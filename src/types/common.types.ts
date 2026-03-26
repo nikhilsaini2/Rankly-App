@@ -25,3 +25,18 @@ export type ButtonProps = {
   icon?: React.ReactNode;
   style?: ViewStyle;
 };
+
+export type ProgressProps = {
+  size?: number;
+  strokeWidth?: number;
+  progress?: number;
+  showGradient?: boolean;
+};
+
+export type RegisterPayload = {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+};

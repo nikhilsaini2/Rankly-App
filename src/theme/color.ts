@@ -25,13 +25,15 @@ export const colors = {
 
   // states
   success: "#22C55E",
+  successDark: "#065F46",
   error: "#EF4444",
 
   glow: "#A78BFA",
 };
 
 export const gradients = {
-  primary: ["#9B5CFF", "#7638E3", "#5228CC"],
+  primary: ["#9B5CFF", "#7638E3", "#5228CC"] as const,
+  success: ["#22C55E", "#065F46"],
   card: ["rgba(20,15,40,0.9)", "rgba(10,10,30,0.9)"],
 };
 

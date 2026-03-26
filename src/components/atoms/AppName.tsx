@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   ly: {
     marginLeft: 1,
 
-    color: colors.primary,
+    color: colors.secondary,
     fontWeight: "900",
     letterSpacing: -0.3,
 

@@ -1,23 +1,79 @@
-import { StyleSheet, TextInput } from "react-native";
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TextInputProps,
+  View,
+} from "react-native";
 import { colors } from "../../theme/color";
 
-export const Input = (props: any) => {
+type Props = TextInputProps & {
+  label?: string;
+  rightIcon?: React.ReactNode;
+};
+
+export const Input = ({ label, rightIcon, ...props }: Props) => {
+  const [focused, setFocused] = useState(false);
+
   return (
-    <TextInput
-      placeholderTextColor={colors.textMuted}
-      style={styles.input}
-      {...props}
-    />
+    <View style={styles.wrapper}>
+      {label && <Text style={styles.label}>{label}</Text>}
+
+      <View style={[styles.inputContainer, focused && styles.inputFocused]}>
+        <TextInput
+          {...props}
+          placeholderTextColor={colors.textMuted}
+          style={styles.input}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+        />
+
+        {rightIcon && <View style={styles.icon}>{rightIcon}</View>}
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  input: {
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderRadius: 12,
-    padding: 14,
-    color: colors.textPrimary,
+  wrapper: {
+    width: "100%",
+  },
+
+  label: {
+    color: colors.textMuted,
+    fontSize: 11,
+    marginBottom: 6,
+    letterSpacing: 0.6,
+  },
+
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+
+    backgroundColor: colors.glass,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+
     borderWidth: 1,
     borderColor: colors.border,
+  },
+
+  inputFocused: {
+    borderColor: colors.secondary,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+  },
+
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    color: colors.textPrimary,
+    fontSize: 14,
+  },
+
+  icon: {
+    marginLeft: 8,
   },
 });

@@ -27,3 +27,15 @@ export const BARS: Bar[] = [
   { label: "Format", value: 93, colors: ["#22C55E", "#065F46"] },
   { label: "Skills", value: 68, colors: ["#F59E0B", "#92400E"] },
 ];
+
+export const googleIcon = require("../../assets/images/google.png");
+
+export const roles = [
+  "SWE",
+  "Product",
+  "Design",
+  "Data",
+  "DevOps",
+  "ML Eng",
+  "Other",
+];

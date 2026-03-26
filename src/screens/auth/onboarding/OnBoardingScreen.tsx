@@ -1,36 +1,30 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import AppName from "../../../components/atoms/AppName";
+import ProgressRing from "../../../components/atoms/ProgressRing";
 import { BARS, FEATURES } from "../../../constants/all";
 import { colors } from "../../../theme/color";
 import { styles } from "./styles";
 
 const OnBoardingScreen = () => {
+  const navigation = useNavigation<any>();
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <AppName size={30} />
       </View>
 
-      {/* Glass Card */}
       <View style={styles.cardWrapper}>
         <LinearGradient
           colors={["rgba(20,15,40,0.95)", "rgba(10,10,30,0.95)"]}
           style={styles.card}
         >
-          {/* subtle top light */}
-          <View style={styles.topHighlight} />
-
-          {/* Score section */}
           <View style={styles.scoreRow}>
             <View style={styles.ringOuter}>
-              <View style={styles.ringInner}>
-                <Text style={styles.score}>82</Text>
-                <Text style={styles.ats}>ATS</Text>
-              </View>
+              <ProgressRing progress={82} />
             </View>
 
             <View>
@@ -43,7 +37,6 @@ const OnBoardingScreen = () => {
             </View>
           </View>
 
-          {/* Bars */}
           {BARS.map((item) => (
             <View key={item.label} style={styles.barRow}>
               <Text style={styles.barLabel}>{item.label}</Text>
@@ -61,7 +54,6 @@ const OnBoardingScreen = () => {
         </LinearGradient>
       </View>
 
-      {/* Features */}
       <View style={styles.features}>
         {FEATURES.map((f) => (
           <View key={f.title} style={styles.featureItem}>
@@ -77,7 +69,12 @@ const OnBoardingScreen = () => {
         ))}
       </View>
 
-      <TouchableOpacity onPress={() => {}}>
+      <TouchableOpacity
+        onPress={() => {
+          navigation.replace("Register");
+        }}
+        activeOpacity={0.85}
+      >
         <LinearGradient
           colors={[colors.secondary, colors.secondaryDark]}
           style={styles.cta}
@@ -88,7 +85,13 @@ const OnBoardingScreen = () => {
         </LinearGradient>
       </TouchableOpacity>
 
-      <TouchableOpacity activeOpacity={0.85} style={styles.ghostBtn}>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        style={styles.ghostBtn}
+        onPress={() => {
+          navigation.replace("Login");
+        }}
+      >
         <Text style={styles.ghostText}>I already have an account</Text>
       </TouchableOpacity>
     </View>
