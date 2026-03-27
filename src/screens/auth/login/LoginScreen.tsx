@@ -53,6 +53,7 @@ const LoginScreen = ({ navigation }: any) => {
   const handleGoogleLogin = async () => {
     try {
       setGoogleLoading(true);
+      setLoading(true);
 
       const user = await signInWithGoogle();
 
@@ -61,8 +62,33 @@ const LoginScreen = ({ navigation }: any) => {
       alert(err.message);
     } finally {
       setGoogleLoading(false);
+      setLoading(false);
     }
   };
+
+  const loadingIndicator = () => {
+    return (
+      <View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text
+          style={{ color: "white", fontSize: 18, marginTop: 15, marginLeft: 3 }}
+        >
+          Loading...
+        </Text>
+      </View>
+    );
+  };
+  if (loading) return loadingIndicator();
 
   return (
     <View style={styles.container}>

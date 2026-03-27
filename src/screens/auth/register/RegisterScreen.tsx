@@ -40,19 +40,59 @@ const RegisterScreen = ({ navigation }: any) => {
     });
   }, []);
 
+  const waitForSession = async (retries = 6) => {
+    for (let i = 0; i < retries; i++) {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session?.user) return session.user;
+
+      await new Promise((res) => setTimeout(res, 400));
+    }
+
+    throw new Error("Session not established");
+  };
+
   const handleGoogleLogin = async () => {
     try {
       setGoogleLoading(true);
+      setLoading(true);
 
-      const user = await signInWithGoogle();
-
+      await signInWithGoogle();
+      const user = await waitForSession();
       await handleUserProfile(user);
     } catch (err: any) {
       alert("Google sign-in failed: " + err.message);
     } finally {
       setGoogleLoading(false);
+      setLoading(false);
     }
   };
+
+  const loadingIndicator = () => {
+    return (
+      <View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text
+          style={{ color: "white", fontSize: 18, marginTop: 15, marginLeft: 3 }}
+        >
+          Loading...
+        </Text>
+      </View>
+    );
+  };
+  if (loading) return loadingIndicator();
 
   return (
     <View style={styles.container}>
@@ -91,7 +131,6 @@ const RegisterScreen = ({ navigation }: any) => {
                 role: values.role,
               });
             } catch (err: any) {
-              console.error("❌ Registration error:", err.message);
               setLoading(false);
               setSubmitting(false);
               alert("Registration failed: " + err.message);

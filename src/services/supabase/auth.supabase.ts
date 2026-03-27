@@ -59,31 +59,58 @@ function mapAuthError(message: string, code?: string): string {
 }
 
 export const handleUserProfile = async (user: any) => {
-  const { data, error } = await supabase
+  if (!user?.id) return;
+
+  const { data: existingUser, error: fetchError } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
     .maybeSingle();
 
-  if (error) throw error;
+  if (fetchError) throw fetchError;
+  if (existingUser) return;
 
-  if (data) return;
+  const provider = user.app_metadata?.provider;
+  const email = user.email ?? "";
 
-  const email = user.email;
+  let firstName = "User";
+  let lastName = "";
 
-  const fullName = user.user_metadata?.full_name || "";
-  const [firstName, lastName] = fullName.split(" ");
+  if (provider === "google") {
+    const fullName = user.user_metadata?.full_name || "";
+    if (fullName) {
+      const parts = fullName.split(" ");
+      firstName = parts[0] || "User";
+      lastName = parts.slice(1).join(" ") || "";
+    } else {
+      firstName = email.split("@")[0] || "User";
+    }
+  } else {
+    firstName = user.user_metadata?.firstName || email.split("@")[0] || "User";
 
-  const safeFirstName =
-    firstName || email?.split("@")[0]?.split(".")[0] || "User";
+    lastName = user.user_metadata?.lastName || "";
+  }
 
-  const { error: insertError } = await supabase.from("users").insert({
-    auth_id: user.id,
-    email,
-    first_name: safeFirstName,
-    last_name: lastName || "",
-    target_role: "SWE",
-  });
+  const role = user.user_metadata?.role || "SWE";
 
-  if (insertError) throw insertError;
+  const { error: insertError } = await supabase.from("users").upsert(
+    {
+      auth_id: user.id,
+      email,
+      first_name: firstName,
+      last_name: lastName,
+      target_role: role,
+    },
+    { onConflict: "auth_id" },
+  );
+
+  if (insertError) {
+    if (
+      insertError.message.includes("row-level security") ||
+      insertError.message.includes("duplicate")
+    ) {
+      return;
+    }
+    throw insertError;
+  }
 };

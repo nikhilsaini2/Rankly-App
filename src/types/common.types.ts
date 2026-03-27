@@ -40,3 +40,14 @@ export type RegisterPayload = {
   lastName: string;
   role: string;
 };
+
+export interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  avatarUrl?: string;
+  role: string;
+  bio?: string;
+  createdAt: string;
+}
