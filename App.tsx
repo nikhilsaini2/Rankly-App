@@ -1,18 +1,15 @@
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { Provider } from "react-redux";
-import { PersistGate } from "redux-persist/integration/react";
 import { GlobalBackground } from "./src/components/GlobalBackground";
-// import RootNavigator from "./src/navigation/RootNavigator";
-import { AppNavigator } from "./src/navigation/AppNavigator";
-import { persistor, store } from "./src/store/auth/authStore";
+import RootNavigator from "./src/navigation/RootNavigator";
+
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+});
 
 const AppProviders = ({ children }: { children: React.ReactNode }) => (
-  <Provider store={store}>
-    <PersistGate persistor={persistor}>
-      <SafeAreaProvider>{children}</SafeAreaProvider>
-    </PersistGate>
-  </Provider>
+  <SafeAreaProvider>{children}</SafeAreaProvider>
 );
 
 export default function App() {
@@ -20,8 +17,8 @@ export default function App() {
     <AppProviders>
       <NavigationContainer>
         <GlobalBackground>
-          {/* <RootNavigator /> */}
-          <AppNavigator />
+          <RootNavigator />
+          {/* <AppNavigator /> */}
         </GlobalBackground>
       </NavigationContainer>
     </AppProviders>

@@ -1,17 +1,68 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Formik } from "formik";
-import React, { useRef } from "react";
-import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import AppName from "../../../components/atoms/AppName";
 import { colors } from "../../../theme/color";
 import { loginSchema } from "../../../validation/auth.schema";
 import { styles } from "./styles";
 
+import {
+  handleUserProfile,
+  signInWithGoogle,
+} from "../../../services/supabase/auth.supabase";
+import { supabase } from "../../../services/supabase/supabase";
+
 const LoginScreen = ({ navigation }: any) => {
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
+
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleEmailLogin = async (values: any) => {
+    try {
+      setLoading(true);
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: values.email.trim(),
+        password: values.password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        await handleUserProfile(data.user);
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+
+      const user = await signInWithGoogle();
+
+      await handleUserProfile(user);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -30,15 +81,10 @@ const LoginScreen = ({ navigation }: any) => {
         </View>
 
         <Formik
-          initialValues={{
-            email: "",
-            password: "",
-          }}
+          initialValues={{ email: "", password: "" }}
           validationSchema={loginSchema}
-          validateOnMount={true}
-          onSubmit={(values) => {
-            console.log(values);
-          }}
+          validateOnMount
+          onSubmit={handleEmailLogin}
         >
           {({
             handleChange,
@@ -51,21 +97,20 @@ const LoginScreen = ({ navigation }: any) => {
             dirty,
           }) => (
             <View style={styles.card}>
-              {/* EMAIL */}
               <View>
                 <Text style={styles.label}>EMAIL ADDRESS</Text>
                 <TextInput
                   ref={emailRef}
+                  style={styles.input}
                   placeholder="rahul@gmail.com"
                   placeholderTextColor={colors.textMuted}
-                  style={styles.input}
                   value={values.email}
                   onChangeText={handleChange("email")}
                   onBlur={handleBlur("email")}
                   returnKeyType="next"
                   autoCapitalize="none"
-                  autoComplete="off"
                   autoCorrect={false}
+                  autoComplete="off"
                   onSubmitEditing={() => passwordRef.current?.focus()}
                 />
                 {touched.email && errors.email && (
@@ -73,22 +118,20 @@ const LoginScreen = ({ navigation }: any) => {
                 )}
               </View>
 
-              {/* PASSWORD */}
               <View>
                 <Text style={styles.label}>PASSWORD</Text>
                 <View style={styles.inputRow}>
                   <TextInput
                     ref={passwordRef}
+                    style={[styles.input, { flex: 1 }]}
                     placeholder="•••••••••"
                     placeholderTextColor={colors.textMuted}
-                    style={[styles.input, { flex: 1 }]}
                     secureTextEntry
                     value={values.password}
                     onChangeText={handleChange("password")}
                     onBlur={handleBlur("password")}
                     returnKeyType="done"
                     autoCapitalize="none"
-                    autoComplete="off"
                     autoCorrect={false}
                   />
                 </View>
@@ -97,38 +140,60 @@ const LoginScreen = ({ navigation }: any) => {
                 )}
               </View>
 
-              {/* CTA */}
               <TouchableOpacity
                 onPress={handleSubmit as any}
-                disabled={!isValid || !dirty}
+                disabled={!isValid || !dirty || loading}
                 activeOpacity={0.9}
               >
                 <LinearGradient
                   colors={[colors.secondary, colors.secondaryDark]}
                   style={[styles.cta, { opacity: isValid && dirty ? 1 : 0.5 }]}
                 >
-                  <Text style={styles.ctaText}>Login </Text>
-                  <Ionicons name="arrow-forward" size={16} color="#fff" />
+                  {loading ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <>
+                      <Text style={styles.ctaText}>Login</Text>
+                      <Ionicons name="arrow-forward" size={16} color="#fff" />
+                    </>
+                  )}
                 </LinearGradient>
               </TouchableOpacity>
 
-              {/* DIVIDER */}
               <View style={styles.divider}>
                 <View style={styles.line} />
                 <Text style={styles.dividerText}>OR</Text>
                 <View style={styles.line} />
               </View>
 
-              {/* GOOGLE */}
-              <TouchableOpacity style={styles.googleBtn}>
-                <Image
-                  source={require("../../../../assets/images/google.png")}
-                  style={styles.googleIcon}
-                />
-                <Text style={styles.googleText}>Continue with Google</Text>
+              <TouchableOpacity
+                style={[styles.googleBtn, { opacity: googleLoading ? 0.8 : 1 }]}
+                onPress={handleGoogleLogin}
+                disabled={googleLoading || loading}
+                activeOpacity={0.9}
+              >
+                {googleLoading ? (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 10,
+                    }}
+                  >
+                    <ActivityIndicator size="small" color="white" />
+                    <Text style={styles.googleText}>Logging in...</Text>
+                  </View>
+                ) : (
+                  <>
+                    <Image
+                      source={require("../../../../assets/images/google.png")}
+                      style={styles.googleIcon}
+                    />
+                    <Text style={styles.googleText}>Continue with Google</Text>
+                  </>
+                )}
               </TouchableOpacity>
 
-              {/* NAV */}
               <TouchableOpacity onPress={() => navigation.replace("Register")}>
                 <Text
                   style={{

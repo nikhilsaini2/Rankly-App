@@ -1,5 +1,26 @@
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { RegisterPayload } from "../../types/common.types";
 import { supabase } from "./supabase";
+
+export const signInWithGoogle = async () => {
+  await GoogleSignin.hasPlayServices();
+  await GoogleSignin.signOut();
+
+  const userInfo = await GoogleSignin.signIn();
+  const { idToken } = await GoogleSignin.getTokens();
+
+  if (!idToken) throw new Error("Google sign-in failed");
+
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: "google",
+    token: idToken,
+  });
+
+  if (error) throw error;
+  if (!data.user) throw new Error("Authentication failed");
+
+  return data.user;
+};
 
 export const registerUser = async ({
   email,
@@ -8,80 +29,61 @@ export const registerUser = async ({
   lastName,
   role,
 }: RegisterPayload) => {
-  try {
-    console.log("🔍 Starting registration for:", email);
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { firstName, lastName, role },
+    },
+  });
 
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { firstName, lastName, role },
-      },
-    });
+  if (error) throw new Error(mapAuthError(error.message, error.code));
+  if (!data.user) throw new Error("User creation failed");
 
-    if (authError) {
-      throw new Error(mapAuthError(authError.message, authError.code));
-    }
-
-    if (!authData.user) {
-      throw new Error("User creation failed - no user returned");
-    }
-    return authData.user;
-  } catch (err: any) {
-    throw new Error(err.message || "Registration failed. Please try again.");
-  }
+  return data.user;
 };
 
 function mapAuthError(message: string, code?: string): string {
-  if (
-    code === "user_already_exists" ||
-    message.includes("already registered")
-  ) {
-    return "Email already in use";
-  }
+  if (code === "user_already_exists") return "Email already in use";
+  if (code === "invalid_credentials") return "Invalid email or password";
+  if (code === "invalid_email") return "Invalid email address";
+  if (code === "weak_password") return "Password must be at least 6 characters";
 
-  if (code === "invalid_credentials") {
-    return "Invalid email or password";
-  }
+  const msg = message.toLowerCase();
 
-  if (code === "validation_failed") {
-    if (message.includes("email")) return "Invalid email format";
-    if (message.includes("password"))
-      return "Password is too weak (min 6 chars)";
-  }
+  if (msg.includes("already")) return "Email already in use";
+  if (msg.includes("email")) return "Invalid email address";
+  if (msg.includes("password")) return "Password must be at least 6 characters";
 
-  if (code === "over_request_rate_limit") {
-    return "Too many signup attempts. Please wait a moment.";
-  }
-
-  if (code === "invalid_email") {
-    return "Invalid email address";
-  }
-
-  if (code === "weak_password") {
-    return "Password must be at least 6 characters";
-  }
-
-  const lowerMessage = message.toLowerCase();
-
-  if (
-    lowerMessage.includes("already registered") ||
-    lowerMessage.includes("already exists")
-  ) {
-    return "Email already in use";
-  }
-
-  if (lowerMessage.includes("invalid email")) {
-    return "Invalid email address";
-  }
-
-  if (lowerMessage.includes("password")) {
-    return "Password must be at least 6 characters";
-  }
-
-  if (lowerMessage.includes("network") || lowerMessage.includes("fetch")) {
-    return "Network error. Please check your connection.";
-  }
-
-  return `Registration failed: ${message}`;
+  return "Registration failed";
 }
+
+export const handleUserProfile = async (user: any) => {
+  const { data, error } = await supabase
+    .from("users")
+    .select("id")
+    .eq("auth_id", user.id)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (data) return;
+
+  const email = user.email;
+
+  const fullName = user.user_metadata?.full_name || "";
+  const [firstName, lastName] = fullName.split(" ");
+
+  const safeFirstName =
+    firstName || email?.split("@")[0]?.split(".")[0] || "User";
+
+  const { error: insertError } = await supabase.from("users").insert({
+    auth_id: user.id,
+    email,
+    first_name: safeFirstName,
+    last_name: lastName || "",
+    target_role: "SWE",
+  });
+
+  if (insertError) throw insertError;
+};

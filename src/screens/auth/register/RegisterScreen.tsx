@@ -1,6 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { Formik } from "formik";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -13,7 +13,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import AppName from "../../../components/atoms/AppName";
 import { roles } from "../../../constants/all";
-import { registerUser } from "../../../services/supabase/auth.supabase";
+import {
+  handleUserProfile,
+  registerUser,
+  signInWithGoogle,
+} from "../../../services/supabase/auth.supabase";
+import { supabase } from "../../../services/supabase/supabase";
 import { colors } from "../../../theme/color";
 import { RegisterSchema } from "../../../validation/auth.schema";
 import { styles } from "./styles";
@@ -25,6 +30,29 @@ const RegisterScreen = ({ navigation }: any) => {
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (data.session?.user) {
+        await handleUserProfile(data.session.user);
+      }
+    });
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+
+      const user = await signInWithGoogle();
+
+      await handleUserProfile(user);
+    } catch (err: any) {
+      alert("Google sign-in failed: " + err.message);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -62,10 +90,11 @@ const RegisterScreen = ({ navigation }: any) => {
                 lastName: values.lastName,
                 role: values.role,
               });
-
-              navigation.replace("Home");
             } catch (err: any) {
-              console.log(err.message);
+              console.error("❌ Registration error:", err.message);
+              setLoading(false);
+              setSubmitting(false);
+              alert("Registration failed: " + err.message);
             } finally {
               setLoading(false);
               setSubmitting(false);
@@ -135,6 +164,8 @@ const RegisterScreen = ({ navigation }: any) => {
                   onChangeText={handleChange("email")}
                   onBlur={handleBlur("email")}
                   returnKeyType="next"
+                  autoComplete="off"
+                  autoCorrect={false}
                   onSubmitEditing={() => passwordRef.current?.focus()}
                 />
                 {touched.email && errors.email && (
@@ -155,6 +186,8 @@ const RegisterScreen = ({ navigation }: any) => {
                     onChangeText={handleChange("password")}
                     onBlur={handleBlur("password")}
                     returnKeyType="next"
+                    autoComplete="off"
+                    autoCorrect={false}
                     onSubmitEditing={() => confirmPasswordRef.current?.focus()}
                   />
                 </View>
@@ -207,7 +240,7 @@ const RegisterScreen = ({ navigation }: any) => {
 
               <TouchableOpacity
                 onPress={handleSubmit as any}
-                disabled={!(isValid && dirty)}
+                disabled={!(isValid && dirty) || loading}
                 activeOpacity={0.9}
               >
                 <LinearGradient
@@ -233,12 +266,32 @@ const RegisterScreen = ({ navigation }: any) => {
                 <View style={styles.line} />
               </View>
 
-              <TouchableOpacity style={styles.googleBtn}>
-                <Image
-                  source={require("../../../../assets/images/google.png")}
-                  style={styles.googleIcon}
-                />
-                <Text style={styles.googleText}>Continue with Google</Text>
+              <TouchableOpacity
+                style={[styles.googleBtn, { opacity: googleLoading ? 0.8 : 1 }]}
+                onPress={handleGoogleLogin}
+                disabled={googleLoading || loading}
+                activeOpacity={0.9}
+              >
+                {googleLoading ? (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 10,
+                    }}
+                  >
+                    <ActivityIndicator size="small" color="white" />
+                    <Text style={styles.googleText}>Signing in...</Text>
+                  </View>
+                ) : (
+                  <>
+                    <Image
+                      source={require("../../../../assets/images/google.png")}
+                      style={styles.googleIcon}
+                    />
+                    <Text style={styles.googleText}>Continue with Google</Text>
+                  </>
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity onPress={() => navigation.replace("Login")}>

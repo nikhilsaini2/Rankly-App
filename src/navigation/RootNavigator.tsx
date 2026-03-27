@@ -1,26 +1,42 @@
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import React from "react";
-import { BottomTabs } from "./BottomTabs";
-
-// import { useSelector } from "react-redux";
-// import { RootState } from "../store/auth/authStore";
-// import { AppNavigator } from "./AppNavigator";
-// import { AuthNavigator } from "./AuthNavigator";
+import React, { useEffect, useState } from "react";
+import { supabase } from "../services/supabase/supabase";
+import { AppNavigator } from "./AppNavigator";
+import { AuthNavigator } from "./AuthNavigator";
 
 const RootNavigator = () => {
-  const Stack = createNativeStackNavigator();
-  // const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-  // return isAuthenticated ? <AppNavigator /> : <AuthNavigator />;
-  return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: "transparent" },
-      }}
-    >
-      <Stack.Screen name="Tabs" component={BottomTabs} />
-    </Stack.Navigator>
-  );
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const init = async () => {
+      const { data } = await supabase.auth.getSession();
+
+      if (mounted) {
+        setUser(data.session?.user ?? null);
+        setLoading(false);
+      }
+    };
+
+    init();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+      },
+    );
+
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  if (loading) return null;
+
+  return user ? <AppNavigator /> : <AuthNavigator />;
+  // return <AuthNavigator />;
 };
 
 export default RootNavigator;
