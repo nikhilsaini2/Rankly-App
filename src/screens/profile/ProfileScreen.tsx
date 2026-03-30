@@ -1,31 +1,43 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Linking from "expo-linking";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Modal,
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useToast } from "../../components/atoms/Toast";
-import ProfileActions from "../../components/layouts/profileActions";
-import ProfileHeader from "../../components/layouts/profileHeader";
-import ProfileStats from "../../components/layouts/profileStats";
 import { experienceLevels, TARGET_ROLES } from "../../constants/all";
 import { NOTIF_STORAGE_KEY } from "../../constants/content";
 import { useProfile } from "../../hooks/useProfile";
 import {
+  deleteUserAccountData,
   getProfileStatsForUser,
+  logout,
   updateUserProfile,
   uploadAvatarFromUri,
   UserProfileUpdate,
@@ -47,7 +59,40 @@ export default function ProfileScreen() {
     bestAts: 0,
     interviews: 0,
   });
+  const [statsDisplay, setStatsDisplay] = useState({
+    resumes: 0,
+    bestAts: 0,
+    interviews: 0,
+  });
   const [roleModal, setRoleModal] = useState(false);
+  const [savingAvatar, setSavingAvatar] = useState(false);
+
+  const zone = useSharedValue(0);
+  useEffect(() => {
+    zone.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+  }, [zone]);
+
+  const avatarRot = useSharedValue(0);
+  useEffect(() => {
+    avatarRot.value = withRepeat(
+      withTiming(360, { duration: 6000, easing: Easing.linear }),
+      -1,
+      false,
+    );
+  }, [avatarRot]);
+
+  const avatarRingStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${avatarRot.value}deg` }],
+  }));
+
+  const badgeO = useSharedValue(0);
+  useEffect(() => {
+    badgeO.value = withDelay(150, withTiming(1, { duration: 200 }));
+  }, [badgeO]);
+  const badgeStyle = useAnimatedStyle(() => ({ opacity: badgeO.value }));
 
   useEffect(() => {
     AsyncStorage.getItem(NOTIF_STORAGE_KEY).then((v) => setNotif(v === "1"));
@@ -126,6 +171,7 @@ export default function ProfileScreen() {
     if (res.canceled || !res.assets[0]) return;
     const uri = res.assets[0].uri;
     try {
+      setSavingAvatar(true);
       const publicUrl = await uploadAvatarFromUri(user.id, uri);
       try {
         await updateUserProfile({ avatarUrl: publicUrl });
@@ -153,6 +199,8 @@ export default function ProfileScreen() {
         return;
       }
       toast("Avatar upload failed", "error");
+    } finally {
+      setSavingAvatar(false);
     }
   }
 
@@ -160,6 +208,74 @@ export default function ProfileScreen() {
     setNotif(v);
     await AsyncStorage.setItem(NOTIF_STORAGE_KEY, v ? "1" : "0");
   }
+
+  // NOTE: All hooks must run before any early returns (Rules of Hooks).
+  const fullName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
+  const initials = getInitials(user?.firstName, user?.lastName);
+  const planLabel = (user?.plan === "pro" ? "Pro" : "Free").toUpperCase();
+  const creditsLabel = `${user?.credits ?? 0} CREDITS`;
+  const appVersion = "1.0.0";
+
+  const statsDidAnimate = useSharedValue(0);
+  const sResumes = useSharedValue(0);
+  const sBest = useSharedValue(0);
+  const sInterviews = useSharedValue(0);
+
+  useEffect(() => {
+    if (statsDidAnimate.value === 1) return;
+    const hasReal =
+      stats.resumes > 0 || stats.bestAts > 0 || stats.interviews > 0;
+    if (!hasReal) {
+      setStatsDisplay(stats);
+      return;
+    }
+    statsDidAnimate.value = 1;
+    sResumes.value = withTiming(stats.resumes, {
+      duration: 800,
+      easing: Easing.out(Easing.cubic),
+    });
+    sBest.value = withTiming(stats.bestAts, {
+      duration: 800,
+      easing: Easing.out(Easing.cubic),
+    });
+    sInterviews.value = withTiming(stats.interviews, {
+      duration: 800,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [stats.bestAts, stats.interviews, stats.resumes]);
+
+  useAnimatedReaction(
+    () => ({
+      resumes: Math.floor(sResumes.value),
+      bestAts: Math.floor(sBest.value),
+      interviews: Math.floor(sInterviews.value),
+    }),
+    (next) => {
+      runOnJS(setStatsDisplay)(next);
+    },
+    [],
+  );
+
+  const z1 = useAnimatedStyle(() => ({
+    opacity: zone.value,
+    transform: [{ translateY: (1 - zone.value) * 20 }],
+  }));
+  const z2 = useAnimatedStyle(() => ({
+    opacity: zone.value,
+    transform: [{ translateY: (1 - zone.value) * 20 }],
+  }));
+  const z3 = useAnimatedStyle(() => ({
+    opacity: zone.value,
+    transform: [{ translateY: (1 - zone.value) * 20 }],
+  }));
+  const z4 = useAnimatedStyle(() => ({
+    opacity: zone.value,
+    transform: [{ translateY: (1 - zone.value) * 20 }],
+  }));
+  const z5 = useAnimatedStyle(() => ({
+    opacity: zone.value,
+    transform: [{ translateY: (1 - zone.value) * 20 }],
+  }));
 
   if (loading && !user) {
     return (
@@ -201,37 +317,81 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <LinearGradient
-        colors={[colors.primary, "transparent"]}
-        style={{
-          position: "absolute",
-          width: 300,
-          height: 300,
-          borderRadius: 300,
-          top: -100,
-          left: -100,
-          opacity: 0.4,
-        }}
-      />
-
+    <View style={[styles.root, { paddingTop: insets.top }]}>
       <ScrollView
         bounces={false}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          padding: 20,
-          paddingBottom: 50 + insets.bottom,
-        }}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 100 },
+        ]}
       >
-        <ProfileHeader
-          user={user}
-          onAvatarPress={pickAvatar}
-          editing={editing}
-          onEditPress={() => openEdit(user)}
-          onCancelEdit={cancelEdit}
-          onSaveEdit={saveEdit}
-          saving={saving}
-        />
+        {/* ZONE 1 — HERO */}
+        <Animated.View style={[styles.heroWrap, z1]}>
+          <LinearGradient
+            colors={["rgba(108,99,255,0.18)", "rgba(13,13,20,0)"]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={styles.heroBanner}
+            pointerEvents="none"
+          />
+
+          <View style={styles.heroInner}>
+            <View style={styles.avatarOuter}>
+              <Animated.View style={[styles.avatarRing, avatarRingStyle]}>
+                <LinearGradient
+                  colors={[colors.primary, colors.secondary]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFillObject}
+                />
+              </Animated.View>
+
+              <View style={styles.avatarSeparator}>
+                {user.avatarUrl ? (
+                  <Image
+                    source={{ uri: user.avatarUrl }}
+                    style={styles.avatarImg}
+                  />
+                ) : (
+                  <View style={styles.avatarFallback}>
+                    <Text style={styles.avatarInitials}>{initials}</Text>
+                  </View>
+                )}
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={pickAvatar}
+                style={styles.avatarEditBtn}
+                accessibilityRole="button"
+              >
+                <Feather name="edit-2" size={13} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.heroName}>{fullName || "—"}</Text>
+            <Text style={styles.heroRole}>{user.role || "—"}</Text>
+
+            <Animated.View style={[styles.badgeRow, badgeStyle]}>
+              <View style={styles.planBadge}>
+                <Feather name="star" size={11} color={colors.primary} />
+                <Text style={styles.planBadgeText}>{planLabel}</Text>
+              </View>
+              <View style={styles.creditsBadge}>
+                <Feather name="zap" size={11} color={colors.accent} />
+                <Text style={styles.creditsBadgeText}>{creditsLabel}</Text>
+              </View>
+            </Animated.View>
+
+            {savingAvatar ? (
+              <View style={styles.avatarBusyRow}>
+                <ActivityIndicator size="small" color={colors.textSecondary} />
+                <Text style={styles.avatarBusyText}>Updating avatar…</Text>
+              </View>
+            ) : null}
+          </View>
+        </Animated.View>
 
         {editing ? (
           <View style={{ marginBottom: 24, gap: 14 }}>
@@ -346,19 +506,202 @@ export default function ProfileScreen() {
           </View>
         ) : null}
 
-        <ProfileStats
-          resumeCount={stats.resumes}
-          bestAts={stats.bestAts}
-          interviewsDone={stats.interviews}
-        />
-        <ProfileActions
-          notificationsOn={notif}
-          onToggleNotifications={onToggleNotif}
-          onDeleted={() => {}}
-        />
+        {/* ZONE 2 — STATS STRIP */}
+        <Animated.View style={[styles.statsStrip, z2]}>
+          <View style={styles.statCell}>
+            <Text
+              style={[
+                styles.statValue,
+                statsDisplay.resumes === 0 && styles.statValueMuted,
+              ]}
+            >
+              {statsDisplay.resumes === 0 ? "—" : String(statsDisplay.resumes)}
+            </Text>
+            <Text style={styles.statLabel}>Resumes</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statCell}>
+            <Text
+              style={[
+                styles.statValue,
+                statsDisplay.bestAts === 0 && styles.statValueMuted,
+                statsDisplay.bestAts > 0 && styles.statBest,
+              ]}
+            >
+              {statsDisplay.bestAts === 0 ? "—" : String(statsDisplay.bestAts)}
+            </Text>
+            <Text style={styles.statLabel}>Best ATS</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statCell}>
+            <Text
+              style={[
+                styles.statValue,
+                statsDisplay.interviews === 0 && styles.statValueMuted,
+              ]}
+            >
+              {statsDisplay.interviews === 0
+                ? "—"
+                : String(statsDisplay.interviews)}
+            </Text>
+            <Text style={styles.statLabel}>Interviews</Text>
+          </View>
+        </Animated.View>
+
+        {/* ZONE 3 — BIO CARD */}
+        <Animated.View style={[styles.bioCard, z3]}>
+          <View style={styles.bioHeaderRow}>
+            <Text style={styles.sectionCap}>ABOUT</Text>
+            <TouchableOpacity
+              onPress={() => openEdit(user)}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+            >
+              <Text style={styles.bioEditLink}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.bioText, !user.bio && styles.bioPlaceholder]}>
+            {user.bio
+              ? user.bio
+              : "No bio added yet. Tap Edit to add a short description about yourself."}
+          </Text>
+        </Animated.View>
+
+        {/* ZONE 4 — SETTINGS */}
+        <Animated.View style={[styles.settingsCard, z4]}>
+          <View style={styles.settingsRow}>
+            <View style={[styles.settingsIconBox, styles.settingsIconNotif]}>
+              <Feather name="bell" size={16} color={colors.primary} />
+            </View>
+            <Text style={styles.settingsLabel}>Notifications</Text>
+            <Switch
+              value={notif}
+              onValueChange={onToggleNotif}
+              trackColor={{ false: colors.surfaceAlt, true: colors.primary }}
+              thumbColor={colors.textPrimary}
+            />
+          </View>
+          <View style={styles.settingsDivider} />
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() =>
+              Linking.openURL("https://example.com/privacy").catch(() => {})
+            }
+          >
+            <View style={styles.settingsRow}>
+              <View
+                style={[styles.settingsIconBox, styles.settingsIconPrivacy]}
+              >
+                <Feather name="shield" size={16} color={colors.accent} />
+              </View>
+              <Text style={styles.settingsLabel}>Privacy Policy</Text>
+              <Feather
+                name="chevron-right"
+                size={16}
+                color={colors.textSecondary}
+              />
+            </View>
+          </TouchableOpacity>
+          <View style={styles.settingsDivider} />
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() =>
+              Linking.openURL("https://example.com/terms").catch(() => {})
+            }
+          >
+            <View style={styles.settingsRow}>
+              <View style={[styles.settingsIconBox, styles.settingsIconTerms]}>
+                <Feather
+                  name="file-text"
+                  size={16}
+                  color={colors.textSecondary}
+                />
+              </View>
+              <Text style={styles.settingsLabel}>Terms of Service</Text>
+              <Feather
+                name="chevron-right"
+                size={16}
+                color={colors.textSecondary}
+              />
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
+
+        {/* ZONE 5 — DANGER */}
+        <Animated.View style={[styles.dangerWrap, z5]}>
+          <Pressable
+            onPress={logout}
+            style={({ pressed }) => [
+              styles.dangerRow,
+              pressed && { transform: [{ scale: 0.98 }] },
+            ]}
+          >
+            <View style={[styles.dangerIconCircle, styles.dangerIconPrimaryBg]}>
+              <Feather name="log-out" size={16} color={colors.primary} />
+            </View>
+            <Text style={styles.signOutText}>Sign Out</Text>
+            <Feather
+              name="chevron-right"
+              size={16}
+              color={colors.textSecondary}
+            />
+          </Pressable>
+
+          <Pressable
+            onPress={() =>
+              Alert.alert(
+                "Delete account",
+                "This removes your Rankly profile data from this device session. You may need to contact support to fully remove your auth account.",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                      try {
+                        await deleteUserAccountData();
+                      } catch {
+                        Alert.alert("Could not delete account data");
+                      }
+                    },
+                  },
+                ],
+              )
+            }
+            style={({ pressed }) => [
+              styles.dangerRow,
+              styles.deleteRow,
+              pressed && { transform: [{ scale: 0.98 }] },
+            ]}
+          >
+            <View style={[styles.dangerIconCircle, styles.dangerIconDangerBg]}>
+              <Feather name="trash-2" size={16} color={colors.danger} />
+            </View>
+            <Text style={styles.deleteText}>Delete Account</Text>
+            <Feather
+              name="chevron-right"
+              size={16}
+              color={"rgba(255,92,92,0.5)"}
+            />
+          </Pressable>
+
+          <Text style={styles.footerCaption}>
+            Version {appVersion} · Made with{" "}
+            <Text style={styles.footerHeart}>♥</Text>
+          </Text>
+        </Animated.View>
       </ScrollView>
     </View>
   );
+}
+
+function getInitials(firstName?: string | null, lastName?: string | null) {
+  const a = (firstName ?? "").trim();
+  const b = (lastName ?? "").trim();
+  const i1 = a ? a[0] : "";
+  const i2 = b ? b[0] : "";
+  const out = `${i1}${i2}`.toUpperCase();
+  return out || "—";
 }
 
 function Field({
@@ -470,3 +813,271 @@ const modalRow = {
 };
 
 const modalRowOn = { backgroundColor: colors.surfaceAlt };
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.background },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 0 },
+
+  heroWrap: { marginBottom: 18 },
+  heroBanner: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 120,
+  },
+  heroInner: { alignItems: "center", paddingTop: 26 },
+
+  avatarOuter: { width: 96, height: 96, position: "relative" },
+  avatarRing: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    padding: 2.5,
+    overflow: "hidden",
+    position: "absolute",
+    top: 0,
+    left: 0,
+  },
+  avatarSeparator: {
+    position: "absolute",
+    top: 2.5,
+    left: 2.5,
+    right: 2.5,
+    bottom: 2.5,
+    borderRadius: 46,
+    backgroundColor: colors.background,
+    padding: 2,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarImg: { width: 84, height: 84, borderRadius: 42 },
+  avatarFallback: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarInitials: { fontSize: 28, fontWeight: "700", color: colors.primary },
+  avatarEditBtn: {
+    position: "absolute",
+    right: -4,
+    bottom: -4,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: colors.background,
+  },
+
+  heroName: {
+    marginTop: 12,
+    fontSize: 24,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
+    textAlign: "center",
+  },
+  heroRole: {
+    marginTop: 4,
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
+  badgeRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+    justifyContent: "center",
+  },
+  planBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: "rgba(108,99,255,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(108,99,255,0.3)",
+  },
+  planBadgeText: {
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  creditsBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,212,170,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(0,212,170,0.3)",
+  },
+  creditsBadgeText: {
+    color: colors.accent,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  avatarBusyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 10,
+  },
+  avatarBusyText: { color: colors.textSecondary, fontSize: 12 },
+
+  statsStrip: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: 20,
+    paddingVertical: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 8,
+  },
+  statCell: { flex: 1, alignItems: "center" },
+  statDivider: { width: 1, height: 32, backgroundColor: colors.border },
+  statValue: {
+    color: colors.textPrimary,
+    fontSize: 26,
+    fontWeight: "800",
+    letterSpacing: -1,
+  },
+  statValueMuted: { color: colors.textSecondary },
+  statBest: { color: colors.accent },
+  statLabel: {
+    marginTop: 4,
+    color: colors.textSecondary,
+    fontSize: 10,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+  },
+
+  sectionCap: {
+    color: colors.textSecondary,
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+  },
+
+  bioCard: {
+    marginTop: 16,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 20,
+  },
+  bioHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  bioEditLink: { color: colors.primary, fontSize: 13, fontWeight: "600" },
+  bioText: {
+    marginTop: 12,
+    color: colors.textPrimary,
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  bioPlaceholder: { color: colors.textSecondary, fontStyle: "italic" },
+
+  settingsCard: {
+    marginTop: 16,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+  },
+  settingsRow: {
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  settingsIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  settingsIconNotif: { backgroundColor: "rgba(108,99,255,0.12)" },
+  settingsIconPrivacy: { backgroundColor: "rgba(0,212,170,0.12)" },
+  settingsIconTerms: { backgroundColor: "rgba(144,144,176,0.12)" },
+  settingsLabel: {
+    flex: 1,
+    marginLeft: 14,
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  settingsDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginLeft: 68,
+  },
+
+  dangerWrap: { marginTop: 16 },
+  dangerRow: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginHorizontal: 0,
+    padding: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  dangerIconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dangerIconPrimaryBg: { backgroundColor: "rgba(108,99,255,0.12)" },
+  dangerIconDangerBg: { backgroundColor: "rgba(255,92,92,0.12)" },
+  signOutText: {
+    flex: 1,
+    color: colors.primary,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  deleteRow: { marginTop: 10, borderColor: "rgba(255,92,92,0.2)" },
+  deleteText: {
+    flex: 1,
+    color: colors.danger,
+    fontSize: 15,
+    fontWeight: "500",
+  },
+
+  footerCaption: {
+    textAlign: "center",
+    color: colors.textSecondary,
+    fontSize: 11,
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  footerHeart: { color: colors.danger },
+});
