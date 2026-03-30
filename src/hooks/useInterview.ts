@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { generateGeminiText, parseGeminiJson } from '../services/gemini/gemini';
 import {
   buildInterviewEvalPrompt,
@@ -41,6 +41,17 @@ export function useInterview() {
   const [busy, setBusy] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionRole, setSessionRole] = useState('');
+  const [config, setConfig] = useState<{
+    role: string;
+    difficulty: "easy" | "medium" | "hard";
+    sessionType: "behavioral" | "technical" | "mixed";
+    questionCount: number;
+  }>({
+    role: "",
+    difficulty: "medium",
+    sessionType: "behavioral",
+    questionCount: 5,
+  });
   const [questions, setQuestions] = useState<QRow[]>([]);
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<'setup' | 'live' | 'done'>('setup');
@@ -52,6 +63,7 @@ export function useInterview() {
     sessionType: 'behavioral' | 'technical' | 'mixed',
     totalQuestions: number,
   ) {
+    setConfig({ role, difficulty, sessionType, questionCount: totalQuestions });
     setBusy(true);
     try {
       const {
@@ -181,12 +193,40 @@ export function useInterview() {
     setIndex(0);
     setPhase('setup');
     setSessionScore(null);
+    setConfig((c) => ({ ...c }));
   }
+
+  const session =
+    sessionId && phase !== 'setup'
+      ? {
+          id: sessionId,
+          role: sessionRole,
+          difficulty: config.difficulty,
+          sessionType: config.sessionType,
+          totalQuestions: config.questionCount,
+          score: sessionScore,
+        }
+      : null;
+
+  const currentQuestion = questions[index]?.question ?? null;
 
   return {
     busy,
     sessionId,
     sessionRole,
+    // fields required by the premium UI spec
+    config,
+    setConfig: (patch: Partial<typeof config>) => {
+      setConfig((prev) => ({ ...prev, ...patch }));
+    },
+    session,
+    currentQuestion,
+    currentIndex: index,
+    totalQuestions: questions.length || config.questionCount,
+    isLoading: busy,
+    endSession: reset,
+
+    // existing fields (used by current AIScreen)
     questions,
     index,
     phase,

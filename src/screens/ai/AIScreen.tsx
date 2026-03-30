@@ -21,9 +21,18 @@ import Animated, {
   withDelay,
   withRepeat,
   withSequence,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, {
+  Circle,
+  Defs,
+  Ellipse,
+  FeGaussianBlur,
+  Filter,
+  Path,
+} from "react-native-svg";
 import { PressableScale } from "../../components/atoms/PressableScale";
 import { ScoreRing } from "../../components/atoms/ScoreRing";
 import { AI_STARTER_PROMPTS } from "../../constants/content";
@@ -47,61 +56,89 @@ function MessageBubble({
   showRanklyLabel: boolean;
 }) {
   const isUser = item.role === "user";
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(12);
+
+  useEffect(() => {
+    opacity.value = withTiming(1, { duration: 250 });
+    translateY.value = withTiming(0, { duration: 250 });
+  }, [item.id]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
   return (
-    <View
+    <Animated.View
       style={[
+        animStyle,
         styles.bubbleWrap,
         isUser ? styles.bubbleWrapUser : styles.bubbleWrapAi,
       ]}
     >
       {!isUser && showRanklyLabel ? (
-        <Text style={styles.ranklyLabel}>Rankly AI</Text>
+        <View style={styles.aiBubbleHeader}>
+          <View style={styles.aiBubbleMark}>
+            <Text style={styles.aiBubbleMarkSpark}>✦</Text>
+          </View>
+          <View style={styles.aiBubbleHeaderTextWrap}>
+            <Text style={styles.aiBubbleHeaderText}>Rankly AI</Text>
+          </View>
+        </View>
       ) : null}
-      <View
-        style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAi]}
-      >
-        <Text style={isUser ? styles.bubbleUserText : styles.bubbleAiText}>
-          {item.content}
-        </Text>
-      </View>
-      <Text style={styles.msgTime}>
+
+      {isUser ? (
+        <LinearGradient
+          colors={[colors.primary, colors.secondary]}
+          style={styles.userBubbleGrad}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
+          <Text style={styles.userBubbleText}>{item.content}</Text>
+        </LinearGradient>
+      ) : (
+        <View style={styles.aiBubbleSurface}>
+          <Text style={styles.aiBubbleText}>{item.content}</Text>
+        </View>
+      )}
+
+      <Text style={[styles.msgTime, isUser && styles.msgTimeRight]}>
         {item.createdAt ? formatTime(item.createdAt) : ""}
       </Text>
-    </View>
+    </Animated.View>
   );
 }
 
 function TypingIndicator() {
-  const o1 = useSharedValue(0.3);
-  const o2 = useSharedValue(0.3);
-  const o3 = useSharedValue(0.3);
+  const y1 = useSharedValue(0);
+  const y2 = useSharedValue(0);
+  const y3 = useSharedValue(0);
+
   useEffect(() => {
-    const cycle = { duration: 800 } as const;
-    o1.value = withRepeat(
-      withSequence(withTiming(1, cycle), withTiming(0.3, cycle)),
-      -1,
+    const bounce = withSequence(
+      withTiming(-5, { duration: 300 }),
+      withTiming(0, { duration: 300 }),
     );
-    o2.value = withDelay(
-      150,
-      withRepeat(
-        withSequence(withTiming(1, cycle), withTiming(0.3, cycle)),
-        -1,
-      ),
-    );
-    o3.value = withDelay(
-      300,
-      withRepeat(
-        withSequence(withTiming(1, cycle), withTiming(0.3, cycle)),
-        -1,
-      ),
-    );
-  }, [o1, o2, o3]);
-  const s1 = useAnimatedStyle(() => ({ opacity: o1.value }));
-  const s2 = useAnimatedStyle(() => ({ opacity: o2.value }));
-  const s3 = useAnimatedStyle(() => ({ opacity: o3.value }));
+
+    y1.value = withRepeat(bounce, -1, false);
+    y2.value = withDelay(150, withRepeat(bounce, -1, false));
+    y3.value = withDelay(300, withRepeat(bounce, -1, false));
+  }, [y1, y2, y3]);
+
+  const s1 = useAnimatedStyle(() => ({
+    transform: [{ translateY: y1.value }],
+  }));
+  const s2 = useAnimatedStyle(() => ({
+    transform: [{ translateY: y2.value }],
+  }));
+  const s3 = useAnimatedStyle(() => ({
+    transform: [{ translateY: y3.value }],
+  }));
+
   return (
     <View style={styles.typingRow}>
-      <View style={[styles.bubble, styles.bubbleAi, styles.typingBubble]}>
+      <View style={[styles.aiBubbleSurface, styles.typingBubble]}>
         <View style={styles.typingDots}>
           <Animated.View style={[styles.dot, s1]} />
           <Animated.View style={[styles.dot, s2]} />
@@ -112,24 +149,338 @@ function TypingIndicator() {
   );
 }
 
-const Pill = ({
+function StatusPulseDot() {
+  const pulseScale = useSharedValue(1);
+  const pulseOpacity = useSharedValue(0.6);
+
+  useEffect(() => {
+    pulseScale.value = withRepeat(
+      withTiming(1.8, { duration: 1800 }),
+      -1,
+      true,
+    );
+    pulseOpacity.value = withRepeat(
+      withTiming(0, { duration: 1800 }),
+      -1,
+      true,
+    );
+  }, [pulseScale, pulseOpacity]);
+
+  const ringStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+    opacity: pulseOpacity.value,
+  }));
+
+  return (
+    <View style={styles.statusDotWrap}>
+      <Animated.View style={[styles.statusDotRing, ringStyle]} />
+      <View style={styles.statusDotInner} />
+    </View>
+  );
+}
+
+function PremiumHeader() {
+  return (
+    <View style={styles.headerWrap}>
+      <View style={styles.headerTopRow}>
+        <View style={styles.headerTitleRow}>
+          <StatusPulseDot />
+          <Text style={styles.headerTitle}>AI Coach</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.historyBtn}
+          onPress={() => {
+            // no-op for now (visual affordance only)
+          }}
+          accessibilityRole="button"
+        >
+          <Ionicons
+            name="time-outline"
+            size={20}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.headerSubtitle}>
+        <Text style={styles.headerSubtitleSpark}>✦</Text> Powered by Gemini
+      </Text>
+    </View>
+  );
+}
+
+function PremiumTabSwitcher({
+  active,
+  onChange,
+}: {
+  active: "chat" | "interview";
+  onChange: (v: "chat" | "interview") => void;
+}) {
+  const indicatorX = useSharedValue(active === "chat" ? 0 : 1);
+  const [tabWidth, setTabWidth] = useState(0);
+
+  useEffect(() => {
+    indicatorX.value = withSpring(active === "chat" ? 0 : 1, {
+      damping: 20,
+      stiffness: 200,
+    });
+  }, [active, indicatorX]);
+
+  const half = tabWidth / 2;
+
+  const underlineStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: indicatorX.value * half }],
+  }));
+
+  return (
+    <View
+      style={styles.tabOuter}
+      onLayout={(e) => setTabWidth(e.nativeEvent.layout.width)}
+    >
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => onChange("chat")}
+        accessibilityRole="button"
+      >
+        {active === "chat" ? (
+          <Ionicons
+            name="chatbubble-ellipses-outline"
+            size={16}
+            color={colors.primary}
+            style={{ marginBottom: 2 }}
+          />
+        ) : null}
+        <Text
+          style={[
+            styles.tabText,
+            active === "chat" ? styles.tabTextActive : styles.tabTextMuted,
+          ]}
+        >
+          Chat
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => onChange("interview")}
+        accessibilityRole="button"
+      >
+        {active === "interview" ? (
+          <Ionicons
+            name="mic-outline"
+            size={16}
+            color={colors.primary}
+            style={{ marginBottom: 2 }}
+          />
+        ) : null}
+        <Text
+          style={[
+            styles.tabText,
+            active === "interview" ? styles.tabTextActive : styles.tabTextMuted,
+          ]}
+        >
+          Interview
+        </Text>
+      </TouchableOpacity>
+
+      {half > 0 ? (
+        <View style={styles.tabUnderlineTrack} pointerEvents="none">
+          <Animated.View
+            style={[styles.tabUnderline, underlineStyle, { width: half }]}
+          >
+            <LinearGradient
+              colors={[colors.primary, colors.secondary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={StyleSheet.absoluteFillObject}
+            />
+          </Animated.View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function AICoachAvatarIllustration() {
+  return (
+    <Svg width={80} height={80} viewBox="0 0 80 80">
+      <Defs>
+        <Filter id="docBlur">
+          <FeGaussianBlur stdDeviation={2.5} />
+        </Filter>
+      </Defs>
+
+      <Ellipse
+        cx={40}
+        cy={72}
+        rx={22}
+        ry={6}
+        fill={colors.primary}
+        opacity={0.2}
+        filter="url(#docBlur)"
+      />
+
+      <Circle
+        cx={40}
+        cy={40}
+        r={40}
+        fill={colors.surface}
+        stroke={colors.border}
+        strokeWidth={1}
+      />
+
+      {/* inner ring */}
+      <Circle
+        cx={40}
+        cy={40}
+        r={26}
+        fill="none"
+        stroke={colors.border}
+        strokeWidth={1}
+        opacity={0.7}
+      />
+
+      {/* premium spark mark */}
+      <Path
+        d="M40 22 L44 34 L56 38 L44 42 L40 56 L36 42 L24 38 L36 34 Z"
+        fill={colors.primary}
+        opacity={0.78}
+      />
+      <Path
+        d="M40 26 L43 35 L52 38 L43 41 L40 50 L37 41 L28 38 L37 35 Z"
+        fill={colors.secondary}
+        opacity={0.35}
+      />
+
+      {/* orbit dot */}
+        <Circle cx={58} cy={24} r={3} fill={colors.accent} />
+    </Svg>
+  );
+}
+
+function SuggestionChip({
+  prompt,
+  index,
+  onSend,
+  disabled,
+}: {
+  prompt: string;
+  index: number;
+  onSend: () => void;
+  disabled: boolean;
+}) {
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(8);
+
+  useEffect(() => {
+    opacity.value = withDelay(index * 80, withTiming(1, { duration: 280 }));
+    translateY.value = withDelay(index * 80, withTiming(0, { duration: 280 }));
+  }, [index, opacity, translateY]);
+
+  const aStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  return (
+    <Animated.View style={aStyle}>
+      <PressableScale
+        style={styles.suggestionChip}
+        onPress={onSend}
+        disabled={disabled}
+      >
+        <View style={styles.suggestionChipInner}>
+          <Text style={styles.suggestionChipSpark}>✦</Text>
+          <Text style={styles.suggestionChipText} numberOfLines={1}>
+            {prompt}
+          </Text>
+          <Ionicons
+            name="arrow-forward"
+            size={14}
+            color={colors.textSecondary}
+          />
+        </View>
+      </PressableScale>
+    </Animated.View>
+  );
+}
+
+function Pill({
   label,
   selected,
+  tone,
   onPress,
 }: {
   label: string;
   selected: boolean;
+  tone: "primary" | "easy" | "medium" | "hard";
   onPress: () => void;
-}) => (
-  <TouchableOpacity
-    onPress={onPress}
-    style={[styles.pill, selected && styles.pillOn]}
-  >
-    <Text style={[styles.pillText, selected && styles.pillTextOn]}>
-      {label}
-    </Text>
-  </TouchableOpacity>
-);
+}) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const AnimatedTouchableOpacity =
+    Animated.createAnimatedComponent(TouchableOpacity);
+
+  const displayLabel =
+    label.length > 0 && isNaN(Number(label))
+      ? label.charAt(0).toUpperCase() + label.slice(1)
+      : label;
+
+  return (
+    <AnimatedTouchableOpacity
+      onPress={onPress}
+      activeOpacity={1}
+      onPressIn={() => {
+        scale.value = withTiming(0.95, { duration: 80 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 20, stiffness: 200 });
+      }}
+      style={[
+        styles.pillBase,
+        selected && tone === "primary" && styles.pillSelectedPrimary,
+        selected && tone === "easy" && styles.pillSelectedEasy,
+        selected && tone === "medium" && styles.pillSelectedMedium,
+        selected && tone === "hard" && styles.pillSelectedHard,
+        !selected && styles.pillOff,
+        animStyle,
+      ]}
+    >
+      {selected ? (
+        <Ionicons
+          name="checkmark"
+          size={12}
+          color={
+            tone === "easy"
+              ? colors.accent
+              : tone === "medium"
+                ? colors.warning
+                : tone === "hard"
+                  ? colors.danger
+                  : colors.primary
+          }
+          style={{ marginRight: 6 }}
+        />
+      ) : null}
+      <Text
+        style={[
+          styles.pillTextBase,
+          selected && tone === "primary" && styles.pillTextPrimary,
+          selected && tone === "easy" && styles.pillTextEasy,
+          selected && tone === "medium" && styles.pillTextMedium,
+          selected && tone === "hard" && styles.pillTextHard,
+          !selected && styles.pillTextMuted,
+        ]}
+      >
+        {displayLabel}
+      </Text>
+    </AnimatedTouchableOpacity>
+  );
+}
 
 export default function AIScreen() {
   const insets = useSafeAreaInsets();
@@ -208,19 +559,8 @@ export default function AIScreen() {
       keyboardVerticalOffset={0}
     >
       <Animated.View style={[styles.flex, screenAnim]}>
-        <Text style={styles.screenTitle}>AI Coach</Text>
-        <View style={styles.seg}>
-          <SegBtn
-            label="Chat"
-            active={segment === "chat"}
-            onPress={() => setSegment("chat")}
-          />
-          <SegBtn
-            label="Interview"
-            active={segment === "interview"}
-            onPress={() => setSegment("interview")}
-          />
-        </View>
+        <PremiumHeader />
+        <PremiumTabSwitcher active={segment} onChange={setSegment} />
 
         {segment === "chat" ? (
           !chat.ready ? (
@@ -228,27 +568,32 @@ export default function AIScreen() {
               <ActivityIndicator color={colors.primary} />
             </View>
           ) : chat.messages.length === 0 ? (
-            <View style={[styles.chatBody, styles.welcomeOuter]}>
-              <View style={styles.welcomeContainer}>
-                <Text style={styles.welcomeEmoji}>🤖</Text>
-                <Text style={styles.welcomeTitle}>Your AI Career Coach</Text>
-                <Text style={styles.welcomeSubtitle}>
+            <View style={[styles.chatBody, styles.chatEmptyOuter]}>
+              <View style={styles.chatEmptyWrap}>
+                <View style={styles.chatEmptyAvatarGlow}>
+                  <AICoachAvatarIllustration />
+                </View>
+                <Text style={styles.chatEmptyTitle}>Your AI Career Coach</Text>
+                <Text style={styles.chatEmptySubtitle}>
                   Ask me anything about your resume, job search, salary
                   negotiation, or interview prep.
                 </Text>
-                {AI_STARTER_PROMPTS.map((prompt) => (
-                  <PressableScale
-                    key={prompt}
-                    style={styles.starterChip}
-                    onPress={() => {
-                      if (!chat.loading) void chat.send(prompt);
-                    }}
-                    disabled={chat.loading}
-                  >
-                    <Text style={styles.starterText}>{prompt}</Text>
-                  </PressableScale>
-                ))}
+
+                <View style={styles.chatSuggestionList}>
+                  {AI_STARTER_PROMPTS.map((prompt, idx) => (
+                    <SuggestionChip
+                      key={prompt}
+                      prompt={prompt}
+                      index={idx}
+                      onSend={() => {
+                        if (!chat.loading) void chat.send(prompt);
+                      }}
+                      disabled={chat.loading}
+                    />
+                  ))}
+                </View>
               </View>
+
               {chat.loading ? <TypingIndicator /> : null}
               <InputBar
                 input={input}
@@ -328,23 +673,60 @@ function InputBar({
   insetsBottom: number;
 }) {
   const canSend = input.trim().length > 0 && !disabled;
+  const [focused, setFocused] = useState(false);
+
+  const pressScale = useSharedValue(1);
+  const pressAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pressScale.value }],
+  }));
+
+  const AnimatedTouchableOpacity =
+    Animated.createAnimatedComponent(TouchableOpacity);
+
   return (
     <View style={[styles.inputRow, { paddingBottom: 12 + insetsBottom }]}>
       <TextInput
-        style={styles.input}
+        style={[styles.input, focused && styles.inputFocused]}
         placeholder="Ask your career coach..."
         placeholderTextColor={colors.textMuted}
         value={input}
         onChangeText={setInput}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         multiline
       />
-      <PressableScale
-        style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}
+      <AnimatedTouchableOpacity
+        style={[
+          styles.sendBtnBase,
+          !canSend && styles.sendBtnDisabled,
+          pressAnimStyle,
+        ]}
+        activeOpacity={1}
+        onPressIn={() => {
+          if (!canSend) return;
+          pressScale.value = withTiming(0.92, { duration: 80 });
+        }}
+        onPressOut={() => {
+          pressScale.value = withSpring(1, { damping: 20, stiffness: 200 });
+        }}
         onPress={onSend}
         disabled={!canSend}
       >
-        <Ionicons name="arrow-forward" size={20} color={colors.textPrimary} />
-      </PressableScale>
+        {canSend ? (
+          <LinearGradient
+            colors={[colors.primary, colors.primaryDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+        ) : null}
+        <Ionicons
+          name="arrow-forward"
+          size={20}
+          color={canSend ? colors.textPrimary : colors.textSecondary}
+          style={{ transform: [{ rotate: "-90deg" }] }}
+        />
+      </AnimatedTouchableOpacity>
     </View>
   );
 }
@@ -405,6 +787,66 @@ function InterviewPanel({
   setAnswer: (v: string) => void;
   onDiscussCoach: () => void;
 }) {
+  const [roleFocused, setRoleFocused] = useState(false);
+  const [answerFocused, setAnswerFocused] = useState(false);
+
+  const card0Opacity = useSharedValue(0);
+  const card0Y = useSharedValue(10);
+  const card1Opacity = useSharedValue(0);
+  const card1Y = useSharedValue(10);
+  const card2Opacity = useSharedValue(0);
+  const card2Y = useSharedValue(10);
+  const card3Opacity = useSharedValue(0);
+  const card3Y = useSharedValue(10);
+
+  useEffect(() => {
+    if (iv.phase !== "setup") return;
+
+    const duration = 280;
+    const stagger = 60;
+
+    const apply = (
+      op: typeof card0Opacity,
+      y: typeof card0Y,
+      i: number,
+    ) => {
+      op.value = withDelay(i * stagger, withTiming(1, { duration }));
+      y.value = withDelay(i * stagger, withTiming(0, { duration }));
+    };
+
+    // reset
+    card0Opacity.value = 0;
+    card0Y.value = 10;
+    card1Opacity.value = 0;
+    card1Y.value = 10;
+    card2Opacity.value = 0;
+    card2Y.value = 10;
+    card3Opacity.value = 0;
+    card3Y.value = 10;
+
+    apply(card0Opacity, card0Y, 0);
+    apply(card1Opacity, card1Y, 1);
+    apply(card2Opacity, card2Y, 2);
+    apply(card3Opacity, card3Y, 3);
+  }, [iv.phase]);
+
+  const card0Style = useAnimatedStyle(() => ({
+    opacity: card0Opacity.value,
+    transform: [{ translateY: card0Y.value }],
+  }));
+  const card1Style = useAnimatedStyle(() => ({
+    opacity: card1Opacity.value,
+    transform: [{ translateY: card1Y.value }],
+  }));
+  const card2Style = useAnimatedStyle(() => ({
+    opacity: card2Opacity.value,
+    transform: [{ translateY: card2Y.value }],
+  }));
+  const card3Style = useAnimatedStyle(() => ({
+    opacity: card3Opacity.value,
+    transform: [{ translateY: card3Y.value }],
+  }));
+
   if (iv.phase === "setup") {
     return (
       <ScrollView
@@ -421,50 +863,63 @@ function InterviewPanel({
           Practice common questions for your target role
         </Text>
 
-        <Text style={styles.fieldLabel}>Role</Text>
-        <TextInput
-          style={styles.ivInput}
-          value={setupRole}
-          onChangeText={setSetupRole}
-          placeholder="e.g. Software Engineer, Product Manager"
-          placeholderTextColor={colors.textMuted}
-        />
+        <Animated.View style={[styles.setupCard, card0Style]}>
+          <Text style={styles.fieldLabel}>Role</Text>
+          <TextInput
+            style={[styles.ivInput, roleFocused && styles.ivInputFocused]}
+            value={setupRole}
+            onChangeText={setSetupRole}
+            placeholder="e.g. Software Engineer, Product Manager"
+            placeholderTextColor={colors.textMuted}
+            onFocus={() => setRoleFocused(true)}
+            onBlur={() => setRoleFocused(false)}
+          />
+        </Animated.View>
 
-        <Text style={styles.fieldLabel}>Difficulty</Text>
-        <View style={styles.pillRow}>
-          {(["easy", "medium", "hard"] as const).map((d) => (
-            <Pill
-              key={d}
-              label={d}
-              selected={difficulty === d}
-              onPress={() => setDifficulty(d)}
-            />
-          ))}
-        </View>
+        <Animated.View style={[styles.setupCard, card1Style]}>
+          <Text style={styles.fieldLabel}>Difficulty</Text>
+          <View style={styles.pillRow}>
+            {(["easy", "medium", "hard"] as const).map((d) => (
+              <Pill
+                key={d}
+                label={d}
+                selected={difficulty === d}
+                tone={d}
+                onPress={() => setDifficulty(d)}
+              />
+            ))}
+          </View>
+        </Animated.View>
 
-        <Text style={styles.fieldLabel}>Session Type</Text>
-        <View style={styles.pillRow}>
-          {(["behavioral", "technical", "mixed"] as const).map((t) => (
-            <Pill
-              key={t}
-              label={t}
-              selected={sessionType === t}
-              onPress={() => setSessionType(t)}
-            />
-          ))}
-        </View>
+        <Animated.View style={[styles.setupCard, card2Style]}>
+          <Text style={styles.fieldLabel}>Session Type</Text>
+          <View style={styles.pillRow}>
+            {(["behavioral", "technical", "mixed"] as const).map((t) => (
+              <Pill
+                key={t}
+                label={t}
+                selected={sessionType === t}
+                tone="primary"
+                onPress={() => setSessionType(t)}
+              />
+            ))}
+          </View>
+        </Animated.View>
 
-        <Text style={styles.fieldLabel}>Questions</Text>
-        <View style={styles.pillRow}>
-          {[3, 5, 10].map((n) => (
-            <Pill
-              key={n}
-              label={String(n)}
-              selected={numQ === n}
-              onPress={() => setNumQ(n)}
-            />
-          ))}
-        </View>
+        <Animated.View style={[styles.setupCard, card3Style]}>
+          <Text style={styles.fieldLabel}>Questions</Text>
+          <View style={styles.pillRow}>
+            {[3, 5, 10].map((n) => (
+              <Pill
+                key={n}
+                label={String(n)}
+                selected={numQ === n}
+                tone="primary"
+                onPress={() => setNumQ(n)}
+              />
+            ))}
+          </View>
+        </Animated.View>
 
         <PressableScale
           style={styles.startButtonWrap}
@@ -474,7 +929,7 @@ function InterviewPanel({
           disabled={iv.busy || !setupRole.trim()}
         >
           <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
+            colors={[colors.primary, colors.secondary]}
             style={[
               styles.startBtn,
               (iv.busy || !setupRole.trim()) && styles.startBtnDisabledGrad,
@@ -483,7 +938,14 @@ function InterviewPanel({
             {iv.busy ? (
               <ActivityIndicator color={colors.textPrimary} />
             ) : (
-              <Text style={styles.startBtnText}>Start Session →</Text>
+              <View style={styles.startBtnRow}>
+                <Ionicons
+                  name="play"
+                  size={18}
+                  color={colors.textPrimary}
+                />
+                <Text style={styles.startBtnText}>Start Session</Text>
+              </View>
             )}
           </LinearGradient>
         </PressableScale>
@@ -495,6 +957,30 @@ function InterviewPanel({
     const q = iv.questions[iv.index];
     const progressWidth =
       iv.questions.length > 0 ? (iv.index / iv.questions.length) * 100 : 0;
+    const diff = iv.config.difficulty;
+    const diffBg =
+      diff === "easy"
+        ? "rgba(0,212,170,0.15)"
+        : diff === "medium"
+          ? "rgba(255,179,71,0.15)"
+          : "rgba(255,92,92,0.15)";
+    const diffBorder =
+      diff === "easy"
+        ? colors.accent
+        : diff === "medium"
+          ? colors.warning
+          : colors.danger;
+    const diffText =
+      diff === "easy"
+        ? colors.accent
+        : diff === "medium"
+          ? colors.warning
+          : colors.danger;
+    const typeLabel =
+      iv.config.sessionType.charAt(0).toUpperCase() +
+      iv.config.sessionType.slice(1);
+    const diffLabel =
+      diff.charAt(0).toUpperCase() + diff.slice(1);
     return (
       <KeyboardAvoidingView
         style={styles.flex}
@@ -502,19 +988,52 @@ function InterviewPanel({
         keyboardVerticalOffset={0}
       >
         <View style={[styles.liveBody, { paddingBottom: 24 + insetsBottom }]}>
-          <View style={styles.progressRow}>
+          <View style={styles.progressHeader}>
             <Text style={styles.progressText}>
               Question {iv.index + 1} of {iv.questions.length}
             </Text>
-            <View style={styles.progressBar}>
-              <View
-                style={[styles.progressFill, { width: `${progressWidth}%` }]}
+            <TouchableOpacity style={styles.endBtn} onPress={() => {}}>
+              <Text style={styles.endBtnText}>End</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.progressTrack}>
+            {progressWidth > 0 ? (
+              <LinearGradient
+                colors={[colors.primary, colors.accent]}
+                style={[styles.progressFillGrad, { width: `${progressWidth}%` }]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
               />
+            ) : null}
+          </View>
+
+          <View style={styles.questionCard}>
+            <LinearGradient
+              colors={[colors.primary, colors.secondary]}
+              style={styles.questionAccentBar}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+            />
+            <Text style={styles.questionText}>{q.question}</Text>
+
+            <View style={styles.metaRow}>
+              <View style={styles.metaChipPrimary}>
+                <Text style={styles.metaChipTextPrimary}>{typeLabel}</Text>
+              </View>
+              <View
+                style={[
+                  styles.metaChip,
+                  { backgroundColor: diffBg, borderColor: diffBorder },
+                ]}
+              >
+                <Text style={[styles.metaChipText, { color: diffText }]}>
+                  {diffLabel}
+                </Text>
+              </View>
             </View>
           </View>
-          <View style={styles.questionCard}>
-            <Text style={styles.questionText}>{q.question}</Text>
-          </View>
+
           <TextInput
             multiline
             numberOfLines={6}
@@ -522,8 +1041,10 @@ function InterviewPanel({
             placeholderTextColor={colors.textMuted}
             value={answer}
             onChangeText={setAnswer}
-            style={styles.answerInput}
+            style={[styles.answerInput, answerFocused && styles.answerInputFocused]}
             textAlignVertical="top"
+            onFocus={() => setAnswerFocused(true)}
+            onBlur={() => setAnswerFocused(false)}
           />
           <View style={styles.actionRow}>
             <PressableScale
@@ -644,6 +1165,84 @@ function InterviewPanel({
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
+  headerWrap: { paddingHorizontal: 20, paddingTop: 8, marginBottom: 10 },
+  headerTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerTitleRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
+  },
+  headerSubtitle: { fontSize: 11, color: colors.textSecondary, marginTop: 6 },
+  headerSubtitleSpark: { color: colors.primary, fontWeight: "700" },
+  historyBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  statusDotWrap: {
+    width: 14,
+    height: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  statusDotRing: {
+    position: "absolute",
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  statusDotInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.accent,
+  },
+
+  tabOuter: {
+    flexDirection: "row",
+    marginHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingBottom: 2,
+  },
+  tabItem: {
+    flex: 1,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabText: { fontSize: 14 },
+  tabTextActive: { color: colors.textPrimary, fontWeight: "600" },
+  tabTextMuted: { color: colors.textSecondary, fontWeight: "400" },
+  tabUnderlineTrack: {
+    position: "absolute",
+    left: 0,
+    bottom: 0,
+    height: 2,
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  tabUnderline: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    height: 2,
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+
   screenTitle: {
     fontSize: 28,
     fontWeight: "700",
@@ -670,67 +1269,192 @@ const styles = StyleSheet.create({
   chatBody: { flex: 1 },
   welcomeOuter: { justifyContent: "space-between" },
   listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 },
-  bubbleWrap: { maxWidth: "88%", marginBottom: 10 },
-  bubbleWrapUser: { alignSelf: "flex-end", alignItems: "flex-end" },
-  bubbleWrapAi: { alignSelf: "flex-start", alignItems: "flex-start" },
+  bubbleWrap: { marginBottom: 10 },
+  bubbleWrapUser: {
+    alignSelf: "flex-end",
+    alignItems: "flex-end",
+    maxWidth: "75%",
+  },
+  bubbleWrapAi: {
+    alignSelf: "flex-start",
+    alignItems: "flex-start",
+    maxWidth: "85%",
+  },
   ranklyLabel: { fontSize: 10, color: colors.textSecondary, marginBottom: 4 },
   bubble: { paddingVertical: 12, paddingHorizontal: 14 },
-  bubbleUser: {
+  msgTime: { fontSize: 10, color: colors.textSecondary, marginTop: 4 },
+  msgTimeRight: { textAlign: "right" },
+
+  aiBubbleHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  aiBubbleMark: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aiBubbleMarkSpark: {
+    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  aiBubbleHeaderTextWrap: { flex: 1 },
+  aiBubbleHeaderText: {
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+
+  userBubbleGrad: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderRadius: 18,
     borderBottomRightRadius: 4,
+    overflow: "hidden",
   },
-  bubbleAi: {
+
+  aiBubbleSurface: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     backgroundColor: colors.surfaceAlt,
     borderRadius: 18,
     borderBottomLeftRadius: 4,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  bubbleUserText: { color: colors.textPrimary, fontSize: 15, lineHeight: 22 },
-  bubbleAiText: { color: colors.textPrimary, fontSize: 15, lineHeight: 22 },
-  msgTime: { fontSize: 10, color: colors.textSecondary, marginTop: 4 },
+  userBubbleText: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    lineHeight: 22,
+    fontWeight: "400",
+  },
+  aiBubbleText: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    lineHeight: 22,
+    fontWeight: "400",
+  },
   typingRow: { paddingHorizontal: 20, marginBottom: 8 },
-  typingBubble: { alignSelf: "flex-start" },
+  typingBubble: { alignSelf: "flex-start", maxWidth: "85%" },
   typingDots: { flexDirection: "row", gap: 6 },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.textMuted,
+    backgroundColor: colors.textSecondary,
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "flex-end",
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 10,
     borderTopWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.bgPrimary,
+    backgroundColor: colors.surface,
   },
   input: {
     flex: 1,
     minHeight: 44,
     maxHeight: 100,
     backgroundColor: colors.surfaceAlt,
-    borderRadius: 14,
-    paddingHorizontal: 14,
+    borderRadius: 24,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     color: colors.textPrimary,
     borderWidth: 1,
     borderColor: colors.border,
-    fontSize: 15,
+    fontSize: 14,
   },
-  sendBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
+  inputFocused: { borderColor: colors.primary },
+
+  sendBtnBase: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  sendBtnDisabled: { opacity: 0.35 },
+  sendBtnDisabled: {
+    backgroundColor: colors.surfaceAlt,
+    borderColor: colors.border,
+    opacity: 1,
+  },
+
+  chatEmptyOuter: { flex: 1, justifyContent: "space-between" },
+  chatEmptyWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingHorizontal: 20,
+    paddingTop: 22,
+  },
+  chatEmptyAvatarGlow: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.primary,
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  chatEmptyTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: colors.textPrimary,
+    textAlign: "center",
+    marginTop: 18,
+  },
+  chatEmptySubtitle: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginTop: 8,
+    lineHeight: 19,
+    maxWidth: 260,
+  },
+  chatSuggestionList: { width: "100%", marginTop: 18 },
+  suggestionChip: {
+    marginBottom: 10,
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+  },
+  suggestionChipInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  suggestionChipSpark: {
+    color: colors.primary,
+    fontSize: 14,
+    width: 18,
+    textAlign: "center",
+    fontWeight: "700",
+  },
+  suggestionChipText: {
+    flex: 1,
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "500",
+  },
   welcomeContainer: { paddingHorizontal: 20, paddingTop: 24 },
   welcomeEmoji: { fontSize: 48, textAlign: "center", marginBottom: 12 },
   welcomeTitle: {
@@ -759,25 +1483,25 @@ const styles = StyleSheet.create({
   starterText: { color: colors.textPrimary, fontSize: 15 },
   setupContainer: { paddingHorizontal: 20 },
   setupTitle: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 20,
+    fontWeight: "800",
     color: colors.textPrimary,
     marginBottom: 8,
   },
   setupSubtitle: {
-    fontSize: 15,
+    fontSize: 13,
     color: colors.textSecondary,
-    lineHeight: 22,
+    lineHeight: 18,
     marginBottom: 16,
   },
   fieldLabel: {
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: 10,
+    fontWeight: "700",
     color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 1.5,
-    marginTop: 12,
-    marginBottom: 8,
+    marginTop: 0,
+    marginBottom: 10,
   },
   ivInput: {
     backgroundColor: colors.surfaceAlt,
@@ -788,7 +1512,47 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 15,
   },
+  ivInputFocused: { borderColor: colors.primary },
   pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  pillBase: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: "transparent",
+  },
+  pillOff: { backgroundColor: "transparent", borderColor: colors.border },
+  pillSelectedPrimary: {
+    backgroundColor: "rgba(108,99,255,0.15)",
+    borderColor: colors.primary,
+  },
+  pillSelectedEasy: {
+    backgroundColor: "rgba(0,212,170,0.15)",
+    borderColor: colors.accent,
+  },
+  pillSelectedMedium: {
+    backgroundColor: "rgba(255,179,71,0.15)",
+    borderColor: colors.warning,
+  },
+  pillSelectedHard: {
+    backgroundColor: "rgba(255,92,92,0.15)",
+    borderColor: colors.danger,
+  },
+  pillTextBase: {
+    fontSize: 12,
+    fontWeight: "400",
+    textTransform: "capitalize",
+  },
+  pillTextMuted: { color: colors.textSecondary, fontWeight: "400" },
+  pillTextPrimary: { color: colors.primary, fontWeight: "600" },
+  pillTextEasy: { color: colors.accent, fontWeight: "600" },
+  pillTextMedium: { color: colors.warning, fontWeight: "600" },
+  pillTextHard: { color: colors.danger, fontWeight: "600" },
   pill: {
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -799,13 +1563,49 @@ const styles = StyleSheet.create({
   pillOn: { borderColor: colors.primary, backgroundColor: colors.surfaceAlt },
   pillText: { color: colors.textSecondary, textTransform: "capitalize" },
   pillTextOn: { color: colors.textPrimary, fontWeight: "700" },
-  startButtonWrap: { marginTop: 24 },
-  startBtn: { paddingVertical: 16, borderRadius: 14, alignItems: "center" },
-  startBtnDisabledGrad: { opacity: 0.45 },
-  startBtnText: { color: colors.textPrimary, fontWeight: "800", fontSize: 16 },
+  setupCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 16,
+    marginBottom: 12,
+  },
+  startButtonWrap: { marginTop: 24, width: "100%" },
+  startBtnRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  startBtn: {
+    width: "100%",
+    height: 56,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  startBtnDisabledGrad: { opacity: 0.4 },
+  startBtnText: { color: colors.textPrimary, fontWeight: "700", fontSize: 16 },
   liveBody: { flex: 1, paddingHorizontal: 20 },
-  progressRow: { marginBottom: 16 },
-  progressText: { color: colors.textSecondary, fontSize: 13, marginBottom: 8 },
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  progressText: { color: colors.textSecondary, fontSize: 13 },
+  endBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  endBtnText: { color: colors.textSecondary, fontWeight: "600", fontSize: 12 },
+  progressTrack: {
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: colors.surfaceAlt,
+    overflow: "hidden",
+    marginBottom: 20,
+  },
+  progressFillGrad: { height: 3, borderRadius: 2 },
   progressBar: {
     height: 6,
     backgroundColor: colors.surfaceAlt,
@@ -820,19 +1620,55 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     marginBottom: 16,
+    paddingLeft: 22,
+    overflow: "hidden",
+    position: "relative",
   },
-  questionText: { color: colors.textPrimary, fontSize: 17, lineHeight: 26 },
+  questionText: {
+    color: colors.textPrimary,
+    fontSize: 17,
+    fontWeight: "600",
+    lineHeight: 26,
+  },
+  questionAccentBar: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    borderTopLeftRadius: 2,
+    borderBottomLeftRadius: 2,
+  },
+  metaRow: { flexDirection: "row", gap: 8, marginTop: 16 },
+  metaChipPrimary: {
+    backgroundColor: "rgba(108,99,255,0.15)",
+    borderColor: colors.primary,
+    borderWidth: 1,
+    borderRadius: 24,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  metaChip: {
+    borderWidth: 1,
+    borderRadius: 24,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  metaChipTextPrimary: { color: colors.primary, fontWeight: "600", fontSize: 11 },
+  metaChipText: { fontWeight: "600", fontSize: 11 },
   answerInput: {
     minHeight: 120,
     backgroundColor: colors.surfaceAlt,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.border,
     padding: 12,
     color: colors.textPrimary,
     fontSize: 15,
     marginBottom: 16,
+    maxHeight: 200,
   },
+  answerInputFocused: { borderColor: colors.primary },
   actionRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   skipButton: {
     paddingVertical: 14,

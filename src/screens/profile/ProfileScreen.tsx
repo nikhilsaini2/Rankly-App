@@ -26,14 +26,12 @@ import { NOTIF_STORAGE_KEY } from "../../constants/content";
 import { useProfile } from "../../hooks/useProfile";
 import {
   getProfileStatsForUser,
-  uploadAvatarFromUri,
   updateUserProfile,
+  uploadAvatarFromUri,
   UserProfileUpdate,
 } from "../../services/profile/profileService";
 import { colors } from "../../theme/color";
 import type { ExperienceLevel, User } from "../../types/common.types";
-
-// NOTIF_STORAGE_KEY is imported from constants/content
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -151,10 +149,7 @@ export default function ProfileScreen() {
         return;
       }
       if (message === "Avatar storage upload failed") {
-        toast(
-          "Avatar upload failed — check Storage bucket 'avatars'",
-          "error",
-        );
+        toast("Avatar upload failed — check Storage bucket 'avatars'", "error");
         return;
       }
       toast("Avatar upload failed", "error");

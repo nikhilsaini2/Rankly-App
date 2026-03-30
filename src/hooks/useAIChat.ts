@@ -113,5 +113,20 @@ export function useAIChat(profile: User | null) {
     [profile],
   );
 
-  return { messages, loading, ready, send };
+  const clearChat = useCallback(() => {
+    setMessages([]);
+  }, []);
+
+  return {
+    // existing fields (used by current AIScreen)
+    messages,
+    loading,
+    ready,
+    send,
+
+    // aliases (for premium UI spec compatibility)
+    isGenerating: loading,
+    sendMessage: send,
+    clearChat,
+  };
 }
