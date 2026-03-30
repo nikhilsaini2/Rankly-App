@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
@@ -7,10 +6,10 @@ import AppName from "../../../components/atoms/AppName";
 import ProgressRing from "../../../components/atoms/ProgressRing";
 import { BARS, FEATURES } from "../../../constants/all";
 import { colors } from "../../../theme/color";
+import type { AuthScreenProps } from "../../../types/navigation.types";
 import { styles } from "./styles";
 
-const OnBoardingScreen = () => {
-  const navigation = useNavigation<any>();
+const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>

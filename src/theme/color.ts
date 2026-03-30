@@ -1,26 +1,35 @@
 export const colors = {
-  bgPrimary: "#05060A",
-  bgSecondary: "#0A0F1F",
-  glass: "rgba(20, 15, 40, 0.85)",
+  /** Spec: near-black screen bg — alias with legacy name */
+  background: "#0D0D14",
+  surface: "#16161F",
+  surfaceAlt: "#1E1E2E",
 
-  primary: "#7638E3",
-  primaryDark: "#5625A3",
+  bgPrimary: "#0D0D14",
+  bgSecondary: "#16161F",
+  glass: "rgba(22, 22, 31, 0.92)",
 
-  secondary: "#9B5CFF",
-  secondaryDark: "#7638E3",
+  /** Electric violet — CTAs */
+  primary: "#6C63FF",
+  primaryDark: "#5248CC",
+
+  secondary: "#8B5CF6",
+  secondaryDark: "#6C63FF",
 
   primaryLight: "#A78BFA",
+  accent: "#00D4AA",
+  danger: "#FF5C5C",
+  warning: "#FFB347",
 
-  textPrimary: "#FFFFFF",
-  textSecondary: "#A1A1AA",
+  textPrimary: "#F0F0FF",
+  textSecondary: "#9090B0",
   textMuted: "#71717A",
 
-  border: "rgba(239, 235, 243, 0.29)",
-  borderStrong: "rgba(124,58,237,0.25)",
+  border: "#2A2A3D",
+  borderStrong: "rgba(108, 99, 255, 0.35)",
 
-  success: "#22C55E",
+  success: "#00D4AA",
   successDark: "#065F46",
-  error: "#EF4444",
+  error: "#FF5C5C",
 
   glow: "#A78BFA",
 };

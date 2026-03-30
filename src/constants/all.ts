@@ -39,3 +39,32 @@ export const roles = [
   "ML Eng",
   "Other",
 ];
+
+/** Extended role labels for profile picker (separate from short `roles` chips). */
+export const TARGET_ROLES = [
+  "Software Engineer",
+  "Frontend Developer",
+  "Backend Developer",
+  "Full Stack Developer",
+  "Product Manager",
+  "UX Designer",
+  "Data Scientist",
+  "Data Analyst",
+  "DevOps Engineer",
+  "Mobile Developer",
+  "QA Engineer",
+  "Technical Writer",
+  "Marketing Manager",
+  "Sales Representative",
+  "Business Analyst",
+  "Project Manager",
+  "HR Manager",
+] as const;
+
+export const experienceLevels = [
+  { value: "student", label: "Student" },
+  { value: "entry", label: "Entry" },
+  { value: "mid", label: "Mid" },
+  { value: "senior", label: "Senior" },
+  { value: "lead", label: "Lead" },
+] as const;

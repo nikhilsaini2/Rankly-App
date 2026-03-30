@@ -3,9 +3,11 @@ import React from "react";
 import LoginScreen from "../screens/auth/login/LoginScreen";
 import OnBoardingScreen from "../screens/auth/onboarding/OnBoardingScreen";
 import RegisterScreen from "../screens/auth/register/RegisterScreen";
+import type { AuthStackParamList } from "../types/navigation.types";
+
+const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export const AuthNavigator = () => {
-  const Stack = createNativeStackNavigator();
   return (
     <Stack.Navigator
       screenOptions={{

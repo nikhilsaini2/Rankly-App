@@ -1,7 +1,11 @@
 import { StyleSheet, Text, View } from "react-native";
 import { colors } from "../../theme/color";
 
-export const Badge = ({ label }: any) => {
+type BadgeProps = {
+  label: string;
+};
+
+export const Badge = ({ label }: BadgeProps) => {
   return (
     <View style={styles.badge}>
       <Text style={styles.text}>{label}</Text>

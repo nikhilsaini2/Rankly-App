@@ -18,33 +18,38 @@ import { styles } from "./styles";
 
 import {
   handleUserProfile,
+  signInWithEmailPassword,
   signInWithGoogle,
 } from "../../../services/supabase/auth.supabase";
-import { supabase } from "../../../services/supabase/supabase";
+import type { AuthScreenProps } from "../../../types/navigation.types";
 
-const LoginScreen = ({ navigation }: any) => {
+const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
 
   const [googleLoading, setGoogleLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleEmailLogin = async (values: any) => {
+  const handleEmailLogin = async (values: {
+    email: string;
+    password: string;
+  }) => {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: values.email.trim(),
-        password: values.password,
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        await handleUserProfile(data.user);
-      }
-    } catch (err: any) {
-      alert(err.message);
+      const user = await signInWithEmailPassword(
+        values.email.trim(),
+        values.password,
+      );
+      await handleUserProfile(user);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err !== null && "message" in err
+            ? String((err as { message?: unknown }).message ?? "")
+            : "Login failed";
+      alert(message);
     } finally {
       setLoading(false);
     }
@@ -58,8 +63,14 @@ const LoginScreen = ({ navigation }: any) => {
       const user = await signInWithGoogle();
 
       await handleUserProfile(user);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err !== null && "message" in err
+            ? String((err as { message?: unknown }).message ?? "")
+            : "Login failed";
+      alert(message);
     } finally {
       setGoogleLoading(false);
       setLoading(false);
@@ -167,7 +178,7 @@ const LoginScreen = ({ navigation }: any) => {
               </View>
 
               <TouchableOpacity
-                onPress={handleSubmit as any}
+                onPress={() => handleSubmit()}
                 disabled={!isValid || !dirty || loading}
                 activeOpacity={0.9}
               >

@@ -19,7 +19,6 @@ export const TabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
         const onPress = () => {
           if (currentRoute === tab.name) return;
           if (!isFocused) navigation.navigate(tab.name as never);
-          console.log(tab.name);
         };
 
         return (

@@ -15,15 +15,16 @@ import AppName from "../../../components/atoms/AppName";
 import { roles } from "../../../constants/all";
 import {
   handleUserProfile,
+  getAuthSessionUser,
   registerUser,
   signInWithGoogle,
 } from "../../../services/supabase/auth.supabase";
-import { supabase } from "../../../services/supabase/supabase";
 import { colors } from "../../../theme/color";
 import { RegisterSchema } from "../../../validation/auth.schema";
+import type { AuthScreenProps } from "../../../types/navigation.types";
 import { styles } from "./styles";
 
-const RegisterScreen = ({ navigation }: any) => {
+const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
   const firstNameRef = useRef<TextInput>(null);
   const lastNameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
@@ -33,20 +34,19 @@ const RegisterScreen = ({ navigation }: any) => {
   const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (data.session?.user) {
-        await handleUserProfile(data.session.user);
-      }
-    });
+    getAuthSessionUser()
+      .then(async (user) => {
+        if (user) await handleUserProfile(user);
+      })
+      .catch(() => {
+        // Best-effort bootstrap; registration flow will handle re-try.
+      });
   }, []);
 
   const waitForSession = async (retries = 6) => {
     for (let i = 0; i < retries; i++) {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session?.user) return session.user;
+      const user = await getAuthSessionUser();
+      if (user) return user;
 
       await new Promise((res) => setTimeout(res, 400));
     }
@@ -62,8 +62,14 @@ const RegisterScreen = ({ navigation }: any) => {
       await signInWithGoogle();
       const user = await waitForSession();
       await handleUserProfile(user);
-    } catch (err: any) {
-      alert("Google sign-in failed: " + err.message);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err !== null && "message" in err
+            ? String((err as { message?: unknown }).message ?? "")
+            : "";
+      alert("Google sign-in failed: " + (message || "Unknown error"));
     } finally {
       setGoogleLoading(false);
       setLoading(false);
@@ -130,10 +136,16 @@ const RegisterScreen = ({ navigation }: any) => {
                 lastName: values.lastName,
                 role: values.role,
               });
-            } catch (err: any) {
+            } catch (err) {
               setLoading(false);
               setSubmitting(false);
-              alert("Registration failed: " + err.message);
+              const message =
+                err instanceof Error
+                  ? err.message
+                  : typeof err === "object" && err !== null && "message" in err
+                    ? String((err as { message?: unknown }).message ?? "")
+                    : "";
+              alert("Registration failed: " + (message || "Unknown error"));
             } finally {
               setLoading(false);
               setSubmitting(false);
@@ -278,7 +290,7 @@ const RegisterScreen = ({ navigation }: any) => {
               </View>
 
               <TouchableOpacity
-                onPress={handleSubmit as any}
+                onPress={() => handleSubmit()}
                 disabled={!(isValid && dirty) || loading}
                 activeOpacity={0.9}
               >

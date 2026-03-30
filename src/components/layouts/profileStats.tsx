@@ -2,18 +2,28 @@ import React from "react";
 import { Text, View } from "react-native";
 import { colors } from "../../theme/color";
 
-const StatItem = ({ label, value }: any) => (
-  <View style={{ alignItems: "center" }}>
-    <Text
-      style={{ color: colors.textPrimary, fontSize: 18, fontWeight: "700" }}
-    >
-      {value}
-    </Text>
-    <Text style={{ color: colors.textMuted, fontSize: 12 }}>{label}</Text>
-  </View>
-);
+function StatItem({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={{ alignItems: "center" }}>
+      <Text
+        style={{ color: colors.textPrimary, fontSize: 18, fontWeight: "700" }}
+      >
+        {value}
+      </Text>
+      <Text style={{ color: colors.textMuted, fontSize: 12 }}>{label}</Text>
+    </View>
+  );
+}
 
-const ProfileStats = () => {
+export default function ProfileStats({
+  resumeCount,
+  bestAts,
+  interviewsDone,
+}: {
+  resumeCount: number;
+  bestAts: number;
+  interviewsDone: number;
+}) {
   return (
     <View
       style={{
@@ -25,11 +35,9 @@ const ProfileStats = () => {
         backgroundColor: colors.glass,
       }}
     >
-      <StatItem label="Rank" value="—" />
-      <StatItem label="Score" value="—" />
-      <StatItem label="Streak" value="—" />
+      <StatItem label="Resumes" value={`${resumeCount}`} />
+      <StatItem label="Best ATS" value={bestAts > 0 ? `${bestAts}` : "—"} />
+      <StatItem label="Interviews" value={`${interviewsDone}`} />
     </View>
   );
-};
-
-export default React.memo(ProfileStats);
+}

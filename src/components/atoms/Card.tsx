@@ -1,7 +1,12 @@
+import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { colors } from "../../theme/color";
 
-export const Card = ({ children }: any) => {
+type CardProps = {
+  children: ReactNode;
+};
+
+export const Card = ({ children }: CardProps) => {
   return <View style={styles.card}>{children}</View>;
 };
 

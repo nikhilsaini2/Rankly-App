@@ -1,0 +1,89 @@
+import React, { createContext, useContext, useRef, useState } from "react";
+import { Animated, StyleSheet, Text } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors } from "../../theme/color";
+
+export type ToastVariant = "success" | "error" | "info";
+
+type ToastFn = (message: string, variant?: ToastVariant) => void;
+const ToastContext = createContext<ToastFn>(() => {});
+
+export function useToast() {
+  return useContext(ToastContext);
+}
+
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [state, setState] = useState<{
+    message: string;
+    variant: ToastVariant;
+  } | null>(null);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const hideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const insets = useSafeAreaInsets();
+
+  function show(message: string, variant: ToastVariant = "info") {
+    if (hideRef.current) clearTimeout(hideRef.current);
+    setState({ message, variant });
+    Animated.sequence([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+      Animated.delay(2600),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) setState(null);
+    });
+    hideRef.current = setTimeout(() => setState(null), 3000);
+  }
+
+  const borderColor =
+    state?.variant === "success"
+      ? colors.accent
+      : state?.variant === "error"
+        ? colors.danger
+        : colors.primary;
+
+  return (
+    <ToastContext.Provider value={show}>
+      {children}
+      {state ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.banner,
+            {
+              opacity,
+              top: insets.top + 8,
+              borderLeftColor: borderColor,
+            },
+          ]}
+        >
+          <Text style={styles.text}>{state.message}</Text>
+        </Animated.View>
+      ) : null}
+    </ToastContext.Provider>
+  );
+}
+
+const styles = StyleSheet.create({
+  banner: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderLeftWidth: 4,
+    zIndex: 9999,
+  },
+  text: { color: colors.textPrimary, textAlign: "center", fontWeight: "600" },
+});

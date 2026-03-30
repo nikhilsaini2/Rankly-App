@@ -1,5 +1,6 @@
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import { RegisterPayload } from "../../types/common.types";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+import type { RegisterPayload } from "../../types/common.types";
 import { supabase } from "./supabase";
 
 export const signInWithGoogle = async () => {
@@ -43,6 +44,27 @@ export const registerUser = async ({
   return data.user;
 };
 
+export const signInWithEmailPassword = async (
+  email: string,
+  password: string,
+): Promise<SupabaseUser> => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) throw new Error(mapAuthError(error.message, error.code));
+  if (!data.user) throw new Error("Authentication failed");
+
+  return data.user;
+};
+
+export const getAuthSessionUser = async (): Promise<SupabaseUser | null> => {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
+  return data.session?.user ?? null;
+};
+
 function mapAuthError(message: string, code?: string): string {
   if (code === "user_already_exists") return "Email already in use";
   if (code === "invalid_credentials") return "Invalid email or password";
@@ -58,26 +80,34 @@ function mapAuthError(message: string, code?: string): string {
   return "Registration failed";
 }
 
-export const handleUserProfile = async (user: any) => {
+export const handleUserProfile = async (user: SupabaseUser) => {
   if (!user?.id) return;
+
+  const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
+  const userMeta = (user.user_metadata ?? {}) as Record<string, unknown>;
+
+  const getString = (obj: Record<string, unknown>, key: string) => {
+    const v = obj[key];
+    return typeof v === "string" ? v : undefined;
+  };
 
   const { data: existingUser, error: fetchError } = await supabase
     .from("users")
-    .select("id")
+    .select("auth_id")
     .eq("auth_id", user.id)
     .maybeSingle();
 
   if (fetchError) throw fetchError;
   if (existingUser) return;
 
-  const provider = user.app_metadata?.provider;
+  const provider = getString(appMeta, "provider") ?? "";
   const email = user.email ?? "";
 
   let firstName = "User";
   let lastName = "";
 
   if (provider === "google") {
-    const fullName = user.user_metadata?.full_name || "";
+    const fullName = getString(userMeta, "full_name") ?? "";
     if (fullName) {
       const parts = fullName.split(" ");
       firstName = parts[0] || "User";
@@ -86,12 +116,12 @@ export const handleUserProfile = async (user: any) => {
       firstName = email.split("@")[0] || "User";
     }
   } else {
-    firstName = user.user_metadata?.firstName || email.split("@")[0] || "User";
-
-    lastName = user.user_metadata?.lastName || "";
+    firstName =
+      getString(userMeta, "firstName") ?? email.split("@")[0] ?? "User";
+    lastName = getString(userMeta, "lastName") ?? "";
   }
 
-  const role = user.user_metadata?.role || "SWE";
+  const role = getString(userMeta, "role") ?? "SWE";
 
   const { error: insertError } = await supabase.from("users").upsert(
     {
@@ -112,5 +142,77 @@ export const handleUserProfile = async (user: any) => {
       return;
     }
     throw insertError;
+  }
+};
+
+export const ensureUserProfileExists = async (
+  user: SupabaseUser,
+): Promise<void> => {
+  if (!user?.id) return;
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("users")
+    .select("auth_id")
+    .eq("auth_id", user.id)
+    .maybeSingle();
+
+  if (fetchError) {
+    // Don't block app rendering for a best-effort profile bootstrap.
+    if (__DEV__) console.error("[ensureUserProfileExists]", fetchError);
+    return;
+  }
+  if (existing) return;
+
+  const email = user.email ?? "";
+  const userMeta = (user.user_metadata ?? {}) as Record<string, unknown>;
+  const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
+
+  const getString = (obj: Record<string, unknown>, key: string) => {
+    const v = obj[key];
+    return typeof v === "string" ? v : undefined;
+  };
+
+  const provider = getString(appMeta, "provider") ?? "";
+  const fullName = getString(userMeta, "full_name");
+
+  let firstName = "User";
+  let lastName = "";
+
+  if (provider === "google") {
+    if (fullName) {
+      const parts = fullName.split(" ");
+      firstName = parts[0] || "User";
+      lastName = parts.slice(1).join(" ") || "";
+    } else {
+      firstName = email.split("@")[0] || "User";
+    }
+  } else {
+    const firstFromMeta = getString(userMeta, "firstName");
+    firstName = firstFromMeta ?? email.split("@")[0] ?? "User";
+    lastName = getString(userMeta, "lastName") ?? "";
+  }
+
+  const avatarUrl = getString(userMeta, "avatar_url");
+
+  const role = getString(userMeta, "role") ?? "SWE";
+
+  const now = new Date().toISOString();
+
+  const { error: upsertError } = await supabase.from("users").upsert(
+    {
+      auth_id: user.id,
+      email,
+      first_name: firstName,
+      last_name: lastName,
+      avatar_url: avatarUrl ?? null,
+      target_role: role,
+      created_at: now,
+      updated_at: now,
+    },
+    { onConflict: "auth_id" },
+  );
+
+  if (upsertError) {
+    if (__DEV__) console.error("[ensureUserProfileExists] upsert failed", upsertError);
   }
 };

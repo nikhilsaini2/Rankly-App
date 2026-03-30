@@ -41,13 +41,64 @@ export type RegisterPayload = {
   role: string;
 };
 
+export type ExperienceLevel =
+  | "student"
+  | "entry"
+  | "mid"
+  | "senior"
+  | "lead";
+
 export interface User {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
   avatarUrl?: string;
+  /** Display role (from `target_role` on `users`). */
   role: string;
   bio?: string;
+  experienceLevel?: ExperienceLevel | null;
+  industry?: string | null;
+  linkedinUrl?: string | null;
+  plan: "free" | "pro";
+  credits: number;
+  onboardingDone: boolean;
   createdAt: string;
 }
+
+export type AtsScoreRow = {
+  id: string;
+  userId: string;
+  resumeId: string | null;
+  overallScore: number;
+  keywordScore: number | null;
+  formatScore: number | null;
+  contentScore: number | null;
+  readabilityScore: number | null;
+  feedback: {
+    strengths?: string[];
+    improvements?: string[];
+  } | null;
+  keywordsFound: string[] | null;
+  keywordsMissing: string[] | null;
+  aiSummary: string | null;
+  createdAt: string;
+};
+
+export type ResumeRow = {
+  id: string;
+  userId: string;
+  title: string;
+  fileUrl: string | null;
+  fileName: string | null;
+  rawText: string | null;
+  isPrimary: boolean;
+  createdAt: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt?: string;
+};
