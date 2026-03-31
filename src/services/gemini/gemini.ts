@@ -1,4 +1,4 @@
-const GEMINI_MODEL = "gemini-2.5-flash-lite";
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 let apiKeyLogged = false;
 
@@ -15,10 +15,7 @@ function getApiKey(): string {
   return key;
 }
 
-export {
-  extractJsonPayload,
-  parseGeminiJson,
-} from "../../utils/gemini";
+export { extractJsonPayload, parseGeminiJson } from "../../utils/gemini";
 
 export type GeminiChatTurn = {
   role: "user" | "model";
@@ -95,13 +92,63 @@ async function generateGeminiRequest(body: {
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Gemini request failed: ${res.status}`);
+    console.error("[Gemini API] Error details:", {
+      status: res.status,
+      statusText: res.statusText,
+      errorBody: errText,
+      model: GEMINI_MODEL,
+      url: url.replace(/\?.*$/, ""), // Hide API key in logs
+    });
+
+    // Provide specific error messages based on status code
+    if (res.status === 400) {
+      throw new Error(
+        "Gemini API: Invalid request. The prompt may be malformed.",
+      );
+    } else if (res.status === 401) {
+      throw new Error(
+        "Gemini API: Invalid API key. Check your EXPO_PUBLIC_GEMINI_API_KEY.",
+      );
+    } else if (res.status === 429) {
+      throw new Error(
+        "Gemini API: Rate limit exceeded. Please wait and try again.",
+      );
+    } else if (res.status >= 500) {
+      throw new Error(
+        "Gemini API: Service temporarily unavailable. Please try again later.",
+      );
+    } else {
+      throw new Error(
+        `Gemini request failed: ${res.status} - ${errText.slice(0, 200)}`,
+      );
+    }
   }
 
   const data = (await res.json()) as {
     candidates?: { content?: { parts?: { text?: string }[] } }[];
   };
+
+  console.log("[Gemini API] Response structure:", {
+    hasCandidates: !!data.candidates,
+    candidatesCount: data.candidates?.length,
+    firstCandidate: data.candidates?.[0] ? "present" : "missing",
+    firstContent: data.candidates?.[0]?.content ? "present" : "missing",
+    firstParts: data.candidates?.[0]?.content?.parts ? "present" : "missing",
+    partsCount: data.candidates?.[0]?.content?.parts?.length,
+  });
+
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-  if (!text) throw new Error("Empty response from Gemini");
+  if (!text) {
+    console.error(
+      "[Gemini API] Empty response, full data:",
+      JSON.stringify(data, null, 2),
+    );
+    throw new Error("Empty response from Gemini");
+  }
+
+  console.log(
+    "[Gemini API] Response preview:",
+    text.slice(0, 200) + (text.length > 200 ? "..." : ""),
+  );
   return text;
 }

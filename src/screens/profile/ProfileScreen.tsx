@@ -44,6 +44,7 @@ import {
 } from "../../services/profile/profileService";
 import { colors } from "../../theme/color";
 import type { ExperienceLevel, User } from "../../types/common.types";
+import { styles } from "./styles";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -105,9 +106,7 @@ export default function ProfileScreen() {
     (async () => {
       const nextStats = await getProfileStatsForUser(user.id);
       if (alive) setStats(nextStats);
-    })().catch(() => {
-      // Keep UI stable; stats will remain at previous values.
-    });
+    })().catch(() => {});
 
     return () => {
       alive = false;
@@ -405,8 +404,13 @@ export default function ProfileScreen() {
               value={draft.lastName ?? ""}
               onChange={(t) => setDraft((d) => ({ ...d, lastName: t }))}
             />
-            <Text style={labels.role}>Target role</Text>
-            <TouchableOpacity onPress={() => setRoleModal(true)} style={inp}>
+            <Text style={styles.labelsRole}>Target role</Text>
+            <TouchableOpacity
+              onPress={() => setRoleModal(true)}
+              style={styles.inputBase}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+            >
               <Text style={{ color: colors.textPrimary, fontSize: 16 }}>
                 {draft.role ?? "Select role"}
               </Text>
@@ -417,13 +421,13 @@ export default function ProfileScreen() {
               transparent
               onRequestClose={() => setRoleModal(false)}
             >
-              <View style={modalScrim}>
+              <View style={styles.modalScrim}>
                 <Pressable
-                  style={modalScrimFill}
+                  style={styles.modalScrimFill}
                   onPress={() => setRoleModal(false)}
                 />
-                <View style={modalSheetWrap}>
-                  <Text style={modalTitle}>Target role</Text>
+                <View style={styles.modalSheetWrap}>
+                  <Text style={styles.modalTitle}>Target role</Text>
                   <FlatList
                     data={TARGET_ROLES}
                     keyExtractor={(item) => item}
@@ -432,7 +436,10 @@ export default function ProfileScreen() {
                       const selected = draft.role === item;
                       return (
                         <TouchableOpacity
-                          style={[modalRow, selected && modalRowOn]}
+                          style={[
+                            styles.modalRow,
+                            selected && styles.modalRowActive,
+                          ]}
                           onPress={() => {
                             setDraft((d) => ({ ...d, role: item }));
                             setRoleModal(false);
@@ -461,7 +468,7 @@ export default function ProfileScreen() {
                 </View>
               </View>
             </Modal>
-            <Text style={labels.role}>Experience</Text>
+            <Text style={styles.labelsRole}>Experience</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {experienceLevels.map((r) => {
                 const on = draft.experienceLevel === r.value;
@@ -474,9 +481,11 @@ export default function ProfileScreen() {
                         experienceLevel: r.value as ExperienceLevel,
                       }))
                     }
-                    style={[chips.base, on && chips.on]}
+                    style={[styles.chipsBase, on && styles.chipsActive]}
                   >
-                    <Text style={[chips.txt, on && chips.txtOn]}>
+                    <Text
+                      style={[styles.chipsText, on && styles.chipsTextActive]}
+                    >
                       {r.label}
                     </Text>
                   </TouchableOpacity>
@@ -494,9 +503,9 @@ export default function ProfileScreen() {
               onChange={(t) => setDraft((d) => ({ ...d, linkedinUrl: t }))}
               autoCapitalize="none"
             />
-            <Text style={labels.role}>Bio</Text>
+            <Text style={styles.labelsRole}>Bio</Text>
             <TextInput
-              style={area}
+              style={styles.inputArea}
               placeholder="Tell recruiters about you"
               placeholderTextColor={colors.textMuted}
               value={draft.bio ?? ""}
@@ -717,9 +726,9 @@ function Field({
 }) {
   return (
     <View>
-      <Text style={labels.role}>{label}</Text>
+      <Text style={styles.labelsRole}>{label}</Text>
       <TextInput
-        style={inp}
+        style={styles.inputBase}
         value={value}
         onChangeText={onChange}
         placeholderTextColor={colors.textMuted}
@@ -728,356 +737,3 @@ function Field({
     </View>
   );
 }
-
-const labels = {
-  role: {
-    color: colors.textMuted,
-    fontSize: 11,
-    letterSpacing: 1.5,
-    textTransform: "uppercase" as const,
-    marginBottom: 6,
-  },
-};
-
-const inp = {
-  backgroundColor: colors.surfaceAlt,
-  borderRadius: 12,
-  borderWidth: 1,
-  borderColor: colors.border,
-  paddingHorizontal: 14,
-  paddingVertical: 12,
-  color: colors.textPrimary,
-  fontSize: 16,
-};
-
-const area = {
-  ...inp,
-  minHeight: 100,
-  textAlignVertical: "top" as const,
-};
-
-const chips = {
-  base: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  on: {
-    borderColor: colors.primary,
-    backgroundColor: colors.surfaceAlt,
-  },
-  txt: { color: colors.textSecondary, fontSize: 13 },
-  txtOn: { color: colors.textPrimary, fontWeight: "700" as const },
-};
-
-const modalScrim = {
-  flex: 1,
-};
-
-const modalScrimFill = {
-  ...StyleSheet.absoluteFillObject,
-  backgroundColor: "rgba(0,0,0,0.55)",
-};
-
-const modalSheetWrap = {
-  position: "absolute" as const,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: colors.surface,
-  borderTopLeftRadius: 16,
-  borderTopRightRadius: 16,
-  paddingTop: 16,
-  paddingHorizontal: 16,
-  paddingBottom: 32,
-  borderTopWidth: 1,
-  borderColor: colors.border,
-};
-
-const modalTitle = {
-  color: colors.textPrimary,
-  fontSize: 18,
-  fontWeight: "700" as const,
-  marginBottom: 12,
-};
-
-const modalRow = {
-  flexDirection: "row" as const,
-  alignItems: "center" as const,
-  paddingVertical: 14,
-  borderBottomWidth: 1,
-  borderBottomColor: colors.border,
-};
-
-const modalRowOn = { backgroundColor: colors.surfaceAlt };
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 0 },
-
-  heroWrap: { marginBottom: 18 },
-  heroBanner: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    height: 120,
-  },
-  heroInner: { alignItems: "center", paddingTop: 26 },
-
-  avatarOuter: { width: 96, height: 96, position: "relative" },
-  avatarRing: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    padding: 2.5,
-    overflow: "hidden",
-    position: "absolute",
-    top: 0,
-    left: 0,
-  },
-  avatarSeparator: {
-    position: "absolute",
-    top: 2.5,
-    left: 2.5,
-    right: 2.5,
-    bottom: 2.5,
-    borderRadius: 46,
-    backgroundColor: colors.background,
-    padding: 2,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarImg: { width: 84, height: 84, borderRadius: 42 },
-  avatarFallback: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: colors.surfaceAlt,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarInitials: { fontSize: 28, fontWeight: "700", color: colors.primary },
-  avatarEditBtn: {
-    position: "absolute",
-    right: -4,
-    bottom: -4,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: colors.background,
-  },
-
-  heroName: {
-    marginTop: 12,
-    fontSize: 24,
-    fontWeight: "700",
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-    textAlign: "center",
-  },
-  heroRole: {
-    marginTop: 4,
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: "center",
-  },
-  badgeRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 12,
-    justifyContent: "center",
-  },
-  planBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    backgroundColor: "rgba(108,99,255,0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(108,99,255,0.3)",
-  },
-  planBadgeText: {
-    color: colors.primary,
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-  },
-  creditsBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    backgroundColor: "rgba(0,212,170,0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(0,212,170,0.3)",
-  },
-  creditsBadgeText: {
-    color: colors.accent,
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1,
-  },
-  avatarBusyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 10,
-  },
-  avatarBusyText: { color: colors.textSecondary, fontSize: 12 },
-
-  statsStrip: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginTop: 20,
-    paddingVertical: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 8,
-  },
-  statCell: { flex: 1, alignItems: "center" },
-  statDivider: { width: 1, height: 32, backgroundColor: colors.border },
-  statValue: {
-    color: colors.textPrimary,
-    fontSize: 26,
-    fontWeight: "800",
-    letterSpacing: -1,
-  },
-  statValueMuted: { color: colors.textSecondary },
-  statBest: { color: colors.accent },
-  statLabel: {
-    marginTop: 4,
-    color: colors.textSecondary,
-    fontSize: 10,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
-
-  sectionCap: {
-    color: colors.textSecondary,
-    fontSize: 10,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-  },
-
-  bioCard: {
-    marginTop: 16,
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 20,
-  },
-  bioHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  bioEditLink: { color: colors.primary, fontSize: 13, fontWeight: "600" },
-  bioText: {
-    marginTop: 12,
-    color: colors.textPrimary,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  bioPlaceholder: { color: colors.textSecondary, fontStyle: "italic" },
-
-  settingsCard: {
-    marginTop: 16,
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-  },
-  settingsRow: {
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  settingsIconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  settingsIconNotif: { backgroundColor: "rgba(108,99,255,0.12)" },
-  settingsIconPrivacy: { backgroundColor: "rgba(0,212,170,0.12)" },
-  settingsIconTerms: { backgroundColor: "rgba(144,144,176,0.12)" },
-  settingsLabel: {
-    flex: 1,
-    marginLeft: 14,
-    color: colors.textPrimary,
-    fontSize: 15,
-    fontWeight: "500",
-  },
-  settingsDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginLeft: 68,
-  },
-
-  dangerWrap: { marginTop: 16 },
-  dangerRow: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginHorizontal: 0,
-    padding: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
-  dangerIconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dangerIconPrimaryBg: { backgroundColor: "rgba(108,99,255,0.12)" },
-  dangerIconDangerBg: { backgroundColor: "rgba(255,92,92,0.12)" },
-  signOutText: {
-    flex: 1,
-    color: colors.primary,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  deleteRow: { marginTop: 10, borderColor: "rgba(255,92,92,0.2)" },
-  deleteText: {
-    flex: 1,
-    color: colors.danger,
-    fontSize: 15,
-    fontWeight: "500",
-  },
-
-  footerCaption: {
-    textAlign: "center",
-    color: colors.textSecondary,
-    fontSize: 11,
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  footerHeart: { color: colors.danger },
-});

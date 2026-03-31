@@ -248,81 +248,87 @@ export default function ResumeScreen() {
   if (resumes.length === 0) {
     return (
       <Reanimated.View style={[{ flex: 1 }, screenStyle]}>
-        <View style={[styles.empty, { paddingTop: insets.top + 30 }]}>
+        <View style={[styles.empty, { paddingTop: insets.top + 22 }]}>
           {progressBar}
 
+          <Text style={styles.pageTitle}>Your resumes</Text>
+
           <View style={styles.emptyPremiumInner}>
-            <Reanimated.View
-              pointerEvents="none"
-              style={[styles.emptyGlow, glowStyle]}
-            >
-              <LinearGradient
-                colors={[colors.primary, "transparent"]}
-                style={StyleSheet.absoluteFillObject}
-                start={{ x: 0, y: 0.2 }}
-                end={{ x: 1, y: 1 }}
-              />
-            </Reanimated.View>
-
-            <View style={styles.emptyIllustrationWrap}>
-              <ResumeEmptyIllustration />
-            </View>
-
-            <Text style={styles.emptyPremiumTitle}>Your Career Hub Awaits</Text>
-            <Text style={styles.emptyPremiumSub}>
-              Upload your resume and let Rankly's AI analyze your ATS score,
-              identify gaps, and guide your next career move.
-            </Text>
-
-            <View style={styles.emptyCtaRow}>
-              <PressableScale
-                onPress={onUpload}
-                disabled={uploading}
-                style={{ flex: 1 }}
+            <View style={styles.emptyCard}>
+              <Reanimated.View
+                pointerEvents="none"
+                style={[styles.emptyGlow, glowStyle]}
               >
                 <LinearGradient
-                  colors={[colors.primary, colors.primaryDark]}
-                  style={styles.emptyPrimaryBtn}
+                  colors={[colors.primary, "transparent"]}
+                  style={StyleSheet.absoluteFillObject}
+                  start={{ x: 0, y: 0.2 }}
+                  end={{ x: 1, y: 1 }}
+                />
+              </Reanimated.View>
+
+              <View style={styles.emptyIllustrationWrap}>
+                <ResumeEmptyIllustration />
+              </View>
+
+              <Text style={styles.emptyPremiumTitle}>
+                Your Career Hub Awaits
+              </Text>
+              <Text style={styles.emptyPremiumSub}>
+                Upload your resume and let Rankly's AI analyze your ATS score,
+                identify gaps, and guide your next career move.
+              </Text>
+
+              <View style={styles.emptyCtaRow}>
+                <PressableScale
+                  onPress={onUpload}
+                  disabled={uploading}
+                  style={{ flex: 1 }}
                 >
-                  {uploading ? (
-                    <ActivityIndicator color={colors.textPrimary} />
-                  ) : (
-                    <Text style={styles.emptyPrimaryBtnTxt}>Upload Resume</Text>
-                  )}
-                </LinearGradient>
-              </PressableScale>
+                  <LinearGradient
+                    colors={[colors.primary, colors.primaryDark]}
+                    style={styles.emptyPrimaryBtn}
+                  >
+                    {uploading ? (
+                      <ActivityIndicator color={colors.textPrimary} />
+                    ) : (
+                      <Text style={styles.emptyPrimaryBtnTxt}>
+                        Upload Resume
+                      </Text>
+                    )}
+                  </LinearGradient>
+                </PressableScale>
 
-              <PressableScale
-                onPress={onUpload}
-                disabled={uploading}
-                style={{ flex: 1, marginLeft: 10 }}
-              >
-                <View style={styles.emptyGhostBtn}>
-                  <Text style={styles.emptyGhostBtnTxt}>
-                    Build from scratch
-                  </Text>
-                </View>
-              </PressableScale>
-            </View>
+                <PressableScale
+                  onPress={onUpload}
+                  disabled={uploading}
+                  style={{ flex: 1, marginLeft: 10 }}
+                >
+                  <View style={styles.emptyGhostBtn}>
+                    <Text style={styles.emptyGhostBtnTxt}>
+                      Build from scratch
+                    </Text>
+                  </View>
+                </PressableScale>
+              </View>
 
-            <Text style={styles.emptyDividerTxt}>
-              ──── or drag &amp; drop ─────
-            </Text>
+              <Text style={styles.emptyDividerTxt}>──── OR ────</Text>
 
-            <View style={styles.supportRow}>
-              <Ionicons
-                name="document-text-outline"
-                size={16}
-                color={colors.primary}
-              />
-              <Text style={styles.supportTxt}>Supported: PDF</Text>
-              <Text style={styles.supportDot}>·</Text>
-              <Ionicons
-                name="information-circle-outline"
-                size={16}
-                color={colors.textSecondary}
-              />
-              <Text style={styles.supportTxt}>Max size: 5MB</Text>
+              <View style={styles.supportRow}>
+                <Ionicons
+                  name="document-text-outline"
+                  size={16}
+                  color={colors.primary}
+                />
+                <Text style={styles.supportTxt}>Supported: PDF</Text>
+                <Text style={styles.supportDot}>·</Text>
+                <Ionicons
+                  name="information-circle-outline"
+                  size={16}
+                  color={colors.textSecondary}
+                />
+                <Text style={styles.supportTxt}>Max size: 5MB</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -419,7 +425,7 @@ export default function ResumeScreen() {
           disabled={uploading}
         >
           <LinearGradient
-            colors={[colors.primary, colors.secondary]}
+            colors={[colors.primary, colors.primaryDark]}
             style={styles.fabInner}
           >
             {uploading ? (
@@ -456,7 +462,7 @@ export default function ResumeScreen() {
                 style={{ marginTop: 16 }}
               >
                 <LinearGradient
-                  colors={[colors.primary, colors.secondary]}
+                  colors={[colors.primary, colors.primaryDark]}
                   style={styles.modalCta}
                 >
                   {scoring ? (
@@ -566,7 +572,7 @@ function ResumeEmptyIllustration() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, paddingHorizontal: 20 },
+  root: { flex: 1, paddingHorizontal: 20, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   pageTitle: {
     color: colors.textPrimary,
@@ -582,8 +588,18 @@ const styles = StyleSheet.create({
     zIndex: 10,
     paddingHorizontal: 20,
   },
-  empty: { flex: 1, paddingHorizontal: 28, alignItems: "center" },
-  loadingWrap: { flex: 1, paddingHorizontal: 28, alignItems: "center" },
+  empty: {
+    flex: 1,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    backgroundColor: colors.background,
+  },
+  loadingWrap: {
+    flex: 1,
+    paddingHorizontal: 28,
+    alignItems: "center",
+    backgroundColor: colors.background,
+  },
 
   quickStatsSkWrap: {
     width: "100%",
@@ -620,12 +636,24 @@ const styles = StyleSheet.create({
   resumeSkBtn: { flex: 1, height: 34 },
 
   emptyPremiumInner: { alignItems: "center", width: "100%" },
+  emptyCard: {
+    width: "100%",
+    borderRadius: 24,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 16,
+    paddingVertical: 24,
+    overflow: "hidden",
+    position: "relative",
+    alignItems: "center",
+  },
   emptyGlow: {
     position: "absolute",
-    top: -70,
-    left: -40,
-    width: 320,
-    height: 320,
+    top: -90,
+    left: -70,
+    width: 360,
+    height: 360,
     borderRadius: 160,
   },
   emptyIllustrationWrap: { marginTop: 12 },

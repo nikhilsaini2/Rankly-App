@@ -90,7 +90,7 @@ function MessageBubble({
 
       {isUser ? (
         <LinearGradient
-          colors={[colors.primary, colors.secondary]}
+          colors={[colors.primary, colors.primaryDark]}
           style={styles.userBubbleGrad}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -354,7 +354,7 @@ function AICoachAvatarIllustration() {
       />
 
       {/* orbit dot */}
-        <Circle cx={58} cy={24} r={3} fill={colors.accent} />
+      <Circle cx={58} cy={24} r={3} fill={colors.accent} />
     </Svg>
   );
 }
@@ -805,11 +805,7 @@ function InterviewPanel({
     const duration = 280;
     const stagger = 60;
 
-    const apply = (
-      op: typeof card0Opacity,
-      y: typeof card0Y,
-      i: number,
-    ) => {
+    const apply = (op: typeof card0Opacity, y: typeof card0Y, i: number) => {
       op.value = withDelay(i * stagger, withTiming(1, { duration }));
       y.value = withDelay(i * stagger, withTiming(0, { duration }));
     };
@@ -939,11 +935,7 @@ function InterviewPanel({
               <ActivityIndicator color={colors.textPrimary} />
             ) : (
               <View style={styles.startBtnRow}>
-                <Ionicons
-                  name="play"
-                  size={18}
-                  color={colors.textPrimary}
-                />
+                <Ionicons name="play" size={18} color={colors.textPrimary} />
                 <Text style={styles.startBtnText}>Start Session</Text>
               </View>
             )}
@@ -979,8 +971,7 @@ function InterviewPanel({
     const typeLabel =
       iv.config.sessionType.charAt(0).toUpperCase() +
       iv.config.sessionType.slice(1);
-    const diffLabel =
-      diff.charAt(0).toUpperCase() + diff.slice(1);
+    const diffLabel = diff.charAt(0).toUpperCase() + diff.slice(1);
     return (
       <KeyboardAvoidingView
         style={styles.flex}
@@ -1001,7 +992,10 @@ function InterviewPanel({
             {progressWidth > 0 ? (
               <LinearGradient
                 colors={[colors.primary, colors.accent]}
-                style={[styles.progressFillGrad, { width: `${progressWidth}%` }]}
+                style={[
+                  styles.progressFillGrad,
+                  { width: `${progressWidth}%` },
+                ]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               />
@@ -1041,7 +1035,10 @@ function InterviewPanel({
             placeholderTextColor={colors.textMuted}
             value={answer}
             onChangeText={setAnswer}
-            style={[styles.answerInput, answerFocused && styles.answerInputFocused]}
+            style={[
+              styles.answerInput,
+              answerFocused && styles.answerInputFocused,
+            ]}
             textAlignVertical="top"
             onFocus={() => setAnswerFocused(true)}
             onBlur={() => setAnswerFocused(false)}
@@ -1654,7 +1651,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  metaChipTextPrimary: { color: colors.primary, fontWeight: "600", fontSize: 11 },
+  metaChipTextPrimary: {
+    color: colors.primary,
+    fontWeight: "600",
+    fontSize: 11,
+  },
   metaChipText: { fontWeight: "600", fontSize: 11 },
   answerInput: {
     minHeight: 120,
