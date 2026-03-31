@@ -41,12 +41,7 @@ export type RegisterPayload = {
   role: string;
 };
 
-export type ExperienceLevel =
-  | "student"
-  | "entry"
-  | "mid"
-  | "senior"
-  | "lead";
+export type ExperienceLevel = "student" | "entry" | "mid" | "senior" | "lead";
 
 export interface User {
   id: string;
@@ -85,6 +80,12 @@ export type AtsScoreRow = {
   createdAt: string;
 };
 
+export type AtsScoreSummary = {
+  id: string;
+  overall_score: number;
+  created_at: string;
+};
+
 export type ResumeRow = {
   id: string;
   userId: string;
@@ -92,8 +93,11 @@ export type ResumeRow = {
   fileUrl: string | null;
   fileName: string | null;
   rawText: string | null;
+  latestScore: number | null;
+  latestScoreId: string | null;
   isPrimary: boolean;
   createdAt: string;
+  ats_scores: AtsScoreSummary[];
 };
 
 export type ChatMessage = {

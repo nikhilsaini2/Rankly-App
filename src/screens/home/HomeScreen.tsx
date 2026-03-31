@@ -38,8 +38,9 @@ export default function HomeScreen() {
     error,
     firstName,
     latestScore,
+    highestScore,
     resumeCount,
-    interviewsDone,
+    sessionCount,
   } = useHome();
 
   const screenOpacity = useSharedValue(0);
@@ -94,10 +95,10 @@ export default function HomeScreen() {
               <PressableScale
                 style={styles.statPress}
                 onPress={() => {
-                  if (latestScore?.resumeId) {
+                  if (highestScore?.id) {
                     rootNav?.navigate("AtsScore", {
-                      resumeId: latestScore.resumeId,
-                      scoreId: latestScore.id,
+                      resumeId: highestScore.resume_id,
+                      scoreId: highestScore.id,
                     });
                   } else {
                     navigation.navigate("Resume");
@@ -113,14 +114,14 @@ export default function HomeScreen() {
                   <Text
                     style={[
                       styles.statVal,
-                      latestScore
-                        ? { color: scoreTierColor(latestScore.overallScore) }
+                      highestScore
+                        ? { color: scoreTierColor(highestScore.overall_score) }
                         : null,
                     ]}
                   >
-                    {latestScore ? `${latestScore.overallScore}` : "—"}
+                    {highestScore ? `${highestScore.overall_score}` : "—"}
                   </Text>
-                  <Text style={styles.statLab}>ATS Score</Text>
+                  <Text style={styles.statLab}>Best ATS</Text>
                 </View>
               </PressableScale>
               <PressableScale
@@ -149,7 +150,7 @@ export default function HomeScreen() {
                     size={18}
                     color={colors.primaryLight}
                   />
-                  <Text style={styles.statVal}>{`${interviewsDone}`}</Text>
+                  <Text style={styles.statVal}>{`${sessionCount}`}</Text>
                   <Text style={styles.statLab}>Sessions</Text>
                 </View>
               </PressableScale>
@@ -159,34 +160,34 @@ export default function HomeScreen() {
 
         {loading ? (
           <Skeleton style={styles.scoreCardSk} />
-        ) : latestScore && latestScore.resumeId ? (
+        ) : latestScore && latestScore.resume_id ? (
           <View style={styles.atsCard}>
             <View style={styles.ringWrap}>
               <ScoreRing
                 size={120}
-                progress={latestScore.overallScore}
-                strokeColor={scoreTierColor(latestScore.overallScore)}
-                displayValue={latestScore.overallScore}
-                subtitle={scoreTierLabel(latestScore.overallScore)}
+                progress={latestScore.overall_score}
+                strokeColor={scoreTierColor(latestScore.overall_score)}
+                displayValue={latestScore.overall_score}
+                subtitle={scoreTierLabel(latestScore.overall_score)}
               />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.atsTitle}>Latest ATS check</Text>
               <View style={styles.tierPillWide}>
                 <Text style={styles.tierPillTxt}>
-                  {scoreTierLabel(latestScore.overallScore)}
+                  {scoreTierLabel(latestScore.overall_score)}
                 </Text>
               </View>
               <PressableScale
                 onPress={() =>
                   rootNav?.navigate("AtsScore", {
-                    resumeId: latestScore.resumeId!,
+                    resumeId: latestScore.resume_id!,
                     scoreId: latestScore.id,
                   })
                 }
               >
                 <LinearGradient
-                  colors={[colors.primary, colors.secondary]}
+                  colors={[colors.primary, colors.primaryDark]}
                   style={styles.reportBtn}
                 >
                   <Text style={styles.reportBtnText}>View Full Report</Text>

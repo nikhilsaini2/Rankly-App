@@ -44,6 +44,7 @@ import { useResumeUpload } from "../../hooks/useResumeUpload";
 import { fetchResumeScreenData } from "../../services/resume/resumeService";
 import { colors } from "../../theme/color";
 import type { ResumeRow } from "../../types/common.types";
+import { AtsScoreSummary } from "../../types/common.types";
 import type {
   RootStackParamList,
   RootTabParamList,
@@ -51,6 +52,14 @@ import type {
 import { formatResumeDate, truncateFilename } from "../../utils/format";
 
 type ScoreInfo = { score: number; scoreId: string };
+
+function getLatestAtsScore(resume: ResumeRow): AtsScoreSummary | null {
+  if (!resume.ats_scores || resume.ats_scores.length === 0) return null;
+  return [...resume.ats_scores].sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  )[0];
+}
 
 export default function ResumeScreen() {
   const insets = useSafeAreaInsets();
@@ -66,7 +75,6 @@ export default function ResumeScreen() {
   const { scoring, scoreResume } = useAtsScore();
 
   const [resumes, setResumes] = useState<ResumeRow[]>([]);
-  const [scores, setScores] = useState<Record<string, ScoreInfo>>({});
   const [loading, setLoading] = useState(true);
   const [analyzeOpen, setAnalyzeOpen] = useState(false);
   const [analyzeResumeId, setAnalyzeResumeId] = useState<string | null>(null);
@@ -99,7 +107,6 @@ export default function ResumeScreen() {
     try {
       setLoading(true);
       const data = await fetchResumeScreenData();
-      setScores(data.scores as Record<string, ScoreInfo>);
       setResumes(data.resumes);
     } finally {
       setLoading(false);
@@ -114,24 +121,32 @@ export default function ResumeScreen() {
     }, [load]),
   );
 
-  React.useEffect(() => {
-    if (progress > 0 && progress < 1) {
-      Animated.timing(progressOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    } else if (progress >= 1) {
-      Animated.sequence([
-        Animated.delay(600),
-        Animated.timing(progressOpacity, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
+  async function runAnalyze() {
+    if (!analyzeResumeId) return;
+    try {
+      const mapped = await scoreResume(
+        analyzeResumeId,
+        jobDescription.trim() || undefined,
+      );
+      setAnalyzeOpen(false);
+      toast("ATS score ready", "success");
+
+      // Refresh the resume list first, then navigate
+      await load();
+
+      // Small delay to ensure state updates are processed
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      if (mapped) {
+        rootNav?.navigate("AtsScore", {
+          resumeId: analyzeResumeId,
+          scoreId: mapped.id,
+        });
+      }
+    } catch {
+      toast("Could not score resume", "error");
     }
-  }, [progress, progressOpacity]);
+  }
 
   async function onUpload() {
     try {
@@ -158,27 +173,6 @@ export default function ResumeScreen() {
     setAnalyzeOpen(true);
   }
 
-  async function runAnalyze() {
-    if (!analyzeResumeId) return;
-    try {
-      const mapped = await scoreResume(
-        analyzeResumeId,
-        jobDescription.trim() || undefined,
-      );
-      setAnalyzeOpen(false);
-      toast("ATS score ready", "success");
-      load();
-      if (mapped) {
-        rootNav?.navigate("AtsScore", {
-          resumeId: analyzeResumeId,
-          scoreId: mapped.id,
-        });
-      }
-    } catch {
-      toast("Could not score resume", "error");
-    }
-  }
-
   async function onDelete(item: ResumeRow) {
     try {
       await deleteResume(item.id, item.fileUrl);
@@ -188,6 +182,22 @@ export default function ResumeScreen() {
       toast("Delete failed", "error");
     }
   }
+
+  React.useEffect(() => {
+    if (progress > 0 && progress < 1) {
+      Animated.timing(progressOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    } else if (progress >= 1) {
+      Animated.timing(progressOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [progress]);
 
   const progressBar =
     progress > 0 && progress <= 1 ? (
@@ -356,7 +366,7 @@ export default function ResumeScreen() {
             ) : null
           }
           renderItem={({ item }) => {
-            const sc = scores[item.id];
+            const latestScore = getLatestAtsScore(item);
             const fname = item.fileName ?? item.title;
             return (
               <View style={styles.card}>
@@ -373,16 +383,18 @@ export default function ResumeScreen() {
                   <View
                     style={[
                       styles.scorePill,
-                      sc ? styles.scorePillOn : styles.scorePillOff,
+                      latestScore ? styles.scorePillOn : styles.scorePillOff,
                     ]}
                   >
                     <Text
                       style={[
                         styles.scorePillTxt,
-                        !sc ? { color: colors.textMuted } : null,
+                        !latestScore ? { color: colors.textMuted } : null,
                       ]}
                     >
-                      {sc ? `ATS ${sc.score}` : "Not Scored"}
+                      {latestScore
+                        ? `ATS ${latestScore.overall_score}`
+                        : "Not Scored"}
                     </Text>
                   </View>
                   <View style={styles.cardRow}>
@@ -393,13 +405,13 @@ export default function ResumeScreen() {
                     >
                       <Text style={styles.outlineBtnTxt}>Get ATS Score</Text>
                     </PressableScale>
-                    {sc ? (
+                    {latestScore ? (
                       <PressableScale
                         style={styles.outlineBtn}
                         onPress={() =>
                           rootNav?.navigate("AtsScore", {
                             resumeId: item.id,
-                            scoreId: sc.scoreId,
+                            scoreId: latestScore.id,
                           })
                         }
                       >

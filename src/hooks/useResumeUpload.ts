@@ -5,7 +5,7 @@ import { useState } from "react";
 import { MAX_FREE_RESUMES } from "../constants/options";
 import { generateGeminiText } from "../services/gemini/gemini";
 import { supabase } from "../services/supabase/supabase";
-import type { ResumeRow } from "../types/common.types";
+import type { AtsScoreSummary, ResumeRow } from "../types/common.types";
 
 const BUCKET = "resumes";
 
@@ -32,13 +32,15 @@ export function useResumeUpload() {
         encoding: "base64",
       });
 
-      // Use Gemini to extract text from the PDF
+      console.log("[extractTextFromPdf] Base64 length:", base64.length);
+
+      // Use Gemini to extract text from PDF
       const prompt = `
-Extract all text content from this PDF resume. Return ONLY the extracted text - no formatting, no explanations, no markdown, no JSON. Just the raw text content of the resume.
+I have a PDF resume in base64 format. Please extract all the text content from this PDF and return ONLY the extracted text - no formatting, no explanations, no markdown, no JSON. Just the raw text content of the resume.
 
-The PDF content is provided as base64 data. Please decode and extract all readable text.
+Base64 data: ${base64}
 
-Return the extracted text content only.
+Return extracted text content only.
       `.trim();
 
       console.log(
@@ -123,7 +125,17 @@ Return the extracted text content only.
 
       // Extract text from PDF for ATS scoring
       console.log("[uploadResume] Extracting text from PDF...");
+      console.log("[uploadResume] File URI:", file.uri);
+
       const extractedText = await extractTextFromPdf(file.uri);
+
+      console.log("[uploadResume] Extraction result:", {
+        length: extractedText.length,
+        preview:
+          extractedText.slice(0, 100) +
+          (extractedText.length > 100 ? "..." : ""),
+        isEmpty: !extractedText.trim(),
+      });
 
       const title = name.replace(/\.pdf$/i, "") || "My Resume";
 
@@ -185,10 +197,13 @@ function mapResume(r: Record<string, unknown>): ResumeRow {
     id: r.id as string,
     userId: r.user_id as string,
     title: r.title as string,
-    fileUrl: (r.file_url as string) ?? null,
-    fileName: (r.file_name as string) ?? null,
-    rawText: (r.raw_text as string) ?? null,
+    fileUrl: r.file_url as string | null,
+    fileName: r.file_name as string | null,
+    rawText: r.raw_text as string | null,
+    latestScore: r.latest_score as number | null,
+    latestScoreId: r.latest_score_id as string | null,
     isPrimary: Boolean(r.is_primary),
     createdAt: r.created_at as string,
+    ats_scores: (r.ats_scores as AtsScoreSummary[]) || [],
   };
 }

@@ -84,6 +84,102 @@ function parseAtsResponse(raw: string): GeminiAts {
   }
 }
 
+async function extractTextFromStorageFile(
+  fileUrl: string,
+  fileName: string,
+): Promise<string> {
+  try {
+    console.log("[extractTextFromStorageFile] Downloading file:", fileName);
+
+    // Get signed URL from Supabase Storage
+    const { data } = await supabase.storage
+      .from("resumes")
+      .createSignedUrl(fileUrl, 60); // 60 seconds expiry
+
+    const signedUrl = data?.signedUrl;
+    if (!signedUrl) {
+      throw new Error("Could not get signed URL for file");
+    }
+
+    // Download the file
+    const response = await fetch(signedUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to download file: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+
+    // Convert blob to base64
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1]); // strip "data:...;base64," prefix
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Gemini API key not available");
+    }
+
+    const mimeType = fileName?.endsWith(".pdf")
+      ? "application/pdf"
+      : "application/octet-stream";
+
+    console.log(
+      "[extractTextFromStorageFile] Sending to Gemini for extraction...",
+    );
+
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { inline_data: { mime_type: mimeType, data: base64 } },
+                {
+                  text: "Extract all text from this resume document. Return only the plain text content exactly as it appears — no formatting, no commentary, no JSON. Just the raw text of the resume.",
+                },
+              ],
+            },
+          ],
+        }),
+      },
+    );
+
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
+      throw new Error(
+        `Gemini extraction failed: ${geminiResponse.status} - ${errorText.slice(0, 200)}`,
+      );
+    }
+
+    const geminiData = await geminiResponse.json();
+    const extractedText =
+      geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
+
+    console.log(
+      "[extractTextFromStorageFile] Extracted text length:",
+      extractedText.length,
+    );
+    console.log(
+      "[extractTextFromStorageFile] Text preview:",
+      extractedText.slice(0, 200) + (extractedText.length > 200 ? "..." : ""),
+    );
+
+    return extractedText;
+  } catch (err) {
+    console.error("[extractTextFromStorageFile] failed:", err);
+    return "";
+  }
+}
+
 export function useAtsScore() {
   const [scoring, setScoring] = useState(false);
   const [score, setScore] = useState<AtsScoreRow | null>(null);
@@ -122,40 +218,110 @@ export function useAtsScore() {
         const body = (res.raw_text as string) || "";
         const fname = (res.file_name as string) || "resume.pdf";
 
-        if (!body.trim()) {
+        let resumeContent = body.trim();
+
+        if (!resumeContent) {
           console.warn(
-            "[scoreResume] Resume text is empty, this may cause poor scoring",
+            "[scoreResume] raw_text is empty — attempting file extraction",
           );
+
+          // Try to extract text from the stored file
+          resumeContent = await extractTextFromStorageFile(
+            res.file_url as string,
+            fname,
+          );
+
+          if (!resumeContent) {
+            throw new Error("EMPTY_RESUME");
+          }
+
+          // Cache the extracted text back to the database for next time
+          console.log("[scoreResume] Caching extracted text to database...");
+          const { error: updateError } = await supabase
+            .from("resumes")
+            .update({
+              raw_text: resumeContent,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", resumeId);
+
+          if (updateError) {
+            console.warn(
+              "[scoreResume] Failed to cache extracted text:",
+              updateError.message,
+            );
+            // Don't fail the whole process - we still have the text for scoring
+          } else {
+            console.log("[scoreResume] Successfully cached extracted text");
+          }
         }
 
-        const prompt = buildAtsScorePrompt(body, fname, jobDescription);
+        console.log(
+          "[scoreResume] Final resume content length:",
+          resumeContent.length,
+        );
+        console.log(
+          "[scoreResume] Content preview:",
+          resumeContent.slice(0, 200) +
+            (resumeContent.length > 200 ? "..." : ""),
+        );
+
+        const prompt = buildAtsScorePrompt(
+          resumeContent,
+          fname,
+          jobDescription,
+        );
         console.log("[scoreResume] Prompt built, sending to Gemini...");
 
         const raw = await generateGeminiText(prompt);
+        console.log(
+          "[scoreResume] Gemini API Response preview:",
+          raw.slice(0, 500),
+        );
         console.log("[scoreResume] Gemini response received, parsing...");
+        const parsed = parseGeminiJson<GeminiAts>(raw);
 
-        const parsed = parseAtsResponse(raw);
+        // Validate and cap scores at 100
+        const validatedScore = Math.min(100, Math.max(0, parsed.overall_score));
+        const validatedKeywordScore = Math.min(
+          100,
+          Math.max(0, parsed.keyword_score || validatedScore),
+        );
+        const validatedFormatScore = Math.min(
+          100,
+          Math.max(0, parsed.format_score || validatedScore),
+        );
+        const validatedContentScore = Math.min(
+          100,
+          Math.max(0, parsed.content_score || validatedScore),
+        );
+        const validatedReadabilityScore = Math.min(
+          100,
+          Math.max(0, parsed.readability_score || validatedScore),
+        );
 
         const insert = {
           user_id: user.id,
           resume_id: resumeId,
           job_description: jobDescription ?? null,
-          overall_score: Math.round(parsed.overall_score),
-          keyword_score: Math.round(
-            parsed.keyword_score ?? parsed.overall_score,
-          ),
-          format_score: Math.round(parsed.format_score ?? parsed.overall_score),
-          content_score: Math.round(
-            parsed.content_score ?? parsed.overall_score,
-          ),
-          readability_score: Math.round(
-            parsed.readability_score ?? parsed.overall_score,
-          ),
+          overall_score: Math.round(validatedScore),
+          keyword_score: Math.round(validatedKeywordScore),
+          format_score: Math.round(validatedFormatScore),
+          content_score: Math.round(validatedContentScore),
+          readability_score: Math.round(validatedReadabilityScore),
           feedback: parsed.feedback ?? { strengths: [], improvements: [] },
           keywords_found: parsed.keywords_found ?? [],
           keywords_missing: parsed.keywords_missing ?? [],
           ai_summary: parsed.ai_summary ?? "",
         };
+
+        console.log("[scoreResume] Final scores being saved:", {
+          overall: validatedScore,
+          keyword: validatedKeywordScore,
+          format: validatedFormatScore,
+          content: validatedContentScore,
+          readability: validatedReadabilityScore,
+        });
 
         console.log("[scoreResume] Inserting ATS score:", {
           user_id: user.id,
@@ -179,6 +345,28 @@ export function useAtsScore() {
 
         console.log("[scoreResume] ATS score saved successfully:", row.id);
 
+        console.log("[scoreResume] Caching score to resume table...");
+        const { error: updateError } = await supabase
+          .from("resumes")
+          .update({
+            latest_score: row.overall_score, // Use DB-returned value, not parsed
+            latest_score_id: row.id,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", resumeId);
+
+        if (updateError) {
+          console.warn(
+            "[scoreResume] Failed to cache score on resume row:",
+            updateError.message,
+          );
+          // Non-fatal - score was saved successfully
+        } else {
+          console.log(
+            "[scoreResume] Successfully cached score to resume table",
+          );
+        }
+
         const mapped = mapDbToAts(row as Record<string, unknown>);
         setScore(mapped);
         return mapped;
@@ -195,6 +383,9 @@ export function useAtsScore() {
         let userMessage = "Could not score resume";
         if (message.includes("Not signed in")) {
           userMessage = "Please sign in again to score your resume.";
+        } else if (message.includes("EMPTY_RESUME")) {
+          userMessage =
+            "Could not read your resume content. Please delete and re-upload the file.";
         } else if (message.includes("Gemini API: Invalid API key")) {
           userMessage =
             "AI service configuration error. Please contact support.";

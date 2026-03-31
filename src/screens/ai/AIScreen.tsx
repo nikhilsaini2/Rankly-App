@@ -925,7 +925,7 @@ function InterviewPanel({
           disabled={iv.busy || !setupRole.trim()}
         >
           <LinearGradient
-            colors={[colors.primary, colors.secondary]}
+            colors={[colors.primary, colors.primaryDark]}
             style={[
               styles.startBtn,
               (iv.busy || !setupRole.trim()) && styles.startBtnDisabledGrad,
