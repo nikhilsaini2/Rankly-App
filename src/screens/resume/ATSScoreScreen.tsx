@@ -7,7 +7,6 @@ import {
   LayoutAnimation,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   UIManager,
@@ -30,6 +29,7 @@ import type {
   RootTabParamList,
 } from "../../types/navigation.types";
 import { scoreTierColor, scoreTierLabel } from "../../utils/score";
+import { styles } from "./styles";
 
 if (
   Platform.OS === "android" &&
@@ -302,79 +302,3 @@ function ChipRow({ items, tone }: { items: string[]; tone: "ok" | "bad" }) {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  back: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
-  backText: { color: colors.textPrimary, fontSize: 16 },
-  hero: { alignItems: "center", marginBottom: 24 },
-  tierPill: {
-    marginTop: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  tierPillText: { color: colors.textPrimary, fontWeight: "700", fontSize: 13 },
-  section: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontWeight: "600",
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
-    marginBottom: 8,
-    marginTop: 8,
-  },
-  accHead: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderColor: colors.border,
-  },
-  accTitle: { flex: 1, color: colors.textPrimary, fontWeight: "700" },
-  accBody: { paddingBottom: 12 },
-  bullet: {
-    color: colors.textSecondary,
-    lineHeight: 22,
-    marginBottom: 6,
-    fontSize: 15,
-  },
-  summaryCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  summaryLabel: {
-    color: colors.textMuted,
-    fontSize: 11,
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
-    marginBottom: 8,
-  },
-  summaryText: { color: colors.textSecondary, lineHeight: 24, fontSize: 15 },
-  cta: {
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  ctaText: { color: colors.textPrimary, fontWeight: "800", fontSize: 16 },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    backgroundColor: colors.surfaceAlt,
-  },
-  chipGreen: { borderColor: colors.accent },
-  chipRed: { borderColor: colors.danger },
-  chipTextGreen: { color: colors.accent, fontSize: 12 },
-  chipTextRed: { color: colors.danger, fontSize: 12 },
-});
