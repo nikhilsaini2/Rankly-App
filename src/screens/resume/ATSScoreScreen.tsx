@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { NavigationProp } from "@react-navigation/native";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import {
   LayoutAnimation,
@@ -73,14 +72,10 @@ export default function AtsScoreScreen() {
     let alive = true;
     (async () => {
       try {
-        let row: AtsScoreRow | null = null;
-        if (scoreId) {
-          row = await getScoreById(scoreId);
-        } else {
-          row = await getLatestScore(resumeId);
-        }
-        if (!alive) return;
-        setData(row);
+        const row = scoreId
+          ? await getScoreById(scoreId)
+          : await getLatestScore(resumeId);
+        if (alive) setData(row);
       } finally {
         if (alive) setLoading(false);
       }
@@ -96,13 +91,21 @@ export default function AtsScoreScreen() {
     return colors.danger;
   }
 
+  function toggleSection(
+    setter: React.Dispatch<React.SetStateAction<boolean>>,
+    current: boolean,
+  ) {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setter(!current);
+  }
+
   if (loading || !data) {
     return (
       <View style={[styles.center, { paddingTop: insets.top }]}>
         <Text style={{ color: colors.textSecondary }}>
           {loading ? "Loading report…" : "No score for this resume yet."}
         </Text>
-        {loading ? null : (
+        {!loading && (
           <TouchableOpacity
             style={{ marginTop: 20 }}
             onPress={() => navigation.goBack()}
@@ -184,105 +187,87 @@ export default function AtsScoreScreen() {
         <Text style={styles.section}>✗ Missing Keywords</Text>
         <ChipRow items={kwM} tone="bad" />
 
-        <TouchableOpacity
-          onPress={() => {
-            LayoutAnimation.configureNext(
-              LayoutAnimation.Presets.easeInEaseOut,
-            );
-            setOpenS(!openS);
-          }}
-          style={styles.accHead}
-        >
-          <Ionicons
-            name="checkmark-circle-outline"
-            size={20}
-            color={colors.accent}
-          />
-          <Text style={styles.accTitle}>Strengths</Text>
-          <Ionicons
-            name={openS ? "chevron-up" : "chevron-down"}
-            size={18}
-            color={colors.textMuted}
-          />
-        </TouchableOpacity>
-        {openS ? (
-          <View style={styles.accBody}>
-            {strengths.map((s) => (
-              <Text key={s} style={styles.bullet}>
-                • {s}
-              </Text>
-            ))}
-          </View>
-        ) : null}
+        <AccordionSection
+          icon="checkmark-circle-outline"
+          iconColor={colors.accent}
+          title="Strengths"
+          open={openS}
+          onToggle={() => toggleSection(setOpenS, openS)}
+          items={strengths}
+        />
+        <AccordionSection
+          icon="alert-circle-outline"
+          iconColor={colors.warning}
+          title="Areas to Improve"
+          open={openI}
+          onToggle={() => toggleSection(setOpenI, openI)}
+          items={improvements}
+        />
 
-        <TouchableOpacity
-          onPress={() => {
-            LayoutAnimation.configureNext(
-              LayoutAnimation.Presets.easeInEaseOut,
-            );
-            setOpenI(!openI);
-          }}
-          style={styles.accHead}
-        >
-          <Ionicons
-            name="alert-circle-outline"
-            size={20}
-            color={colors.warning}
-          />
-          <Text style={styles.accTitle}>Areas to Improve</Text>
-          <Ionicons
-            name={openI ? "chevron-up" : "chevron-down"}
-            size={18}
-            color={colors.textMuted}
-          />
-        </TouchableOpacity>
-        {openI ? (
-          <View style={styles.accBody}>
-            {improvements.map((s) => (
-              <Text key={s} style={styles.bullet}>
-                • {s}
-              </Text>
-            ))}
-          </View>
-        ) : null}
-
-        {data.aiSummary ? (
+        {data.aiSummary && (
           <View style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>AI Summary</Text>
             <Text style={styles.summaryText}>{data.aiSummary}</Text>
           </View>
-        ) : null}
-
-        <TouchableOpacity
-          onPress={() =>
-            tabNav?.navigate("AI", {
-              atsContext: `My ATS score is ${overall}/100. Missing keywords: ${ctxKw}. Help me improve.`,
-              initialSegment: "chat",
-            })
-          }
-        >
-          <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
-            style={styles.cta}
-          >
-            <Text style={styles.ctaText}>Improve with AI Coach →</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+        )}
       </ScrollView>
     </Animated.View>
   );
 }
 
+function AccordionSection({
+  icon,
+  iconColor,
+  title,
+  open,
+  onToggle,
+  items,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  iconColor: string;
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  items: string[];
+}) {
+  return (
+    <>
+      <TouchableOpacity onPress={onToggle} style={styles.accHead}>
+        <Ionicons name={icon} size={20} color={iconColor} />
+        <Text style={styles.accTitle}>{title}</Text>
+        <Ionicons
+          name={open ? "chevron-up" : "chevron-down"}
+          size={18}
+          color={colors.textMuted}
+        />
+      </TouchableOpacity>
+      {open && (
+        <View style={styles.accBody}>
+          {items.map((s) => (
+            <Text key={s + Math.random().toString()} style={styles.bullet}>
+              • {s}
+            </Text>
+          ))}
+        </View>
+      )}
+    </>
+  );
+}
+
 function ChipRow({ items, tone }: { items: string[]; tone: "ok" | "bad" }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      bounces={false}
+    >
       <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
         {items.length === 0 ? (
           <Text style={{ color: colors.textMuted }}>—</Text>
         ) : (
           items.map((k) => (
             <View
-              key={k}
+              key={k + Math.random().toString()}
               style={[
                 styles.chip,
                 tone === "ok" ? styles.chipGreen : styles.chipRed,

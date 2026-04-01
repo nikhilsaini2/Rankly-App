@@ -34,7 +34,7 @@ Return this exact JSON structure:
 }
 
 Scoring guidelines:
-- overall_score: weighted average (keyword 40%, content 30%, format 20%, readability 10%)
+- overall_score: weighted average (keyword 30%, content 40%, format 20%, readability 10%)
 - keyword_score: how well resume matches industry-standard keywords for the role
 - format_score: ATS-friendly formatting (no tables, proper headings, consistent structure)
 - content_score: quality and relevance of experience descriptions, quantified achievements
@@ -96,7 +96,9 @@ Scoring guide:
 `.trim();
 }
 
-export function buildCareerCoachSystemPrompt(user: Pick<User, "role" | "experienceLevel" | "industry">): string {
+export function buildCareerCoachSystemPrompt(
+  user: Pick<User, "role" | "experienceLevel" | "industry">,
+): string {
   const targetRole = user.role || "Not specified";
   const experienceLevel = user.experienceLevel || "Not specified";
   const industry = user.industry || "Not specified";

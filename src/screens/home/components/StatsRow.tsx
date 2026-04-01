@@ -1,25 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { NavigationProp } from "@react-navigation/native";
 import React from "react";
 import { Text, View } from "react-native";
 import { PressableScale } from "../../../components/atoms/PressableScale";
 import { Skeleton } from "../../../components/atoms/Skeleton";
 import { colors } from "../../../theme/color";
-import type {
-  RootStackParamList,
-  RootTabParamList,
-} from "../../../types/navigation.types";
+import { StatsRowProps } from "../../../types";
 import { scoreTierColor } from "../../../utils/score";
 import { styles } from "../styles";
-
-interface StatsRowProps {
-  loading: boolean;
-  highestScore: any;
-  resumeCount: number;
-  sessionCount: number;
-  navigation: NavigationProp<RootTabParamList>;
-  rootNav: NavigationProp<RootStackParamList> | undefined;
-}
 
 export function StatsRow({
   loading,

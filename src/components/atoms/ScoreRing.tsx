@@ -10,18 +10,8 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
 import { colors } from "../../theme/color";
-
+import { Props } from "../../types";
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-
-type Props = {
-  size?: number;
-  strokeWidth?: number;
-  progress: number;
-  strokeColor?: string;
-  displayValue?: number;
-  subtitle?: string;
-  animated?: boolean;
-};
 
 export function ScoreRing({
   size = 120,

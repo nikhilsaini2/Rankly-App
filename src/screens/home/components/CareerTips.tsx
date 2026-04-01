@@ -10,7 +10,7 @@ export function CareerTips() {
       <FlatList
         horizontal
         data={CAREER_TIPS}
-        keyExtractor={(item) => item.title}
+        keyExtractor={(item) => item.title + Math.random().toString()}
         showsHorizontalScrollIndicator={false}
         snapToInterval={280}
         decelerationRate="fast"

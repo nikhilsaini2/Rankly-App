@@ -2,17 +2,14 @@ import { Ionicons } from "@expo/vector-icons";
 import type { NavigationProp } from "@react-navigation/native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Animated,
   FlatList,
-  Modal,
-  StyleSheet,
+  ScrollView,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import Reanimated, {
@@ -24,17 +21,6 @@ import Reanimated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, {
-  Circle,
-  Defs,
-  Ellipse,
-  FeGaussianBlur,
-  Filter,
-  Path,
-  Rect,
-  Stop,
-  LinearGradient as SvgLinearGradient,
-} from "react-native-svg";
 import { PressableScale } from "../../components/atoms/PressableScale";
 import { Skeleton } from "../../components/atoms/Skeleton";
 import { useToast } from "../../components/atoms/Toast";
@@ -49,12 +35,14 @@ import type {
   RootStackParamList,
   RootTabParamList,
 } from "../../types/navigation.types";
-import { formatResumeDate, truncateFilename } from "../../utils/format";
-
-type ScoreInfo = { score: number; scoreId: string };
+import { AnalyzeModal } from "./components/AnalyzeModal";
+import { FeatureRow } from "./components/FeatureRow";
+import { ResumeCard } from "./components/ResumeCard";
+import { ResumeEmptyIllustration } from "./components/ResumeEmptyIllustration";
+import { styles } from "./styles";
 
 function getLatestAtsScore(resume: ResumeRow): AtsScoreSummary | null {
-  if (!resume.ats_scores || resume.ats_scores.length === 0) return null;
+  if (!resume.ats_scores?.length) return null;
   return [...resume.ats_scores].sort(
     (a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
@@ -83,25 +71,36 @@ export default function ResumeScreen() {
   const didInitialLoad = useRef(false);
 
   const screenAnim = useSharedValue(0);
-  React.useEffect(() => {
-    screenAnim.value = withTiming(1, {
-      duration: 300,
-      easing: Easing.out(Easing.quad),
-    });
-  }, [screenAnim]);
+  const glowAnim = useSharedValue(0.12);
 
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenAnim.value,
     transform: [{ translateY: interpolate(screenAnim.value, [0, 1], [16, 0]) }],
   }));
 
-  const glowAnim = useSharedValue(0.12);
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowAnim.value,
-  }));
-  React.useEffect(() => {
+  useEffect(() => {
+    screenAnim.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
     glowAnim.value = withRepeat(withTiming(0.22, { duration: 2000 }), -1, true);
-  }, [glowAnim]);
+  }, [screenAnim, glowAnim]);
+
+  useEffect(() => {
+    if (progress > 0 && progress < 1) {
+      Animated.timing(progressOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    } else if (progress >= 1) {
+      Animated.timing(progressOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [progress, progressOpacity]);
 
   const load = useCallback(async () => {
     try {
@@ -121,42 +120,15 @@ export default function ResumeScreen() {
     }, [load]),
   );
 
-  async function runAnalyze() {
-    if (!analyzeResumeId) return;
-    try {
-      const mapped = await scoreResume(
-        analyzeResumeId,
-        jobDescription.trim() || undefined,
-      );
-      setAnalyzeOpen(false);
-      toast("ATS score ready", "success");
-
-      // Refresh the resume list first, then navigate
-      await load();
-
-      // Small delay to ensure state updates are processed
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      if (mapped) {
-        rootNav?.navigate("AtsScore", {
-          resumeId: analyzeResumeId,
-          scoreId: mapped.id,
-        });
-      }
-    } catch {
-      toast("Could not score resume", "error");
-    }
-  }
-
   async function onUpload() {
+    if (user?.plan === "free" && resumes.length >= 3) {
+      Alert.alert(
+        "Resume limit",
+        "Free plan allows 3 resumes. Delete one to upload another.",
+      );
+      return;
+    }
     try {
-      if (user?.plan === "free" && resumes.length >= 3) {
-        Alert.alert(
-          "Resume limit",
-          "Free plan allows 3 resumes. Delete one to upload another.",
-        );
-        return;
-      }
       const file = await pickResume();
       if (!file) return;
       await uploadResume(file);
@@ -167,10 +139,26 @@ export default function ResumeScreen() {
     }
   }
 
-  function openAnalyze(id: string) {
-    setAnalyzeResumeId(id);
-    setJobDescription("");
-    setAnalyzeOpen(true);
+  async function onAnalyze() {
+    if (!analyzeResumeId) return;
+    try {
+      const mapped = await scoreResume(
+        analyzeResumeId,
+        jobDescription.trim() || undefined,
+      );
+      setAnalyzeOpen(false);
+      toast("ATS score ready", "success");
+      await load();
+      await new Promise((r) => setTimeout(r, 100));
+      if (mapped) {
+        rootNav?.navigate("AtsScore", {
+          resumeId: analyzeResumeId,
+          scoreId: mapped.id,
+        });
+      }
+    } catch {
+      toast("Could not score resume", "error");
+    }
   }
 
   async function onDelete(item: ResumeRow) {
@@ -183,21 +171,11 @@ export default function ResumeScreen() {
     }
   }
 
-  React.useEffect(() => {
-    if (progress > 0 && progress < 1) {
-      Animated.timing(progressOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    } else if (progress >= 1) {
-      Animated.timing(progressOpacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [progress]);
+  function openAnalyze(id: string) {
+    setAnalyzeResumeId(id);
+    setJobDescription("");
+    setAnalyzeOpen(true);
+  }
 
   const progressBar =
     progress > 0 && progress <= 1 ? (
@@ -217,23 +195,23 @@ export default function ResumeScreen() {
     return (
       <Reanimated.View style={[{ flex: 1 }, screenStyle]}>
         <View style={[styles.loadingWrap, { paddingTop: insets.top }]}>
-          <Text style={styles.pageTitle}>Resumes</Text>
-
+          <Text style={[styles.pageTitle, { alignSelf: "flex-start" }]}>
+            Your resumes
+          </Text>
           <View style={styles.quickStatsSkWrap}>
-            <View style={styles.quickStatsSkCell}>
-              <Skeleton style={styles.quickStatsSkNum} radius={10} />
-              <Skeleton style={styles.quickStatsSkLab} radius={8} />
-            </View>
-            <View style={[styles.quickStatsSkCell, styles.quickStatsSkDivider]}>
-              <Skeleton style={styles.quickStatsSkNum} radius={10} />
-              <Skeleton style={styles.quickStatsSkLab} radius={8} />
-            </View>
-            <View style={[styles.quickStatsSkCell, styles.quickStatsSkDivider]}>
-              <Skeleton style={styles.quickStatsSkNum} radius={10} />
-              <Skeleton style={styles.quickStatsSkLab} radius={8} />
-            </View>
+            {[0, 1, 2].map((i) => (
+              <View
+                key={i}
+                style={[
+                  styles.quickStatsSkCell,
+                  i > 0 && styles.quickStatsSkDivider,
+                ]}
+              >
+                <Skeleton style={styles.quickStatsSkNum} radius={10} />
+                <Skeleton style={styles.quickStatsSkLab} radius={8} />
+              </View>
+            ))}
           </View>
-
           <View style={styles.resumeSkList}>
             {[0, 1, 2].map((i) => (
               <View key={i} style={styles.resumeSkCard}>
@@ -258,90 +236,92 @@ export default function ResumeScreen() {
   if (resumes.length === 0) {
     return (
       <Reanimated.View style={[{ flex: 1 }, screenStyle]}>
-        <View style={[styles.empty, { paddingTop: insets.top + 22 }]}>
+        <ScrollView
+          style={{ flex: 1, backgroundColor: colors.background }}
+          contentContainerStyle={[
+            styles.emptyScroll,
+            { paddingTop: insets.top + 16 },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
           {progressBar}
 
-          <Text style={styles.pageTitle}>Your resumes</Text>
-
-          <View style={styles.emptyPremiumInner}>
-            <View style={styles.emptyCard}>
-              <Reanimated.View
-                pointerEvents="none"
-                style={[styles.emptyGlow, glowStyle]}
-              >
-                <LinearGradient
-                  colors={[colors.primary, "transparent"]}
-                  style={StyleSheet.absoluteFillObject}
-                  start={{ x: 0, y: 0.2 }}
-                  end={{ x: 1, y: 1 }}
-                />
-              </Reanimated.View>
-
-              <View style={styles.emptyIllustrationWrap}>
-                <ResumeEmptyIllustration />
-              </View>
-
-              <Text style={styles.emptyPremiumTitle}>
-                Your Career Hub Awaits
-              </Text>
-              <Text style={styles.emptyPremiumSub}>
-                Upload your resume and let Rankly's AI analyze your ATS score,
-                identify gaps, and guide your next career move.
-              </Text>
-
-              <View style={styles.emptyCtaRow}>
-                <PressableScale
-                  onPress={onUpload}
-                  disabled={uploading}
-                  style={{ flex: 1 }}
-                >
-                  <LinearGradient
-                    colors={[colors.primary, colors.primaryDark]}
-                    style={styles.emptyPrimaryBtn}
-                  >
-                    {uploading ? (
-                      <ActivityIndicator color={colors.textPrimary} />
-                    ) : (
-                      <Text style={styles.emptyPrimaryBtnTxt}>
-                        Upload Resume
-                      </Text>
-                    )}
-                  </LinearGradient>
-                </PressableScale>
-
-                <PressableScale
-                  onPress={onUpload}
-                  disabled={uploading}
-                  style={{ flex: 1, marginLeft: 10 }}
-                >
-                  <View style={styles.emptyGhostBtn}>
-                    <Text style={styles.emptyGhostBtnTxt}>
-                      Build from scratch
-                    </Text>
-                  </View>
-                </PressableScale>
-              </View>
-
-              <Text style={styles.emptyDividerTxt}>──── OR ────</Text>
-
-              <View style={styles.supportRow}>
-                <Ionicons
-                  name="document-text-outline"
-                  size={16}
-                  color={colors.primary}
-                />
-                <Text style={styles.supportTxt}>Supported: PDF</Text>
-                <Text style={styles.supportDot}>·</Text>
-                <Ionicons
-                  name="information-circle-outline"
-                  size={16}
-                  color={colors.textSecondary}
-                />
-                <Text style={styles.supportTxt}>Max size: 5MB</Text>
-              </View>
-            </View>
+          {/* Stacked-document illustration */}
+          <View style={styles.emptyIllustration}>
+            <ResumeEmptyIllustration />
           </View>
-        </View>
+
+          {/* Status badge */}
+          <View style={styles.emptyBadge}>
+            <View style={styles.emptyBadgeDot} />
+            <Text style={styles.emptyBadgeTxt}>AI-powered analysis ready</Text>
+          </View>
+
+          <Text style={styles.emptyHeading}>No resume uploaded yet</Text>
+          <Text style={styles.emptySub}>
+            Upload your PDF and get an instant ATS score, keyword gaps, and AI
+            feedback.
+          </Text>
+
+          {/* Feature rows */}
+          <View style={styles.emptyFeatureList}>
+            <FeatureRow
+              iconName="analytics-outline"
+              iconColor={colors.primary}
+              iconBg="rgba(108,99,255,0.10)"
+              title="ATS Score"
+              subtitle="0–100 score across 4 metrics"
+            />
+            <FeatureRow
+              iconName="search-outline"
+              iconColor={colors.accent}
+              iconBg="rgba(0,212,170,0.08)"
+              title="Keyword analysis"
+              subtitle="Found & missing keywords"
+            />
+            <FeatureRow
+              iconName="chatbubble-outline"
+              iconColor="#8B5CF6"
+              iconBg="rgba(139,92,246,0.10)"
+              title="AI feedback"
+              subtitle="Strengths & improvements"
+            />
+          </View>
+
+          {/* Upload CTA */}
+          <PressableScale
+            onPress={onUpload}
+            disabled={uploading}
+            style={styles.emptyUploadBtn}
+          >
+            <LinearGradient
+              colors={[colors.primary, colors.primaryDark]}
+              style={styles.emptyUploadGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              {uploading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Ionicons
+                    name="cloud-upload-outline"
+                    size={20}
+                    color="#fff"
+                  />
+                  <Text style={styles.emptyUploadTxt}>Upload resume</Text>
+                </>
+              )}
+            </LinearGradient>
+          </PressableScale>
+
+          {/* Format hint */}
+          <View style={styles.emptySupportRow}>
+            <Text style={styles.emptySupportTxt}>PDF</Text>
+            <Text style={styles.emptySupportDot}>·</Text>
+            <Text style={styles.emptySupportTxt}>Max 5 MB</Text>
+          </View>
+        </ScrollView>
       </Reanimated.View>
     );
   }
@@ -353,7 +333,7 @@ export default function ResumeScreen() {
         <Text style={styles.pageTitle}>Your resumes</Text>
         <FlatList
           data={resumes}
-          keyExtractor={(i) => i.id}
+          keyExtractor={(i) => i.id + Math.random().toString()}
           contentContainerStyle={{ paddingBottom: 120 }}
           ListHeaderComponent={
             scoring ? (
@@ -365,71 +345,16 @@ export default function ResumeScreen() {
               </View>
             ) : null
           }
-          renderItem={({ item }) => {
-            const latestScore = getLatestAtsScore(item);
-            const fname = item.fileName ?? item.title;
-            return (
-              <View style={styles.card}>
-                <View style={styles.pdfIcon}>
-                  <Text style={styles.pdfTxt}>PDF</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>
-                    {truncateFilename(fname)}
-                  </Text>
-                  <Text style={styles.cardMeta}>
-                    {formatResumeDate(item.createdAt)}
-                  </Text>
-                  <View
-                    style={[
-                      styles.scorePill,
-                      latestScore ? styles.scorePillOn : styles.scorePillOff,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.scorePillTxt,
-                        !latestScore ? { color: colors.textMuted } : null,
-                      ]}
-                    >
-                      {latestScore
-                        ? `ATS ${latestScore.overall_score}`
-                        : "Not Scored"}
-                    </Text>
-                  </View>
-                  <View style={styles.cardRow}>
-                    <PressableScale
-                      style={styles.outlineBtn}
-                      onPress={() => openAnalyze(item.id)}
-                      disabled={scoring}
-                    >
-                      <Text style={styles.outlineBtnTxt}>Get ATS Score</Text>
-                    </PressableScale>
-                    {latestScore ? (
-                      <PressableScale
-                        style={styles.outlineBtn}
-                        onPress={() =>
-                          rootNav?.navigate("AtsScore", {
-                            resumeId: item.id,
-                            scoreId: latestScore.id,
-                          })
-                        }
-                      >
-                        <Text style={styles.outlineBtnTxt}>View Report</Text>
-                      </PressableScale>
-                    ) : null}
-                    <TouchableOpacity onPress={() => onDelete(item)}>
-                      <Ionicons
-                        name="trash-outline"
-                        size={22}
-                        color={colors.danger}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            );
-          }}
+          renderItem={({ item }) => (
+            <ResumeCard
+              item={item}
+              latestScore={getLatestAtsScore(item)}
+              scoring={scoring}
+              rootNav={rootNav}
+              onAnalyze={openAnalyze}
+              onDelete={onDelete}
+            />
+          )}
         />
         <PressableScale
           style={[styles.fab, { bottom: 88 + insets.bottom }]}
@@ -447,437 +372,15 @@ export default function ResumeScreen() {
             )}
           </LinearGradient>
         </PressableScale>
-
-        <Modal
+        <AnalyzeModal
           visible={analyzeOpen}
-          animationType="slide"
-          transparent
-          onRequestClose={() => setAnalyzeOpen(false)}
-        >
-          <View style={styles.modalBackdrop}>
-            <View style={styles.modalCard}>
-              <Text style={styles.modalTitle}>Analyze resume</Text>
-              <Text style={styles.modalSub}>
-                Job description (optional — for better accuracy)
-              </Text>
-              <TextInput
-                style={styles.jdInput}
-                placeholder="Paste job description…"
-                placeholderTextColor={colors.textMuted}
-                value={jobDescription}
-                onChangeText={setJobDescription}
-                multiline
-              />
-              <PressableScale
-                onPress={runAnalyze}
-                disabled={scoring}
-                style={{ marginTop: 16 }}
-              >
-                <LinearGradient
-                  colors={[colors.primary, colors.primaryDark]}
-                  style={styles.modalCta}
-                >
-                  {scoring ? (
-                    <ActivityIndicator color={colors.textPrimary} />
-                  ) : (
-                    <Text style={styles.modalCtaTxt}>Analyze Resume</Text>
-                  )}
-                </LinearGradient>
-              </PressableScale>
-              <TouchableOpacity
-                style={{ marginTop: 12 }}
-                onPress={() => setAnalyzeOpen(false)}
-              >
-                <Text style={{ color: colors.textMuted, textAlign: "center" }}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
+          scoring={scoring}
+          jobDescription={jobDescription}
+          onChangeText={setJobDescription}
+          onAnalyze={onAnalyze}
+          onClose={() => setAnalyzeOpen(false)}
+        />
       </View>
     </Reanimated.View>
   );
 }
-
-function ResumeEmptyIllustration() {
-  return (
-    <Svg width={160} height={180} viewBox="0 0 80 100">
-      <Defs>
-        <SvgLinearGradient id="docGrad" x1="0" y1="0" x2="1" y2="1">
-          <Stop offset="0%" stopColor={colors.surfaceAlt} />
-          <Stop offset="100%" stopColor={colors.surface} />
-        </SvgLinearGradient>
-        <Filter id="blur">
-          <FeGaussianBlur stdDeviation={3} />
-        </Filter>
-      </Defs>
-
-      {/* Subtle glow/shadow behind the document */}
-      <Ellipse
-        cx={40}
-        cy={88}
-        rx={26}
-        ry={10}
-        fill={colors.primary}
-        opacity={0.2}
-        filter="url(#blur)"
-      />
-
-      <Rect
-        x={10}
-        y={14}
-        width={60}
-        height={72}
-        rx={12}
-        fill="url(#docGrad)"
-        stroke={colors.primary}
-        strokeOpacity={0.5}
-        strokeWidth={1.2}
-      />
-
-      {/* 3 horizontal "text" lines */}
-      <Rect
-        x={20}
-        y={38}
-        width={48}
-        height={3}
-        rx={2}
-        fill={colors.border}
-        opacity={0.9}
-      />
-      <Rect
-        x={24}
-        y={52}
-        width={36}
-        height={3}
-        rx={2}
-        fill={colors.border}
-        opacity={0.85}
-      />
-      <Rect
-        x={22}
-        y={66}
-        width={42}
-        height={3}
-        rx={2}
-        fill={colors.border}
-        opacity={0.8}
-      />
-
-      {/* Floating badge (top-right) */}
-      <Circle
-        cx={62}
-        cy={24}
-        r={7}
-        fill="rgba(108,99,255,0.12)"
-        stroke={colors.primary}
-        strokeOpacity={0.35}
-        strokeWidth={1}
-      />
-      <Path
-        d="M62 18 L63.4 22 L68 23 L63.4 24 L62 29 L60.6 24 L56 23 L60.6 22 Z"
-        fill={colors.primary}
-      />
-    </Svg>
-  );
-}
-
-const styles = StyleSheet.create({
-  root: { flex: 1, paddingHorizontal: 20, backgroundColor: colors.background },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  pageTitle: {
-    color: colors.textPrimary,
-    fontSize: 28,
-    fontWeight: "700",
-    marginBottom: 16,
-    letterSpacing: -0.5,
-  },
-  topProg: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    paddingHorizontal: 20,
-  },
-  empty: {
-    flex: 1,
-    paddingHorizontal: 20,
-    alignItems: "center",
-    backgroundColor: colors.background,
-  },
-  loadingWrap: {
-    flex: 1,
-    paddingHorizontal: 28,
-    alignItems: "center",
-    backgroundColor: colors.background,
-  },
-
-  quickStatsSkWrap: {
-    width: "100%",
-    flexDirection: "row",
-    gap: 0,
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-    marginTop: 8,
-  },
-  quickStatsSkCell: { flex: 1, alignItems: "center" },
-  quickStatsSkDivider: { borderLeftWidth: 1, borderLeftColor: colors.border },
-  quickStatsSkNum: { width: "55%", height: 22 },
-  quickStatsSkLab: { width: "70%", height: 12, marginTop: 10 },
-
-  resumeSkList: { width: "100%", marginTop: 16 },
-  resumeSkCard: {
-    flexDirection: "row",
-    gap: 14,
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 12,
-  },
-  resumeSkPdf: { width: 44, height: 52 },
-  resumeSkTitle: { width: "72%", height: 14 },
-  resumeSkMeta: { width: "44%", height: 10, marginTop: 6 },
-  resumeSkPill: { width: "44%", height: 18, marginTop: 12 },
-  resumeSkBtnRow: { flexDirection: "row", gap: 12, marginTop: 12 },
-  resumeSkBtn: { flex: 1, height: 34 },
-
-  emptyPremiumInner: { alignItems: "center", width: "100%" },
-  emptyCard: {
-    width: "100%",
-    borderRadius: 24,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-    overflow: "hidden",
-    position: "relative",
-    alignItems: "center",
-  },
-  emptyGlow: {
-    position: "absolute",
-    top: -90,
-    left: -70,
-    width: 360,
-    height: 360,
-    borderRadius: 160,
-  },
-  emptyIllustrationWrap: { marginTop: 12 },
-  emptyPremiumTitle: {
-    marginTop: 14,
-    textAlign: "center",
-    color: colors.textPrimary,
-    fontSize: 22,
-    fontWeight: "800",
-    letterSpacing: -0.2,
-  },
-  emptyPremiumSub: {
-    marginTop: 10,
-    textAlign: "center",
-    color: colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
-    maxWidth: 260,
-  },
-  emptyCtaRow: {
-    flexDirection: "row",
-    width: "100%",
-    marginTop: 18,
-  },
-  emptyPrimaryBtn: {
-    width: "100%",
-    height: 54,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyPrimaryBtnTxt: {
-    color: colors.textPrimary,
-    fontWeight: "800",
-    fontSize: 14,
-  },
-  emptyGhostBtn: {
-    height: 54,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyGhostBtnTxt: {
-    color: colors.primary,
-    fontWeight: "800",
-    fontSize: 14,
-  },
-  emptyDividerTxt: {
-    marginTop: 16,
-    color: colors.textSecondary,
-    textAlign: "center",
-    fontSize: 12,
-  },
-  supportRow: {
-    marginTop: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  supportTxt: { color: colors.textSecondary, fontSize: 12 },
-  supportDot: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    marginHorizontal: -2,
-  },
-
-  emoji: { fontSize: 56, marginTop: 8 },
-  emptyTitle: {
-    color: colors.textPrimary,
-    fontSize: 20,
-    fontWeight: "700",
-    marginTop: 16,
-  },
-  emptySub: {
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginTop: 10,
-    lineHeight: 22,
-    fontSize: 15,
-  },
-  primaryBtn: {
-    marginTop: 28,
-    paddingVertical: 16,
-    paddingHorizontal: 28,
-    minWidth: 240,
-    borderRadius: 14,
-    alignItems: "center",
-  },
-  primaryBtnText: {
-    color: colors.textPrimary,
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  progTrack: {
-    height: 4,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  progFill: { height: 4, backgroundColor: colors.accent, borderRadius: 4 },
-  analyzingBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 12,
-    marginBottom: 12,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  analyzingTxt: { color: colors.textSecondary, fontSize: 14 },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    flexDirection: "row",
-    gap: 14,
-  },
-  pdfIcon: {
-    width: 44,
-    height: 52,
-    borderRadius: 8,
-    backgroundColor: colors.danger,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pdfTxt: { color: colors.textPrimary, fontWeight: "800", fontSize: 11 },
-  cardTitle: { color: colors.textPrimary, fontWeight: "700", fontSize: 16 },
-  cardMeta: { color: colors.textMuted, fontSize: 12, marginTop: 4 },
-  scorePill: {
-    alignSelf: "flex-start",
-    marginTop: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  scorePillOn: {
-    borderColor: colors.accent,
-    backgroundColor: colors.surfaceAlt,
-  },
-  scorePillOff: {
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
-  },
-  scorePillTxt: { fontWeight: "700", fontSize: 12, color: colors.accent },
-  cardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginTop: 12,
-    flexWrap: "wrap",
-  },
-  outlineBtn: {
-    borderWidth: 1,
-    borderColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: "transparent",
-  },
-  outlineBtnTxt: { color: colors.primary, fontWeight: "600", fontSize: 13 },
-  fab: {
-    position: "absolute",
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    overflow: "hidden",
-    elevation: 6,
-  },
-  fabInner: { flex: 1, alignItems: "center", justifyContent: "center" },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "flex-end",
-  },
-  modalCard: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 24,
-    paddingBottom: 36,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  modalTitle: {
-    color: colors.textPrimary,
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  modalSub: { color: colors.textSecondary, fontSize: 13, marginBottom: 8 },
-  jdInput: {
-    minHeight: 100,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
-    color: colors.textPrimary,
-    textAlignVertical: "top",
-    fontSize: 15,
-  },
-  modalCta: { paddingVertical: 16, borderRadius: 14, alignItems: "center" },
-  modalCtaTxt: { color: colors.textPrimary, fontWeight: "800", fontSize: 16 },
-});

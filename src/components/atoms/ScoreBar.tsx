@@ -40,7 +40,9 @@ export function ScoreBar({
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.track}>
-        <Animated.View style={[styles.fill, { backgroundColor: fillColor }, fillStyle]} />
+        <Animated.View
+          style={[styles.fill, { backgroundColor: fillColor }, fillStyle]}
+        />
       </View>
       <Text style={styles.val}>{Math.round(value)}</Text>
     </View>

@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { NavigationProp } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Text, View } from "react-native";
@@ -7,17 +6,15 @@ import { PressableScale } from "../../../components/atoms/PressableScale";
 import { ScoreRing } from "../../../components/atoms/ScoreRing";
 import { Skeleton } from "../../../components/atoms/Skeleton";
 import { colors } from "../../../theme/color";
-import type { RootStackParamList } from "../../../types/navigation.types";
+import { LatestScoreCardProps } from "../../../types";
 import { scoreTierColor, scoreTierLabel } from "../../../utils/score";
 import { styles } from "../styles";
 
-interface LatestScoreCardProps {
-  loading: boolean;
-  latestScore: any;
-  rootNav: NavigationProp<RootStackParamList> | undefined;
-}
-
-export function LatestScoreCard({ loading, latestScore, rootNav }: LatestScoreCardProps) {
+export function LatestScoreCard({
+  loading,
+  latestScore,
+  rootNav,
+}: LatestScoreCardProps) {
   if (loading) {
     return <Skeleton style={styles.scoreCardSk} />;
   }
@@ -25,11 +22,7 @@ export function LatestScoreCard({ loading, latestScore, rootNav }: LatestScoreCa
   if (!latestScore || !latestScore.resume_id) {
     return (
       <View style={styles.emptyScoreCard}>
-        <Ionicons
-          name="analytics-outline"
-          size={40}
-          color={colors.textMuted}
-        />
+        <Ionicons name="analytics-outline" size={40} color={colors.textMuted} />
         <Text style={styles.emptyScoreTitle}>No ATS score yet</Text>
         <Text style={styles.emptyScoreSub}>
           Upload your resume to get your ATS score

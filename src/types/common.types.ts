@@ -1,5 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { NavigationProp } from "@react-navigation/native";
 import { TextStyle, ViewStyle } from "react-native";
+import { GeminiChatTurn } from "../services/gemini";
+import type { RootStackParamList, RootTabParamList } from "./navigation.types";
 export type AppNameProps = {
   size?: number;
   style?: TextStyle;
@@ -105,4 +108,39 @@ export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   createdAt?: string;
+};
+
+export interface StatsRowProps {
+  loading: boolean;
+  highestScore: any;
+  resumeCount: number;
+  sessionCount: number;
+  navigation: NavigationProp<RootTabParamList>;
+  rootNav: NavigationProp<RootStackParamList> | undefined;
+}
+
+export interface LatestScoreCardProps {
+  loading: boolean;
+  latestScore: any;
+  rootNav: NavigationProp<RootStackParamList> | undefined;
+}
+
+export type Props = {
+  size?: number;
+  strokeWidth?: number;
+  progress: number;
+  strokeColor?: string;
+  displayValue?: number;
+  subtitle?: string;
+  animated?: boolean;
+};
+
+export interface QuickActionsProps {
+  navigation: NavigationProp<RootTabParamList>;
+}
+
+export type GenerateParams = {
+  systemInstruction?: string;
+  userMessage: string;
+  history?: GeminiChatTurn[];
 };

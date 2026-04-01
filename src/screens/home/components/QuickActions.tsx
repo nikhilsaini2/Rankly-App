@@ -1,16 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { NavigationProp } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Text, View } from "react-native";
 import { PressableScale } from "../../../components/atoms/PressableScale";
 import { colors } from "../../../theme/color";
-import type { RootTabParamList } from "../../../types/navigation.types";
+import { QuickActionsProps } from "../../../types";
 import { styles } from "../styles";
-
-interface QuickActionsProps {
-  navigation: NavigationProp<RootTabParamList>;
-}
 
 export function QuickActions({ navigation }: QuickActionsProps) {
   return (

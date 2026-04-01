@@ -1,3 +1,4 @@
+import { GenerateParams } from "../../types";
 const GEMINI_MODEL = "gemini-2.5-flash";
 
 let apiKeyLogged = false;
@@ -27,12 +28,6 @@ export async function generateGeminiText(prompt: string): Promise<string> {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
   });
 }
-
-type GenerateParams = {
-  systemInstruction?: string;
-  userMessage: string;
-  history?: GeminiChatTurn[];
-};
 
 export async function generateGeminiWithContext(
   params: GenerateParams,
