@@ -6,7 +6,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Animated,
   FlatList,
   ScrollView,
   Text,
@@ -38,7 +37,7 @@ import type {
 import { AnalyzeModal } from "./components/AnalyzeModal";
 import { FeatureRow } from "./components/FeatureRow";
 import { ResumeCard } from "./components/ResumeCard";
-import { ResumeEmptyIllustration } from "./components/ResumeEmptyIllustration";
+import { UploadingOverlay } from "./components/Uploadingoverlay";
 import { styles } from "./styles";
 
 function getLatestAtsScore(resume: ResumeRow): AtsScoreSummary | null {
@@ -67,7 +66,7 @@ export default function ResumeScreen() {
   const [analyzeOpen, setAnalyzeOpen] = useState(false);
   const [analyzeResumeId, setAnalyzeResumeId] = useState<string | null>(null);
   const [jobDescription, setJobDescription] = useState("");
-  const progressOpacity = useRef(new Animated.Value(0)).current;
+  const [analyzingInProgress, setAnalyzingInProgress] = useState(false);
   const didInitialLoad = useRef(false);
 
   const screenAnim = useSharedValue(0);
@@ -85,22 +84,6 @@ export default function ResumeScreen() {
     });
     glowAnim.value = withRepeat(withTiming(0.22, { duration: 2000 }), -1, true);
   }, [screenAnim, glowAnim]);
-
-  useEffect(() => {
-    if (progress > 0 && progress < 1) {
-      Animated.timing(progressOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    } else if (progress >= 1) {
-      Animated.timing(progressOpacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [progress, progressOpacity]);
 
   const load = useCallback(async () => {
     try {
@@ -123,8 +106,9 @@ export default function ResumeScreen() {
   async function onUpload() {
     if (user?.plan === "free" && resumes.length >= 3) {
       Alert.alert(
-        "Resume limit",
-        "Free plan allows 3 resumes. Delete one to upload another.",
+        "Resume limit reached",
+        "Free plan allows up to 3 resumes. Delete one to upload another.",
+        [{ text: "Got it", style: "default" }],
       );
       return;
     }
@@ -132,7 +116,7 @@ export default function ResumeScreen() {
       const file = await pickResume();
       if (!file) return;
       await uploadResume(file);
-      toast("Resume uploaded", "success");
+      toast("Resume uploaded successfully", "success");
       load();
     } catch (e) {
       toast(e instanceof Error ? e.message : "Upload failed", "error");
@@ -141,12 +125,13 @@ export default function ResumeScreen() {
 
   async function onAnalyze() {
     if (!analyzeResumeId) return;
+    setAnalyzeOpen(false);
+    setAnalyzingInProgress(true);
     try {
       const mapped = await scoreResume(
         analyzeResumeId,
         jobDescription.trim() || undefined,
       );
-      setAnalyzeOpen(false);
       toast("ATS score ready", "success");
       await load();
       await new Promise((r) => setTimeout(r, 100));
@@ -158,17 +143,32 @@ export default function ResumeScreen() {
       }
     } catch {
       toast("Could not score resume", "error");
+    } finally {
+      setAnalyzingInProgress(false);
     }
   }
 
   async function onDelete(item: ResumeRow) {
-    try {
-      await deleteResume(item.id, item.fileUrl);
-      toast("Resume removed", "success");
-      load();
-    } catch {
-      toast("Delete failed", "error");
-    }
+    Alert.alert(
+      "Remove resume",
+      "This will permanently delete this resume and all its scores.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteResume(item.id, item.fileUrl);
+              toast("Resume removed", "success");
+              load();
+            } catch {
+              toast("Delete failed", "error");
+            }
+          },
+        },
+      ],
+    );
   }
 
   function openAnalyze(id: string) {
@@ -177,27 +177,11 @@ export default function ResumeScreen() {
     setAnalyzeOpen(true);
   }
 
-  const progressBar =
-    progress > 0 && progress <= 1 ? (
-      <Animated.View
-        style={[
-          styles.topProg,
-          { opacity: progressOpacity, paddingTop: insets.top + 4 },
-        ]}
-      >
-        <View style={styles.progTrack}>
-          <View style={[styles.progFill, { width: `${progress * 100}%` }]} />
-        </View>
-      </Animated.View>
-    ) : null;
-
   if (loading) {
     return (
       <Reanimated.View style={[{ flex: 1 }, screenStyle]}>
-        <View style={[styles.loadingWrap, { paddingTop: insets.top }]}>
-          <Text style={[styles.pageTitle, { alignSelf: "flex-start" }]}>
-            Your resumes
-          </Text>
+        <View style={[styles.loadingWrap]}>
+          <Text style={styles.pageTitle}>Your resumes</Text>
           <View style={styles.quickStatsSkWrap}>
             {[0, 1, 2].map((i) => (
               <View
@@ -206,10 +190,7 @@ export default function ResumeScreen() {
                   styles.quickStatsSkCell,
                   i > 0 && styles.quickStatsSkDivider,
                 ]}
-              >
-                <Skeleton style={styles.quickStatsSkNum} radius={10} />
-                <Skeleton style={styles.quickStatsSkLab} radius={8} />
-              </View>
+              ></View>
             ))}
           </View>
           <View style={styles.resumeSkList}>
@@ -244,14 +225,8 @@ export default function ResumeScreen() {
           ]}
           showsVerticalScrollIndicator={false}
         >
-          {progressBar}
+          <View style={styles.emptyIllustration} />
 
-          {/* Stacked-document illustration */}
-          <View style={styles.emptyIllustration}>
-            <ResumeEmptyIllustration />
-          </View>
-
-          {/* Status badge */}
           <View style={styles.emptyBadge}>
             <View style={styles.emptyBadgeDot} />
             <Text style={styles.emptyBadgeTxt}>AI-powered analysis ready</Text>
@@ -263,7 +238,6 @@ export default function ResumeScreen() {
             feedback.
           </Text>
 
-          {/* Feature rows */}
           <View style={styles.emptyFeatureList}>
             <FeatureRow
               iconName="analytics-outline"
@@ -288,7 +262,6 @@ export default function ResumeScreen() {
             />
           </View>
 
-          {/* Upload CTA */}
           <PressableScale
             onPress={onUpload}
             disabled={uploading}
@@ -315,63 +288,80 @@ export default function ResumeScreen() {
             </LinearGradient>
           </PressableScale>
 
-          {/* Format hint */}
           <View style={styles.emptySupportRow}>
             <Text style={styles.emptySupportTxt}>PDF</Text>
             <Text style={styles.emptySupportDot}>·</Text>
             <Text style={styles.emptySupportTxt}>Max 5 MB</Text>
           </View>
         </ScrollView>
+
+        <UploadingOverlay visible={uploading} progress={progress} />
       </Reanimated.View>
     );
   }
 
   return (
     <Reanimated.View style={[{ flex: 1 }, screenStyle]}>
-      <View style={[styles.root, { paddingTop: insets.top }]}>
-        {progressBar}
-        <Text style={styles.pageTitle}>Your resumes</Text>
+      <View style={styles.root}>
+        <View style={styles.listHeader}>
+          <View>
+            <Text style={styles.pageTitle}>Your resumes</Text>
+            <Text style={styles.resumeCountLabel}>
+              {resumes.length} {resumes.length === 1 ? "document" : "documents"}
+            </Text>
+          </View>
+          <PressableScale
+            onPress={onUpload}
+            disabled={uploading}
+            style={styles.uploadIconBtn}
+          >
+            <LinearGradient
+              colors={[colors.primary, colors.primaryDark]}
+              style={styles.uploadIconBtnInner}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              {uploading ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Ionicons name="add" size={22} color="#fff" />
+              )}
+            </LinearGradient>
+          </PressableScale>
+        </View>
+
+        {analyzingInProgress && (
+          <View style={styles.analyzingBanner}>
+            <View style={styles.analyzingPulse} />
+            <ActivityIndicator color={colors.primary} size="small" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.analyzingTxt}>Analyzing your resume…</Text>
+              <Text style={styles.analyzingSubTxt}>
+                AI is scanning keywords, format & content
+              </Text>
+            </View>
+          </View>
+        )}
+
         <FlatList
           data={resumes}
-          keyExtractor={(i) => i.id + Math.random().toString()}
+          keyExtractor={(i) => i.id}
           contentContainerStyle={{ paddingBottom: 120 }}
-          ListHeaderComponent={
-            scoring ? (
-              <View style={styles.analyzingBanner}>
-                <ActivityIndicator color={colors.primary} size="small" />
-                <Text style={styles.analyzingTxt}>
-                  AI is analyzing your resume…
-                </Text>
-              </View>
-            ) : null
-          }
-          renderItem={({ item }) => (
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+          renderItem={({ item, index }) => (
             <ResumeCard
               item={item}
               latestScore={getLatestAtsScore(item)}
               scoring={scoring}
+              index={index}
               rootNav={rootNav}
               onAnalyze={openAnalyze}
               onDelete={onDelete}
             />
           )}
         />
-        <PressableScale
-          style={[styles.fab, { bottom: 88 + insets.bottom }]}
-          onPress={onUpload}
-          disabled={uploading}
-        >
-          <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
-            style={styles.fabInner}
-          >
-            {uploading ? (
-              <ActivityIndicator color={colors.textPrimary} />
-            ) : (
-              <Ionicons name="add" size={28} color={colors.textPrimary} />
-            )}
-          </LinearGradient>
-        </PressableScale>
+
         <AnalyzeModal
           visible={analyzeOpen}
           scoring={scoring}
@@ -381,6 +371,8 @@ export default function ResumeScreen() {
           onClose={() => setAnalyzeOpen(false)}
         />
       </View>
+
+      <UploadingOverlay visible={uploading} progress={progress} />
     </Reanimated.View>
   );
 }

@@ -25,6 +25,7 @@
     "expo-image-picker": "~55.0.14",
     "expo-linear-gradient": "~55.0.9",
     "expo-linking": "~55.0.8",
+    "expo-navigation-bar": "~55.0.9",
     "expo-status-bar": "~55.0.4",
     "expo-web-browser": "~55.0.10",
     "formik": "^2.4.9",

@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import React from "react";
 import { Switch, Text, TouchableOpacity, View } from "react-native";
@@ -34,9 +34,7 @@ export function SettingsCard({ notif, onToggleNotif }: SettingsCardProps) {
         }
       >
         <View style={styles.settingsRow}>
-          <View
-            style={[styles.settingsIconBox, styles.settingsIconPrivacy]}
-          >
+          <View style={[styles.settingsIconBox, styles.settingsIconPrivacy]}>
             <Feather name="shield" size={16} color={colors.accent} />
           </View>
           <Text style={styles.settingsLabel}>Privacy Policy</Text>
@@ -56,11 +54,7 @@ export function SettingsCard({ notif, onToggleNotif }: SettingsCardProps) {
       >
         <View style={styles.settingsRow}>
           <View style={[styles.settingsIconBox, styles.settingsIconTerms]}>
-            <Feather
-              name="file-text"
-              size={16}
-              color={colors.textSecondary}
-            />
+            <Feather name="file-text" size={16} color={colors.textSecondary} />
           </View>
           <Text style={styles.settingsLabel}>Terms of Service</Text>
           <Feather

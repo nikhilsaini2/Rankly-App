@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import AppName from "../../../components/atoms/AppName";
 import ProgressRing from "../../../components/atoms/ProgressRing";
 import { BARS, FEATURES } from "../../../constants/all";
@@ -11,7 +11,12 @@ import { styles } from "./styles";
 
 const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      bounces={false}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 50 }}
+    >
       <View style={styles.header}>
         <AppName size={30} />
       </View>
@@ -75,7 +80,7 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
         activeOpacity={0.85}
       >
         <LinearGradient
-          colors={[colors.secondary, colors.secondaryDark]}
+          colors={[colors.primary, colors.primaryDark]}
           style={styles.cta}
         >
           <Text style={styles.ctaText}>Get Started - </Text>
@@ -93,7 +98,7 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
       >
         <Text style={styles.ghostText}>I already have an account</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 

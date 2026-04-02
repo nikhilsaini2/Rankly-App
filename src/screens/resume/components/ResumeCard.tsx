@@ -1,19 +1,29 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { NavigationProp } from "@react-navigation/native";
-import React from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
+import Reanimated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from "react-native-reanimated";
 import { PressableScale } from "../../../components/atoms/PressableScale";
 import { colors } from "../../../theme/color";
 import type { ResumeRow } from "../../../types/common.types";
 import { AtsScoreSummary } from "../../../types/common.types";
 import type { RootStackParamList } from "../../../types/navigation.types";
 import { formatResumeDate, truncateFilename } from "../../../utils/format";
-import { styles } from "../styles";
+import { scoreTierColor } from "../../../utils/score";
+import { cardStyles } from "./ResumeCard.styles";
 
 type Props = {
   item: ResumeRow;
   latestScore: AtsScoreSummary | null;
   scoring: boolean;
+  index: number;
   rootNav: NavigationProp<RootStackParamList> | undefined;
   onAnalyze: (id: string) => void;
   onDelete: (item: ResumeRow) => void;
@@ -23,63 +33,156 @@ export function ResumeCard({
   item,
   latestScore,
   scoring,
+  index,
   rootNav,
   onAnalyze,
   onDelete,
 }: Props) {
   const fname = item.fileName ?? item.title;
+  const score = latestScore?.overall_score ?? null;
+  const scoreColor = score !== null ? scoreTierColor(score) : colors.textMuted;
+
+  const anim = useSharedValue(0);
+  useEffect(() => {
+    anim.value = withDelay(
+      index * 60,
+      withTiming(1, { duration: 320, easing: Easing.out(Easing.quad) }),
+    );
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: anim.value,
+    transform: [{ translateY: (1 - anim.value) * 14 }],
+  }));
 
   return (
-    <View style={styles.card}>
-      <View style={styles.pdfIcon}>
-        <Text style={styles.pdfTxt}>PDF</Text>
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.cardTitle} numberOfLines={1}>
-          {truncateFilename(fname)}
-        </Text>
-        <Text style={styles.cardMeta}>{formatResumeDate(item.createdAt)}</Text>
-        <View
-          style={[
-            styles.scorePill,
-            latestScore ? styles.scorePillOn : styles.scorePillOff,
-          ]}
-        >
-          <Text
-            style={[
-              styles.scorePillTxt,
-              !latestScore && { color: colors.textMuted },
-            ]}
+    <Reanimated.View style={animStyle}>
+      <View style={cardStyles.card}>
+        <View style={cardStyles.leftCol}>
+          <LinearGradient
+            colors={[colors.danger, colors.danger]}
+            style={cardStyles.pdfIconWrap}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
           >
-            {latestScore ? `ATS ${latestScore.overall_score}` : "Not Scored"}
+            <Ionicons
+              name="document-text"
+              size={20}
+              color={colors.textPrimary}
+            />
+            <Text style={cardStyles.pdfLabel}>PDF</Text>
+          </LinearGradient>
+        </View>
+
+        <View style={cardStyles.content}>
+          <Text style={cardStyles.title} numberOfLines={1}>
+            {truncateFilename(fname)}
           </Text>
-        </View>
-        <View style={styles.cardRow}>
-          <PressableScale
-            style={styles.outlineBtn}
-            onPress={() => onAnalyze(item.id)}
-            disabled={scoring}
-          >
-            <Text style={styles.outlineBtnTxt}>Get ATS Score</Text>
-          </PressableScale>
-          {latestScore && (
+
+          <View style={cardStyles.metaRow}>
+            <Ionicons
+              name="time-outline"
+              size={11}
+              color={colors.textMuted}
+              style={{ marginRight: 4 }}
+            />
+            <Text style={cardStyles.metaText}>
+              {formatResumeDate(item.createdAt)}
+            </Text>
+            {score !== null && (
+              <>
+                <View style={cardStyles.metaDot} />
+                <View
+                  style={[
+                    cardStyles.scorePill,
+                    { borderColor: scoreColor + "55" },
+                  ]}
+                >
+                  <View
+                    style={[
+                      cardStyles.scorePillDot,
+                      { backgroundColor: scoreColor },
+                    ]}
+                  />
+                  <Text
+                    style={[cardStyles.scorePillText, { color: scoreColor }]}
+                  >
+                    ATS {score}
+                  </Text>
+                </View>
+              </>
+            )}
+            {score === null && (
+              <>
+                <View style={cardStyles.metaDot} />
+                <View style={cardStyles.unscored}>
+                  <Text style={cardStyles.unscoredText}>Not scored</Text>
+                </View>
+              </>
+            )}
+          </View>
+
+          <View style={cardStyles.actions}>
             <PressableScale
-              style={styles.outlineBtn}
-              onPress={() =>
-                rootNav?.navigate("AtsScore", {
-                  resumeId: item.id,
-                  scoreId: latestScore.id,
-                })
-              }
+              style={cardStyles.primaryBtn}
+              onPress={() => onAnalyze(item.id)}
+              disabled={scoring}
             >
-              <Text style={styles.outlineBtnTxt}>View Report</Text>
+              <LinearGradient
+                colors={
+                  scoring
+                    ? [colors.surfaceAlt, colors.surfaceAlt]
+                    : ["rgba(108,99,255,0.22)", "rgba(108,99,255,0.12)"]
+                }
+                style={cardStyles.primaryBtnInner}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Ionicons
+                  name="flash-outline"
+                  size={13}
+                  color={scoring ? colors.textMuted : colors.primary}
+                />
+                <Text
+                  style={[
+                    cardStyles.primaryBtnText,
+                    scoring && { color: colors.textMuted },
+                  ]}
+                >
+                  {score !== null ? "Re-analyze" : "Get ATS Score"}
+                </Text>
+              </LinearGradient>
             </PressableScale>
-          )}
-          <TouchableOpacity onPress={() => onDelete(item)}>
-            <Ionicons name="trash-outline" size={22} color={colors.danger} />
-          </TouchableOpacity>
+
+            {score !== null && (
+              <PressableScale
+                style={cardStyles.secondaryBtn}
+                onPress={() =>
+                  rootNav?.navigate("AtsScore", {
+                    resumeId: item.id,
+                    scoreId: latestScore!.id,
+                  })
+                }
+              >
+                <Ionicons
+                  name="bar-chart-outline"
+                  size={13}
+                  color={colors.accent}
+                />
+                <Text style={cardStyles.secondaryBtnText}>View Report</Text>
+              </PressableScale>
+            )}
+
+            <TouchableOpacity
+              style={cardStyles.deleteBtn}
+              onPress={() => onDelete(item)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="trash-outline" size={16} color={colors.danger} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
+    </Reanimated.View>
   );
 }

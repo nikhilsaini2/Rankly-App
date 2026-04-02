@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { View } from "react-native";
-import Animated, {
+import {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -32,7 +32,7 @@ export function StatusPulseDot() {
 
   return (
     <View style={styles.statusDotWrap}>
-      <Animated.View style={[styles.statusDotRing, ringStyle]} />
+      {/* <Animated.View style={[styles.statusDotRing, ringStyle]} /> */}
       <View style={styles.statusDotInner} />
     </View>
   );

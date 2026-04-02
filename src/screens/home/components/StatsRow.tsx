@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback } from "react";
 import { Text, View } from "react-native";
 import { PressableScale } from "../../../components/atoms/PressableScale";
 import { Skeleton } from "../../../components/atoms/Skeleton";
@@ -15,7 +16,16 @@ export function StatsRow({
   sessionCount,
   navigation,
   rootNav,
-}: StatsRowProps) {
+  onRefresh, // <-- add this to StatsRowProps: onRefresh: () => void
+}: StatsRowProps & { onRefresh: () => void }) {
+  // Re-fetch stats every time this screen comes into focus
+  // (e.g. after user adds a resume or completes an AI session)
+  useFocusEffect(
+    useCallback(() => {
+      onRefresh();
+    }, [onRefresh]),
+  );
+
   if (loading) {
     return (
       <View style={styles.statsRow}>
@@ -60,6 +70,7 @@ export function StatsRow({
           <Text style={styles.statLab}>Best ATS</Text>
         </View>
       </PressableScale>
+
       <PressableScale
         style={styles.statPress}
         onPress={() => navigation.navigate("Resume")}
@@ -74,12 +85,8 @@ export function StatsRow({
           <Text style={styles.statLab}>Resumes</Text>
         </View>
       </PressableScale>
-      <PressableScale
-        style={styles.statPress}
-        onPress={() =>
-          navigation.navigate("AI", { initialSegment: "interview" })
-        }
-      >
+
+      <PressableScale style={styles.statPress} onPress={() => {}}>
         <View style={styles.statCard}>
           <Ionicons name="mic-outline" size={18} color={colors.primaryLight} />
           <Text style={styles.statVal}>{`${sessionCount}`}</Text>

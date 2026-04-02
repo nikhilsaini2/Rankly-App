@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../services/supabase/supabase";
 import { AtsScoreRow } from "../types/common.types";
 import { scoreTierColor, scoreTierLabel } from "../utils/score";
@@ -43,6 +43,17 @@ function mapAtsRow(r: Record<string, unknown>): AtsScoreRow {
   };
 }
 
+/** Compare only the fields that actually drive UI — avoids re-renders on identical data */
+function hasStatsChanged(prev: HomeStats, next: HomeStats): boolean {
+  return (
+    prev.resumeCount !== next.resumeCount ||
+    prev.sessionCount !== next.sessionCount ||
+    prev.highestScore?.id !== next.highestScore?.id ||
+    prev.highestScore?.overall_score !== next.highestScore?.overall_score ||
+    prev.latestScore?.id !== next.latestScore?.id
+  );
+}
+
 export function useHome() {
   const [stats, setStats] = useState<HomeStats>({
     latestScore: null,
@@ -50,12 +61,22 @@ export function useHome() {
     resumeCount: 0,
     sessionCount: 0,
   });
+
+  // Ref mirrors latest stats so we can diff inside useCallback without
+  // adding `stats` as a dep (which would break callback stability)
+  const statsRef = useRef<HomeStats>(stats);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
+  const isFirstLoad = useRef(true);
 
-  const load = async () => {
-    setLoading(true);
+  /**
+   * silent = true  → focus re-check: no spinner, only setStats if data changed
+   * silent = false → initial load: show spinner unconditionally
+   */
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
 
     try {
@@ -69,19 +90,12 @@ export function useHome() {
 
       const userId = user.id;
 
-      // Run all queries in parallel
       const [
-        resumesResult,
         latestScoreResult,
         highestScoreResult,
         resumeCountResult,
         sessionsResult,
       ] = await Promise.allSettled([
-        supabase
-          .from("resumes")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", userId),
-        // Latest score (most recent)
         supabase
           .from("ats_scores")
           .select("id, overall_score, resume_id, created_at")
@@ -89,7 +103,6 @@ export function useHome() {
           .order("created_at", { ascending: false })
           .limit(1)
           .single(),
-        // Highest score
         supabase
           .from("ats_scores")
           .select("id, overall_score, resume_id")
@@ -108,7 +121,6 @@ export function useHome() {
           .eq("completed", true),
       ]);
 
-      // Safely extract each result
       const resumeCount =
         resumeCountResult.status === "fulfilled" &&
         resumeCountResult.value?.count != null
@@ -135,46 +147,53 @@ export function useHome() {
           ? highestScoreResult.value.data
           : null;
 
-      const userResult = await supabase
-        .from("users")
-        .select("first_name")
-        .eq("auth_id", user.id)
-        .maybeSingle();
-
-      const firstName =
-        userResult && userResult.data && userResult.data.first_name
-          ? userResult.data.first_name
-          : "there";
-
-      // Log any failures for debugging
-      if (resumesResult.status === "rejected") {
-        console.warn("[useHome] resumes query failed:", resumesResult.reason);
-      }
-      if (latestScoreResult.status === "rejected") {
-        console.warn("[useHome] latestScore failed:", latestScoreResult.reason);
-      }
-      if (highestScoreResult.status === "rejected") {
-        console.warn(
-          "[useHome] highestScore failed:",
-          highestScoreResult.reason,
-        );
-      }
-      if (resumeCountResult.status === "rejected") {
-        console.warn("[useHome] resumeCount failed:", resumeCountResult.reason);
-      }
-      if (sessionsResult.status === "rejected") {
-        console.warn("[useHome] sessionCount failed:", sessionsResult.reason);
-      }
-
-      console.log("[useHome] Final stats:", {
+      const nextStats: HomeStats = {
         latestScore,
         highestScore,
         resumeCount,
         sessionCount,
-      });
+      };
 
-      setStats({ latestScore, highestScore, resumeCount, sessionCount });
-      setFirstName(firstName);
+      // ✅ Key guard: only call setStats (and trigger re-render) if data changed
+      if (isFirstLoad.current || hasStatsChanged(statsRef.current, nextStats)) {
+        statsRef.current = nextStats;
+        setStats(nextStats);
+      }
+
+      // firstName is fetched only once — it never changes between tab switches
+      if (isFirstLoad.current) {
+        isFirstLoad.current = false;
+
+        const userResult = await supabase
+          .from("users")
+          .select("first_name")
+          .eq("auth_id", user.id)
+          .maybeSingle();
+
+        setFirstName(
+          userResult?.data?.first_name ? userResult.data.first_name : "there",
+        );
+      }
+
+      if (__DEV__) {
+        if (latestScoreResult.status === "rejected")
+          console.warn(
+            "[useHome] latestScore failed:",
+            latestScoreResult.reason,
+          );
+        if (highestScoreResult.status === "rejected")
+          console.warn(
+            "[useHome] highestScore failed:",
+            highestScoreResult.reason,
+          );
+        if (resumeCountResult.status === "rejected")
+          console.warn(
+            "[useHome] resumeCount failed:",
+            resumeCountResult.reason,
+          );
+        if (sessionsResult.status === "rejected")
+          console.warn("[useHome] sessionCount failed:", sessionsResult.reason);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to load home";
       console.error("[useHome]", msg);
@@ -182,11 +201,17 @@ export function useHome() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // stable reference — intentionally no deps
 
+  // Initial mount: full load with spinner
   useEffect(() => {
-    load();
-  }, []);
+    load(false);
+  }, [load]);
 
-  return { ...stats, loading, error, firstName, refresh: load };
+  // Exposed to StatsRow via useFocusEffect — silent, no spinner, skips re-render if unchanged
+  const refetch = useCallback(() => {
+    load(true);
+  }, [load]);
+
+  return { ...stats, loading, error, firstName, refetch, refresh: refetch };
 }

@@ -144,3 +144,12 @@ export type GenerateParams = {
   userMessage: string;
   history?: GeminiChatTurn[];
 };
+
+export type ResumeProps = {
+  visible: boolean;
+  scoring: boolean;
+  jobDescription: string;
+  onChangeText: (text: string) => void;
+  onAnalyze: () => void;
+  onClose: () => void;
+};

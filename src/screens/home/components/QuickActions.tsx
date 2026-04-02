@@ -41,7 +41,8 @@ export function QuickActions({ navigation }: QuickActionsProps) {
       <PressableScale
         style={{ flex: 1, minWidth: "42%" }}
         onPress={() =>
-          navigation.navigate("AI", { initialSegment: "interview" })
+          // navigation.navigate("AI", { initialSegment: "interview" })
+          {}
         }
       >
         <LinearGradient

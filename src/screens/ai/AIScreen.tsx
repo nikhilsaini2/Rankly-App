@@ -90,7 +90,7 @@ export default function AIScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.root, { paddingTop: insets.top }]}
+      style={[styles.root]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={0}
     >
@@ -109,12 +109,12 @@ export default function AIScreen() {
             onSendPrompt={(p) => {
               if (!chat.loading) void chat.send(p);
             }}
-            insetsBottom={insets.bottom}
+            insetsBottom={3}
           />
         ) : (
           <InterviewTab
             iv={iv}
-            insetsBottom={insets.bottom}
+            insetsBottom={3}
             setupRole={setupRole}
             setSetupRole={setSetupRole}
             difficulty={difficulty}

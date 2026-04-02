@@ -106,8 +106,7 @@ export const styles = StyleSheet.create({
   // ─── ResumeScreen — loading skeletons ──────────────────────
   loadingWrap: {
     flex: 1,
-    paddingHorizontal: 28,
-    alignItems: "center",
+    paddingHorizontal: 20,
     backgroundColor: colors.background,
   },
   quickStatsSkWrap: {
@@ -242,7 +241,6 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  analyzingTxt: { color: colors.textSecondary, fontSize: 14 },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 16,
@@ -343,4 +341,45 @@ export const styles = StyleSheet.create({
   },
   modalCta: { paddingVertical: 16, borderRadius: 14, alignItems: "center" },
   modalCtaTxt: { color: colors.textPrimary, fontWeight: "800", fontSize: 16 },
+  listHeader: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  resumeCountLabel: {
+    color: colors.textMuted,
+    fontSize: 12,
+    marginTop: 2,
+    fontWeight: "500",
+  },
+  uploadIconBtn: {
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  uploadIconBtnInner: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  analyzingPulse: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: colors.primary,
+    opacity: 0.5,
+  },
+  analyzingTxt: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  analyzingSubTxt: {
+    color: colors.textMuted,
+    fontSize: 11,
+    marginTop: 1,
+  },
 });

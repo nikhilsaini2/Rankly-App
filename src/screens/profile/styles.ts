@@ -131,7 +131,7 @@ export const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.border,
-    marginTop: 20,
+    marginTop: 5,
     paddingVertical: 20,
     flexDirection: "row",
     alignItems: "center",
@@ -362,5 +362,71 @@ export const styles = StyleSheet.create({
 
   modalRowActive: {
     backgroundColor: colors.surfaceAlt,
+  },
+
+  // ─── ADD THESE TO YOUR styles.ts StyleSheet.create({...}) ───────────────────
+
+  // Hero "Edit Profile" pill button (sits below badges in ProfileHero)
+  heroEditProfileBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 9,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(108,99,255,0.35)",
+    backgroundColor: "rgba(108,99,255,0.08)",
+  },
+  heroEditProfileText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+
+  // Sticky action bar at the bottom of the screen while editing
+  editActionBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    backgroundColor: colors.background, // or colors.surface
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  editCancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
+  },
+  editCancelText: {
+    color: colors.textSecondary,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  editSaveBtn: {
+    flex: 2,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+  },
+  editSaveText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: 0.2,
   },
 });

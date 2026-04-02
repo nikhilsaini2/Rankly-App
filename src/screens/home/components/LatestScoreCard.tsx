@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Text, View } from "react-native";
@@ -15,6 +16,7 @@ export function LatestScoreCard({
   latestScore,
   rootNav,
 }: LatestScoreCardProps) {
+  const navigation = useNavigation<any>();
   if (loading) {
     return <Skeleton style={styles.scoreCardSk} />;
   }
@@ -27,7 +29,7 @@ export function LatestScoreCard({
         <Text style={styles.emptyScoreSub}>
           Upload your resume to get your ATS score
         </Text>
-        <PressableScale onPress={() => {}}>
+        <PressableScale onPress={() => navigation.navigate("Resume")}>
           <LinearGradient
             colors={[colors.primary, colors.primaryDark]}
             style={styles.getStartedBtn}

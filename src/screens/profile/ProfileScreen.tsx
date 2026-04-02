@@ -1,7 +1,15 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import {
   Easing,
   runOnJS,
@@ -16,8 +24,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useToast } from "../../components/atoms/Toast";
 import { NOTIF_STORAGE_KEY } from "../../constants/content";
 import { useProfile } from "../../hooks";
+import { useProfileStats } from "../../hooks/useProfileStats";
 import {
-  getProfileStatsForUser,
   updateUserProfile,
   uploadAvatarFromUri,
   UserProfileUpdate,
@@ -35,17 +43,21 @@ import { styles } from "./styles";
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const toast = useToast();
-  const { user, loading, error, refetch } = useProfile();
+  const { user, loading, error, refetch: refetchProfile } = useProfile();
+
+  const { stats, refetch: refetchStats } = useProfileStats(user?.id);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchProfile();
+      refetchStats();
+    }, [refetchProfile, refetchStats]),
+  );
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<UserProfileUpdate>({});
   const [notif, setNotif] = useState(false);
-  const [stats, setStats] = useState({
-    resumes: 0,
-    bestAts: 0,
-    interviews: 0,
-  });
   const [statsDisplay, setStatsDisplay] = useState({
     resumes: 0,
     bestAts: 0,
@@ -85,20 +97,6 @@ export default function ProfileScreen() {
     AsyncStorage.getItem(NOTIF_STORAGE_KEY).then((v) => setNotif(v === "1"));
   }, []);
 
-  useEffect(() => {
-    let alive = true;
-    if (!user?.id) return;
-
-    (async () => {
-      const nextStats = await getProfileStatsForUser(user.id);
-      if (alive) setStats(nextStats);
-    })().catch(() => {});
-
-    return () => {
-      alive = false;
-    };
-  }, [user?.id]);
-
   function openEdit(u: User) {
     setDraft({
       firstName: u.firstName,
@@ -119,7 +117,7 @@ export default function ProfileScreen() {
       await updateUserProfile(draft);
       toast("Profile updated!", "success");
       setEditing(false);
-      refetch();
+      refetchProfile();
     } catch {
       toast("Save failed", "error");
     } finally {
@@ -166,7 +164,7 @@ export default function ProfileScreen() {
         return;
       }
       toast("Avatar updated", "success");
-      refetch();
+      refetchProfile();
     } catch (e) {
       const message =
         e instanceof Error
@@ -194,12 +192,6 @@ export default function ProfileScreen() {
     await AsyncStorage.setItem(NOTIF_STORAGE_KEY, v ? "1" : "0");
   }
 
-  const fullName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
-  const initials = getInitials(user?.firstName, user?.lastName);
-  const planLabel = (user?.plan === "pro" ? "Pro" : "Free").toUpperCase();
-  const creditsLabel = `${user?.credits ?? 0} CREDITS`;
-  const appVersion = "1.0.0";
-
   const statsDidAnimate = useSharedValue(0);
   const sResumes = useSharedValue(0);
   const sBest = useSharedValue(0);
@@ -226,7 +218,7 @@ export default function ProfileScreen() {
       duration: 800,
       easing: Easing.out(Easing.cubic),
     });
-  }, [stats.bestAts, stats.interviews, stats.resumes]);
+  }, [stats.resumes, stats.bestAts, stats.interviews]);
 
   useAnimatedReaction(
     () => ({
@@ -240,26 +232,11 @@ export default function ProfileScreen() {
     [],
   );
 
-  const z1 = useAnimatedStyle(() => ({
-    opacity: zone.value,
-    transform: [{ translateY: (1 - zone.value) * 20 }],
-  }));
-  const z2 = useAnimatedStyle(() => ({
-    opacity: zone.value,
-    transform: [{ translateY: (1 - zone.value) * 20 }],
-  }));
-  const z3 = useAnimatedStyle(() => ({
-    opacity: zone.value,
-    transform: [{ translateY: (1 - zone.value) * 20 }],
-  }));
-  const z4 = useAnimatedStyle(() => ({
-    opacity: zone.value,
-    transform: [{ translateY: (1 - zone.value) * 20 }],
-  }));
-  const z5 = useAnimatedStyle(() => ({
-    opacity: zone.value,
-    transform: [{ translateY: (1 - zone.value) * 20 }],
-  }));
+  const fullName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
+  const initials = getInitials(user?.firstName, user?.lastName);
+  const planLabel = (user?.plan === "pro" ? "Pro" : "Free").toUpperCase();
+  const creditsLabel = `${user?.credits ?? 0} CREDITS`;
+  const appVersion = "1.0.0";
 
   if (loading && !user) {
     return (
@@ -291,7 +268,7 @@ export default function ProfileScreen() {
           {error ?? "Could not load profile"}
         </Text>
         <Text
-          onPress={refetch}
+          onPress={refetchProfile}
           style={{ color: colors.primary, marginTop: 16, fontWeight: "600" }}
         >
           Try again
@@ -301,13 +278,13 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
+    <View style={[styles.root]}>
       <ScrollView
         bounces={false}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + 100 },
+          { paddingBottom: insets.bottom + 120 },
         ]}
       >
         <ProfileHero
@@ -320,6 +297,8 @@ export default function ProfileScreen() {
           avatarRingStyle={avatarRingStyle}
           pickAvatar={pickAvatar}
           savingAvatar={savingAvatar}
+          editing={editing}
+          onEditPress={() => openEdit(user)}
         />
 
         {editing ? (
@@ -329,16 +308,46 @@ export default function ProfileScreen() {
             setRoleModal={setRoleModal}
             setDraft={setDraft}
           />
-        ) : null}
+        ) : (
+          <>
+            <StatsStrip statsDisplay={statsDisplay} />
+            <BioCard user={user} />
+          </>
+        )}
 
-        <StatsStrip statsDisplay={statsDisplay} />
-
-        <BioCard user={user} onEdit={() => openEdit(user)} />
-
-        <SettingsCard notif={notif} onToggleNotif={onToggleNotif} />
-
-        <DangerZone appVersion={appVersion} />
+        {!editing && (
+          <>
+            <SettingsCard notif={notif} onToggleNotif={onToggleNotif} />
+            <DangerZone appVersion={appVersion} />
+          </>
+        )}
       </ScrollView>
+
+      {editing && (
+        <View
+          style={[styles.editActionBar, { paddingBottom: insets.bottom + 12 }]}
+        >
+          <TouchableOpacity
+            onPress={cancelEdit}
+            style={styles.editCancelBtn}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.editCancelText}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={saveEdit}
+            disabled={saving}
+            style={[styles.editSaveBtn, saving && { opacity: 0.6 }]}
+            activeOpacity={0.85}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.editSaveText}>Save Changes</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }

@@ -24,6 +24,8 @@ interface ProfileHeroProps {
   avatarRingStyle: any;
   pickAvatar: () => void;
   savingAvatar: boolean;
+  editing: boolean;
+  onEditPress: () => void;
 }
 
 export function ProfileHero({
@@ -36,6 +38,8 @@ export function ProfileHero({
   avatarRingStyle,
   pickAvatar,
   savingAvatar,
+  editing,
+  onEditPress,
 }: ProfileHeroProps) {
   return (
     <Animated.View style={[styles.heroWrap, badgeStyle]}>
@@ -101,6 +105,19 @@ export function ProfileHero({
             <Text style={styles.avatarBusyText}>Updating avatar…</Text>
           </View>
         ) : null}
+
+        {/* Edit Profile CTA — hidden while in edit mode */}
+        {!editing && (
+          <TouchableOpacity
+            onPress={onEditPress}
+            style={styles.heroEditProfileBtn}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+          >
+            <Feather name="edit-3" size={14} color={colors.primary} />
+            <Text style={styles.heroEditProfileText}>Edit Profile</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </Animated.View>
   );

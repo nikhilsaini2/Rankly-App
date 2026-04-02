@@ -1,51 +1,49 @@
 export const colors = {
-  /** Spec: near-black screen bg — alias with legacy name */
-  background: "#0D0D14",
-  surface: "#16161F",
-  surfaceAlt: "#1E1E2E",
+  background: "#0A0812",
+  surface: "#130F1F",
+  surfaceAlt: "#1C1830",
 
-  bgPrimary: "#0D0D14",
-  bgSecondary: "#16161F",
-  glass: "rgba(22, 22, 31, 0.92)",
+  bgPrimary: "#0A0812",
+  bgSecondary: "#130F1F",
+  glass: "rgba(19, 15, 31, 0.96)",
 
-  /** Electric violet — CTAs */
-  primary: "#6C63FF",
-  primaryDark: "#5248CC",
+  primary: "#8B5CF6",
+  primaryDark: "#6D28D9",
 
-  secondary: "#8B5CF6",
-  secondaryDark: "#6C63FF",
+  secondary: "#A78BFA",
+  secondaryDark: "#7C3AED",
 
-  primaryLight: "#A78BFA",
-  accent: "#00D4AA",
-  danger: "#FF5C5C",
-  warning: "#FFB347",
+  primaryLight: "#C4B5FD",
+  accent: "#10B981",
+  danger: "#EF4444",
+  warning: "#F97316",
 
-  textPrimary: "#F0F0FF",
-  textSecondary: "#9090B0",
-  textMuted: "#71717A",
+  textPrimary: "#FAF9FF",
+  textSecondary: "#A09ABA",
+  textMuted: "#6B6480",
 
-  border: "#2A2A3D",
-  borderStrong: "rgba(108, 99, 255, 0.35)",
+  border: "#2A2440",
+  borderStrong: "rgba(139, 92, 246, 0.5)",
 
-  success: "#00D4AA",
-  successDark: "#065F46",
-  error: "#FF5C5C",
+  success: "#10B981",
+  successDark: "#064E3B",
+  error: "#EF4444",
 
-  glow: "#A78BFA",
+  glow: "#8B5CF6",
 };
 
 export const gradients = {
-  primary: ["#9B5CFF", "#7638E3", "#5228CC"] as const,
-  success: ["#22C55E", "#065F46"] as const,
-  card: ["rgba(20,15,40,0.9)", "rgba(10,10,30,0.9)"] as const,
+  primary: ["#C4B5FD", "#8B5CF6", "#6D28D9"] as const,
+  success: ["#10B981", "#064E3B"] as const,
+  card: ["rgba(28, 24, 48, 0.98)", "rgba(19, 15, 31, 0.98)"] as const,
 };
 
 export const shadows = {
   glow: {
-    shadowColor: "#7638E3",
+    shadowColor: "#8B5CF6",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-    elevation: 20,
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 24,
   },
 };

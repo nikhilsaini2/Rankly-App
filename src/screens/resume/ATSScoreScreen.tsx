@@ -130,18 +130,45 @@ export default function AtsScoreScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingTop: insets.top,
           paddingBottom: 40,
         }}
         showsVerticalScrollIndicator={false}
       >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.back}
+        <View
+          style={{
+            marginBottom: 24,
+            justifyContent: "center",
+          }}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{
+              position: "absolute",
+              left: 0,
+              flexDirection: "row",
+              alignItems: "center",
+              zIndex: 10,
+            }}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color={colors.textPrimary}
+            />
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
+
+          <Text
+            style={{
+              textAlign: "center",
+              fontSize: 24,
+              fontWeight: "bold",
+              color: colors.textPrimary,
+            }}
+          >
+            ATS Score
+          </Text>
+        </View>
 
         <View style={styles.hero}>
           <ScoreRing

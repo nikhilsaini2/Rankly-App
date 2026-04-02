@@ -1,6 +1,6 @@
 import type { NavigationProp } from "@react-navigation/native";
-import { useNavigation } from "@react-navigation/native";
-import React, { useEffect } from "react";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import React, { useCallback, useEffect } from "react";
 import { ScrollView, Text } from "react-native";
 import Animated, {
   Easing,
@@ -26,7 +26,8 @@ export default function HomeScreen() {
   const rootNav = navigation.getParent() as
     | NavigationProp<RootStackParamList>
     | undefined;
-  const { user } = useProfile();
+
+  const { user, refetch: refetchProfile } = useProfile();
   const {
     loading,
     error,
@@ -35,7 +36,17 @@ export default function HomeScreen() {
     highestScore,
     resumeCount,
     sessionCount,
+    refetch: refetchStats,
   } = useHome();
+
+  // On focus: silently re-check both profile and stats.
+  // Neither will trigger a re-render unless data actually changed.
+  useFocusEffect(
+    useCallback(() => {
+      refetchProfile();
+      refetchStats();
+    }, [refetchProfile, refetchStats]),
+  );
 
   const screenOpacity = useSharedValue(0);
   const screenY = useSharedValue(20);
@@ -74,9 +85,7 @@ export default function HomeScreen() {
           avatarUri={avatarUri}
           credits={user?.credits ?? 0}
         />
-
         {error ? <Text style={styles.err}>{error}</Text> : null}
-
         <StatsRow
           loading={loading}
           highestScore={highestScore}
@@ -84,17 +93,15 @@ export default function HomeScreen() {
           sessionCount={sessionCount}
           navigation={navigation}
           rootNav={rootNav}
+          onRefresh={refetchStats}
         />
-
         <LatestScoreCard
           loading={loading}
           latestScore={latestScore}
           rootNav={rootNav}
         />
-
         <Text style={styles.sectionTitle}>Quick actions</Text>
         <QuickActions navigation={navigation} />
-
         <CareerTips />
       </ScrollView>
     </Animated.View>
