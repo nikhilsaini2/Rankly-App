@@ -36,7 +36,7 @@ import { supabase } from "../../services/supabase/supabase";
 import { colors } from "../../theme/color";
 import type { User } from "../../types/common.types";
 import type { RootStackParamList } from "../../types/navigation.types";
-import { ResumeHistoryItem } from "../resume/ResumeBuilderScreen";
+import type { ResumeHistoryItem } from "../resume/types/resume.types";
 import { BioCard } from "./components/BioCard";
 import { DangerZone } from "./components/DangerZone";
 import { EditProfileForm } from "./components/EditProfileForm";
