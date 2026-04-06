@@ -40,20 +40,6 @@ export function QuickActions({ navigation }: QuickActionsProps) {
       </PressableScale>
       <PressableScale
         style={{ flex: 1, minWidth: "42%" }}
-        onPress={() =>
-          navigation.navigate("AI", { initialSegment: "interview" })
-        }
-      >
-        <LinearGradient
-          colors={[colors.surface, colors.surfaceAlt]}
-          style={styles.actionCard}
-        >
-          <Ionicons name="mic-outline" size={32} color={colors.secondary} />
-          <Text style={styles.actionLab}>Practice Interview</Text>
-        </LinearGradient>
-      </PressableScale>
-      <PressableScale
-        style={{ flex: 1, minWidth: "42%" }}
         onPress={() => navigation.navigate("AI", { initialSegment: "chat" })}
       >
         <LinearGradient
@@ -66,6 +52,36 @@ export function QuickActions({ navigation }: QuickActionsProps) {
             color={colors.warning}
           />
           <Text style={styles.actionLab}>AI Career Chat</Text>
+        </LinearGradient>
+      </PressableScale>
+      <PressableScale
+        style={{ flex: 1, minWidth: "42%" }}
+        onPress={() => navigation.getParent()?.navigate("ResumeBuilder")}
+      >
+        <LinearGradient
+          colors={[colors.surface, colors.surfaceAlt]}
+          style={styles.actionCard}
+        >
+          <Ionicons
+            name="document-text-outline"
+            size={32}
+            color={colors.primary}
+          />
+          <Text style={styles.actionLab}>Resume Builder</Text>
+        </LinearGradient>
+      </PressableScale>
+      <PressableScale
+        style={{ flex: 1, minWidth: "42%" }}
+        onPress={() =>
+          navigation.navigate("AI", { initialSegment: "interview" })
+        }
+      >
+        <LinearGradient
+          colors={[colors.surface, colors.surfaceAlt]}
+          style={styles.actionCard}
+        >
+          <Ionicons name="mic-outline" size={32} color={colors.secondary} />
+          <Text style={styles.actionLab}>Practice Interview</Text>
         </LinearGradient>
       </PressableScale>
     </View>

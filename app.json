@@ -26,7 +26,8 @@
     "plugins": [
       "expo-font",
       "@react-native-google-signin/google-signin",
-      "expo-speech-recognition"
+      "expo-speech-recognition",
+      "expo-sharing"
     ]
   }
 }

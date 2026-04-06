@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
@@ -38,7 +39,7 @@ import { EditProfileForm } from "./components/EditProfileForm";
 import { ProfileHero } from "./components/ProfileHero";
 import { SettingsCard } from "./components/SettingsCard";
 import { StatsStrip } from "./components/StatsStrip";
-import { styles } from "./styles";
+import { styles as profileStyles } from "./styles";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -47,11 +48,54 @@ export default function ProfileScreen() {
 
   const { stats, refetch: refetchStats } = useProfileStats(user?.id);
 
+  // Resume History state
+  const [recentResumes, setRecentResumes] = useState<ResumeHistoryItem[]>([]);
+  const [resumesLoading, setResumesLoading] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       refetchProfile();
       refetchStats();
     }, [refetchProfile, refetchStats]),
+  );
+
+  // Fetch recent resumes
+  useFocusEffect(
+    useCallback(() => {
+      const fetchRecentResumes = async () => {
+        setResumesLoading(true);
+        try {
+          let userId: string | undefined;
+          const { data: sessionData } = await supabase.auth.getSession();
+          userId = sessionData?.session?.user?.id;
+          if (!userId) {
+            const { data: userData } = await supabase.auth.getUser();
+            userId = userData?.user?.id;
+          }
+          if (!userId) {
+            setRecentResumes([]);
+            return;
+          }
+
+          const { data } = await supabase
+            .from("resume_builds")
+            .select(
+              "id, full_name, target_role, industry, tone, core_skills, created_at",
+            )
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false })
+            .limit(3);
+
+          setRecentResumes(data ?? []);
+        } catch {
+          setRecentResumes([]);
+        } finally {
+          setResumesLoading(false);
+        }
+      };
+
+      fetchRecentResumes();
+    }, []),
   );
 
   const [editing, setEditing] = useState(false);
@@ -312,6 +356,158 @@ export default function ProfileScreen() {
           <>
             <StatsStrip statsDisplay={statsDisplay} />
             <BioCard user={user} />
+
+            {/* Resume History Section */}
+            <View style={profileStyles.sectionContainer}>
+              {/* Section Header */}
+              <View style={profileStyles.sectionHeader}>
+                <View style={profileStyles.sectionHeaderLeft}>
+                  <View style={profileStyles.sectionIconCircle}>
+                    <Ionicons
+                      name="document-text-outline"
+                      size={16}
+                      color={colors.accent}
+                    />
+                  </View>
+                  <Text style={profileStyles.sectionTitle}>Resume History</Text>
+                </View>
+                <TouchableOpacity
+                  style={profileStyles.viewAllBtn}
+                  onPress={() => {
+                    // Navigate to ResumeBuilder with history tab
+                    const rootNav = navigation.getParent();
+                    const nav = rootNav ?? navigation;
+                    nav.navigate("ResumeBuilder");
+                    // Note: ResumeBuilder will default to form tab
+                    // User can tap History tab once inside
+                  }}
+                >
+                  <Text style={profileStyles.viewAllText}>View All</Text>
+                  <Ionicons
+                    name="arrow-forward"
+                    size={13}
+                    color={colors.accent}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {/* Content */}
+              {resumesLoading ? (
+                <View style={profileStyles.resumeLoadingRow}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={profileStyles.resumeLoadingText}>
+                    Loading...
+                  </Text>
+                </View>
+              ) : recentResumes.length === 0 ? (
+                <TouchableOpacity
+                  style={profileStyles.resumeEmptyCard}
+                  onPress={() => {
+                    const rootNav = navigation.getParent();
+                    const nav = rootNav ?? navigation;
+                    nav.navigate("ResumeBuilder");
+                  }}
+                >
+                  <Ionicons
+                    name="add-circle-outline"
+                    size={24}
+                    color={colors.textMuted}
+                  />
+                  <Text style={profileStyles.resumeEmptyText}>
+                    No resumes built yet
+                  </Text>
+                  <Text style={profileStyles.resumeEmptyAction}>
+                    Tap to build your first →
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <>
+                  {recentResumes.map((item, index) => (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[
+                        profileStyles.resumeMiniCard,
+                        index === recentResumes.length - 1 &&
+                          profileStyles.resumeMiniCardLast,
+                      ]}
+                      onPress={() => {
+                        const rootNav = navigation.getParent();
+                        const nav = rootNav ?? navigation;
+                        nav.navigate("ResumeBuilder");
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      {/* Left accent bar */}
+                      <View style={profileStyles.resumeMiniAccent} />
+
+                      {/* Content */}
+                      <View style={profileStyles.resumeMiniContent}>
+                        <View style={profileStyles.resumeMiniTop}>
+                          <Text
+                            style={profileStyles.resumeMiniName}
+                            numberOfLines={1}
+                          >
+                            {item.full_name}
+                          </Text>
+                          <Text style={profileStyles.resumeMiniDate}>
+                            {new Date(item.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                              },
+                            )}
+                          </Text>
+                        </View>
+                        <Text
+                          style={profileStyles.resumeMiniRole}
+                          numberOfLines={1}
+                        >
+                          {item.target_role}
+                        </Text>
+                        {item.core_skills && item.core_skills.length > 0 && (
+                          <Text
+                            style={profileStyles.resumeMiniSkills}
+                            numberOfLines={1}
+                          >
+                            {item.core_skills.slice(0, 3).join(" • ")}
+                          </Text>
+                        )}
+                      </View>
+
+                      {/* Right arrow */}
+                      <Ionicons
+                        name="chevron-forward"
+                        size={16}
+                        color={colors.textMuted}
+                      />
+                    </TouchableOpacity>
+                  ))}
+
+                  {/* Build New button */}
+                  <TouchableOpacity
+                    style={profileStyles.buildNewBtn}
+                    onPress={() => {
+                      const rootNav = navigation.getParent();
+                      const nav = rootNav ?? navigation;
+                      nav.navigate("ResumeBuilder");
+                    }}
+                  >
+                    <Ionicons
+                      name="add-outline"
+                      size={16}
+                      color={colors.primary}
+                    />
+                    <Text style={profileStyles.buildNewBtnText}>
+                      Build New Resume
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+
+            <SettingsCard notif={notif} onToggleNotif={onToggleNotif} />
+            <DangerZone appVersion={appVersion} />
           </>
         )}
 

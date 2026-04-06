@@ -17,6 +17,7 @@ export type RootStackParamList = {
     questionCount: number;
   };
   SalaryNegotiation: undefined;
+  ResumeBuilder: undefined;
 };
 
 export type RootTabParamList = {
