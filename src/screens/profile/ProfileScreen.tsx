@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect } from "@react-navigation/native";
+import type { NavigationProp } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -31,8 +32,11 @@ import {
   uploadAvatarFromUri,
   UserProfileUpdate,
 } from "../../services/profile/profileService";
+import { supabase } from "../../services/supabase/supabase";
 import { colors } from "../../theme/color";
 import type { User } from "../../types/common.types";
+import type { RootStackParamList } from "../../types/navigation.types";
+import { ResumeHistoryItem } from "../resume/ResumeBuilderScreen";
 import { BioCard } from "./components/BioCard";
 import { DangerZone } from "./components/DangerZone";
 import { EditProfileForm } from "./components/EditProfileForm";
@@ -45,6 +49,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const toast = useToast();
   const { user, loading, error, refetch: refetchProfile } = useProfile();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const { stats, refetch: refetchStats } = useProfileStats(user?.id);
 
@@ -80,13 +85,13 @@ export default function ProfileScreen() {
           const { data } = await supabase
             .from("resume_builds")
             .select(
-              "id, full_name, target_role, industry, tone, core_skills, created_at",
+              "id, user_id, full_name, target_role, experience_level, industry, tone, skills, professional_summary, core_skills, enhanced_experiences, ats_keywords, pdf_uri, created_at",
             )
             .eq("user_id", userId)
             .order("created_at", { ascending: false })
             .limit(3);
 
-          setRecentResumes(data ?? []);
+          setRecentResumes(data ?? ([] as ResumeHistoryItem[]));
         } catch {
           setRecentResumes([]);
         } finally {
@@ -322,12 +327,12 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={[styles.root]}>
+    <View style={[profileStyles.root]}>
       <ScrollView
         bounces={false}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
-          styles.scrollContent,
+          profileStyles.scrollContent,
           { paddingBottom: insets.bottom + 120 },
         ]}
       >
@@ -374,10 +379,8 @@ export default function ProfileScreen() {
                 <TouchableOpacity
                   style={profileStyles.viewAllBtn}
                   onPress={() => {
-                    // Navigate to ResumeBuilder with history tab
-                    const rootNav = navigation.getParent();
-                    const nav = rootNav ?? navigation;
-                    nav.navigate("ResumeBuilder");
+                    // Navigate to ResumeBuilder
+                    navigation.navigate("ResumeBuilder");
                     // Note: ResumeBuilder will default to form tab
                     // User can tap History tab once inside
                   }}
@@ -403,9 +406,8 @@ export default function ProfileScreen() {
                 <TouchableOpacity
                   style={profileStyles.resumeEmptyCard}
                   onPress={() => {
-                    const rootNav = navigation.getParent();
-                    const nav = rootNav ?? navigation;
-                    nav.navigate("ResumeBuilder");
+                    // Navigate to ResumeBuilder
+                    navigation.navigate("ResumeBuilder");
                   }}
                 >
                   <Ionicons
@@ -431,9 +433,8 @@ export default function ProfileScreen() {
                           profileStyles.resumeMiniCardLast,
                       ]}
                       onPress={() => {
-                        const rootNav = navigation.getParent();
-                        const nav = rootNav ?? navigation;
-                        nav.navigate("ResumeBuilder");
+                        // Navigate to ResumeBuilder
+                        navigation.navigate("ResumeBuilder");
                       }}
                       activeOpacity={0.7}
                     >
@@ -488,9 +489,8 @@ export default function ProfileScreen() {
                   <TouchableOpacity
                     style={profileStyles.buildNewBtn}
                     onPress={() => {
-                      const rootNav = navigation.getParent();
-                      const nav = rootNav ?? navigation;
-                      nav.navigate("ResumeBuilder");
+                      // Navigate to ResumeBuilder
+                      navigation.navigate("ResumeBuilder");
                     }}
                   >
                     <Ionicons
@@ -521,25 +521,28 @@ export default function ProfileScreen() {
 
       {editing && (
         <View
-          style={[styles.editActionBar, { paddingBottom: insets.bottom + 12 }]}
+          style={[
+            profileStyles.editActionBar,
+            { paddingBottom: insets.bottom + 12 },
+          ]}
         >
           <TouchableOpacity
             onPress={cancelEdit}
-            style={styles.editCancelBtn}
+            style={profileStyles.editCancelBtn}
             activeOpacity={0.8}
           >
-            <Text style={styles.editCancelText}>Cancel</Text>
+            <Text style={profileStyles.editCancelText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={saveEdit}
             disabled={saving}
-            style={[styles.editSaveBtn, saving && { opacity: 0.6 }]}
+            style={[profileStyles.editSaveBtn, saving && { opacity: 0.6 }]}
             activeOpacity={0.85}
           >
             {saving ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.editSaveText}>Save Changes</Text>
+              <Text style={profileStyles.editSaveText}>Save Changes</Text>
             )}
           </TouchableOpacity>
         </View>
