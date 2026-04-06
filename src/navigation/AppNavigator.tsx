@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 import VoiceInterviewScreen from "../screens/ai/VoiceInterviewScreen";
 import ATSScoreScreen from "../screens/resume/ATSScoreScreen";
+import SalaryNegotiationScreen from "../screens/salary/SalaryNegotiationScreen";
 import type { RootStackParamList } from "../types/navigation.types";
 import { BottomTabs } from "./BottomTabs";
 
@@ -20,6 +21,11 @@ export const AppNavigator = () => {
       <Stack.Screen
         name="VoiceInterview"
         component={VoiceInterviewScreen}
+        options={{ headerShown: false, presentation: "fullScreenModal" }}
+      />
+      <Stack.Screen
+        name="SalaryNegotiation"
+        component={SalaryNegotiationScreen}
         options={{ headerShown: false, presentation: "fullScreenModal" }}
       />
     </Stack.Navigator>

@@ -16,6 +16,7 @@ export type RootStackParamList = {
     sessionType: "behavioral" | "technical" | "mixed";
     questionCount: number;
   };
+  SalaryNegotiation: undefined;
 };
 
 export type RootTabParamList = {

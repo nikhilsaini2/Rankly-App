@@ -1,0 +1,4 @@
+appId: com.nikhil071.Rankly
+---
+- launchApp
+- takeScreenshot: "01-home-loaded"

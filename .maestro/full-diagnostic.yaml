@@ -1,0 +1,62 @@
+appId: com.nikhil071.Rankly
+---
+# ── LAUNCH ──────────────────────────────────────────
+- launchApp
+- takeScreenshot: "01-app-launched"
+
+# ── HOME SCREEN ─────────────────────────────────────
+- assertVisible: "Home"
+- takeScreenshot: "02-home-screen"
+
+# ── QUICK ACTIONS VISIBLE ───────────────────────────
+- assertVisible: "Upload Resume"
+- assertVisible: "Check Score"
+- assertVisible: "Practice Interview"
+- assertVisible: "AI Career Chat"
+- takeScreenshot: "03-quick-actions"
+
+# ── SALARY COACH ────────────────────────────────────
+- tapOn: "Salary Coach"
+- takeScreenshot: "04-salary-coach-opened"
+- assertVisible: "Salary Coach"
+- takeScreenshot: "05-salary-coach-screen"
+
+# KEYBOARD TEST — most critical
+- tapOn: "Job Title"
+- takeScreenshot: "06-keyboard-open-salary"
+# If Analyze My Offer button is NOT visible here = keyboard bug
+- assertVisible: "Analyze My Offer"
+- takeScreenshot: "07-button-visible-under-keyboard"
+- tapOn: "Back"
+- takeScreenshot: "08-back-to-home"
+
+# ── RESUME BUILDER ───────────────────────────────────
+- tapOn: "Resume Builder"
+- takeScreenshot: "09-resume-builder-opened"
+- tapOn: "Full Name"
+- takeScreenshot: "10-keyboard-open-resume"
+- assertVisible: "Next"
+- takeScreenshot: "11-next-visible-under-keyboard"
+- tapOn: "Back"
+
+# ── PRACTICE INTERVIEW ───────────────────────────────
+- tapOn: "Practice Interview"
+- takeScreenshot: "12-interview-screen"
+- assertVisible: "Mock Interview"
+- tapOn: "Back"
+
+# ── AI CAREER CHAT ───────────────────────────────────
+- tapOn: "AI Career Chat"
+- takeScreenshot: "13-ai-chat-screen"
+- tapOn: "Back"
+
+# ── BOTTOM NAVIGATION ────────────────────────────────
+- tapOn: "Resume"
+- takeScreenshot: "14-resume-tab"
+- tapOn: "AI"
+- takeScreenshot: "15-ai-tab"
+- tapOn: "Profile"
+- takeScreenshot: "16-profile-tab"
+- tapOn: "Home"
+- takeScreenshot: "17-back-to-home-final"
+

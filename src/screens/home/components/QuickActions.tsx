@@ -28,14 +28,14 @@ export function QuickActions({ navigation }: QuickActionsProps) {
       </PressableScale>
       <PressableScale
         style={{ flex: 1, minWidth: "42%" }}
-        onPress={() => navigation.navigate("Resume")}
+        onPress={() => navigation.getParent()?.navigate("SalaryNegotiation")}
       >
         <LinearGradient
           colors={[colors.surface, colors.surfaceAlt]}
           style={styles.actionCard}
         >
-          <Ionicons name="analytics-outline" size={32} color={colors.accent} />
-          <Text style={styles.actionLab}>Check Score</Text>
+          <Ionicons name="cash-outline" size={32} color={colors.success} />
+          <Text style={styles.actionLab}>Salary Coach</Text>
         </LinearGradient>
       </PressableScale>
       <PressableScale
