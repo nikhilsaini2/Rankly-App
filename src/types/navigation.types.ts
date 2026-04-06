@@ -10,6 +10,12 @@ export type AuthStackParamList = {
 export type RootStackParamList = {
   Tabs: undefined;
   AtsScore: { resumeId: string; scoreId?: string };
+  VoiceInterview: {
+    role: string;
+    difficulty: "easy" | "medium" | "hard";
+    sessionType: "behavioral" | "technical" | "mixed";
+    questionCount: number;
+  };
 };
 
 export type RootTabParamList = {

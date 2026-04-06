@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import {
@@ -7,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -23,6 +25,7 @@ import { PressableScale } from "../../../components/atoms/PressableScale";
 import { ScoreRing } from "../../../components/atoms/ScoreRing";
 import { useInterview } from "../../../hooks/useInterview";
 import { colors } from "../../../theme/color";
+import type { RootStackParamList } from "../../../types/navigation.types";
 import {
   getInterviewResultMessage,
   getQuestionScoreColor,
@@ -134,6 +137,7 @@ function SetupPhase({
   setNumQ,
 }: SetupProps) {
   const [roleFocused, setRoleFocused] = useState(false);
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const opacities = [0, 0, 0, 0].map(() => useSharedValue(0));
   const ys = [0, 0, 0, 0].map(() => useSharedValue(10));
@@ -251,6 +255,32 @@ function SetupPhase({
           )}
         </LinearGradient>
       </PressableScale>
+
+      {/* Voice Mode button */}
+      <TouchableOpacity
+        style={[
+          voiceStyles.voiceBtn,
+          !setupRole.trim() && voiceStyles.voiceBtnDisabled,
+        ]}
+        onPress={() => {
+          if (!setupRole.trim()) return;
+          const rootNav = navigation.getParent();
+          rootNav?.navigate("VoiceInterview", {
+            role: setupRole.trim(),
+            difficulty,
+            sessionType,
+            questionCount: numQ,
+          });
+        }}
+        disabled={!setupRole.trim()}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="mic-outline" size={18} color={colors.accent} />
+        <Text style={voiceStyles.voiceBtnTxt}>Voice Mode</Text>
+        <View style={voiceStyles.newBadge}>
+          <Text style={voiceStyles.newBadgeTxt}>NEW</Text>
+        </View>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -392,7 +422,7 @@ function LivePhase({
             disabled={iv.busy || !answer.trim()}
           >
             <LinearGradient
-              colors={[colors.primary, colors.secondary]}
+              colors={[colors.primary, colors.primaryDark]}
               style={styles.submitGrad}
             >
               <Text style={styles.submitText}>
@@ -530,3 +560,33 @@ export function InterviewTab(props: InterviewTabProps) {
   }
   return null;
 }
+
+// Voice button styles
+const voiceStyles = StyleSheet.create({
+  voiceBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(0,212,170,0.25)",
+    backgroundColor: "rgba(0,212,170,0.06)",
+    marginTop: 10,
+  },
+  voiceBtnDisabled: { opacity: 0.4 },
+  voiceBtnTxt: { fontSize: 15, fontWeight: "600", color: colors.accent },
+  newBadge: {
+    backgroundColor: colors.accent,
+    borderRadius: 5,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  newBadgeTxt: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: "#000",
+    letterSpacing: 0.5,
+  },
+});

@@ -67,9 +67,6 @@ async function generateGeminiRequest(body: {
     contents: body.contents,
   };
   if (body.systemInstruction) {
-    // Your Gemini REST endpoint currently rejects `systemInstruction`/`system_instruction`
-    // as an unknown JSON field. To keep the exact same system prompt content,
-    // prepend it into the conversation as the first `user` message.
     requestBody.contents = [
       {
         role: "user",
@@ -92,10 +89,9 @@ async function generateGeminiRequest(body: {
       statusText: res.statusText,
       errorBody: errText,
       model: GEMINI_MODEL,
-      url: url.replace(/\?.*$/, ""), // Hide API key in logs
+      url: url.replace(/\?.*$/, ""),
     });
 
-    // Provide specific error messages based on status code
     if (res.status === 400) {
       throw new Error(
         "Gemini API: Invalid request. The prompt may be malformed.",

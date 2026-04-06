@@ -60,7 +60,7 @@ export function PremiumTabSwitcher({ active, onChange }: Props) {
         </Text>
       </TouchableOpacity>
 
-      {/* <TouchableOpacity
+      <TouchableOpacity
         style={styles.tabItem}
         onPress={() => onChange("interview")}
         accessibilityRole="button"
@@ -81,7 +81,7 @@ export function PremiumTabSwitcher({ active, onChange }: Props) {
         >
           Interview
         </Text>
-      </TouchableOpacity> */}
+      </TouchableOpacity>
 
       {half > 0 && (
         <View style={styles.tabUnderlineTrack} pointerEvents="none">
