@@ -210,49 +210,60 @@ export function useAtsScore() {
         console.log("[scoreResume] Resume record:", {
           id: res.id,
           fileName: res.file_name,
-          hasRawText: !!res.raw_text,
-          rawTextLength: res.raw_text?.length || 0,
-          rawTextPreview: res.raw_text?.slice(0, 200) || "NULL",
+          hasExtractedText: !!res.extracted_text,
+          extractedTextLength: res.extracted_text?.length || 0,
+          extractedTextPreview: res.extracted_text?.slice(0, 200) || "NULL",
+          status: res.status,
         });
 
-        const body = (res.raw_text as string) || "";
-        const fname = (res.file_name as string) || "resume.pdf";
+        let resumeContent = (res.extracted_text as string) || "";
 
-        let resumeContent = body.trim();
-
+        // If no extracted text, extract it now
         if (!resumeContent) {
           console.warn(
-            "[scoreResume] raw_text is empty — attempting file extraction",
+            "[scoreResume] extracted_text is empty - extracting from PDF now",
           );
 
-          // Try to extract text from the stored file
           resumeContent = await extractTextFromStorageFile(
             res.file_url as string,
-            fname,
+            (res.file_name as string) || "resume.pdf",
           );
 
           if (!resumeContent) {
             throw new Error("EMPTY_RESUME");
           }
 
-          // Cache the extracted text back to the database for next time
-          console.log("[scoreResume] Caching extracted text to database...");
+          // Save extracted text and update status
+          console.log(
+            "[scoreResume] Saving extracted text and updating status...",
+          );
           const { error: updateError } = await supabase
             .from("resumes")
             .update({
-              raw_text: resumeContent,
+              extracted_text: resumeContent,
+              status: "analyzed",
               updated_at: new Date().toISOString(),
             })
             .eq("id", resumeId);
 
           if (updateError) {
             console.warn(
-              "[scoreResume] Failed to cache extracted text:",
+              "[scoreResume] Failed to save extracted text:",
               updateError.message,
             );
             // Don't fail the whole process - we still have the text for scoring
           } else {
-            console.log("[scoreResume] Successfully cached extracted text");
+            console.log(
+              "[scoreResume] Successfully saved extracted text and updated status",
+            );
+          }
+        } else {
+          // Update status to 'analyzed' even if we already had text
+          if (res.status === "uploaded") {
+            await supabase
+              .from("resumes")
+              .update({ status: "analyzed" })
+              .eq("id", resumeId);
           }
         }
 
@@ -268,7 +279,7 @@ export function useAtsScore() {
 
         const prompt = buildAtsScorePrompt(
           resumeContent,
-          fname,
+          (res.file_name as string) || "resume.pdf",
           jobDescription,
         );
         console.log("[scoreResume] Prompt built, sending to Gemini...");

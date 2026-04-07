@@ -1,5 +1,6 @@
+import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "../../theme/color";
 import { getInitials } from "../../utils";
 
@@ -12,50 +13,55 @@ export function HeroHeader(props: {
   credits: number;
 }) {
   const { greet, firstName, lastName, avatarUrl, avatarUri, credits } = props;
+  const navigation = useNavigation<any>();
   return (
     <View style={heroStyles.heroContainer}>
-      <LinearGradient
-        colors={["rgba(108,99,255,0.15)", "transparent"]}
-        style={heroStyles.heroGlow}
-        start={{ x: 1, y: 0 }}
-        end={{ x: 0.2, y: 1 }}
-        pointerEvents="none"
-      />
-      <View style={heroStyles.heroRow}>
-        <View>
-          <Text style={heroStyles.heroEyebrow}>{greet.toUpperCase()}</Text>
-          <Text style={heroStyles.heroTitle}>
-            Hey, <Text style={heroStyles.heroNameAccent}>{firstName}</Text> 👋
-          </Text>
-          <Text style={heroStyles.heroSub}>Ready to land your dream job?</Text>
-        </View>
-        <View style={heroStyles.heroRight}>
-          <View style={heroStyles.avatarRing}>
-            <LinearGradient
-              colors={[colors.primary, colors.accent]}
-              style={StyleSheet.absoluteFillObject}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
-            {avatarUrl ? (
-              <Image
-                source={{ uri: avatarUri }}
-                style={heroStyles.avatarImage}
+      <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
+        <LinearGradient
+          colors={["rgba(108,99,255,0.15)", "transparent"]}
+          style={heroStyles.heroGlow}
+          start={{ x: 1, y: 0 }}
+          end={{ x: 0.2, y: 1 }}
+          pointerEvents="none"
+        />
+        <View style={heroStyles.heroRow}>
+          <View>
+            <Text style={heroStyles.heroEyebrow}>{greet.toUpperCase()}</Text>
+            <Text style={heroStyles.heroTitle}>
+              Hey, <Text style={heroStyles.heroNameAccent}>{firstName}</Text> 👋
+            </Text>
+            <Text style={heroStyles.heroSub}>
+              Ready to land your dream job?
+            </Text>
+          </View>
+          <View style={heroStyles.heroRight}>
+            <View style={heroStyles.avatarRing}>
+              <LinearGradient
+                colors={[colors.primary, colors.accent]}
+                style={StyleSheet.absoluteFillObject}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
               />
-            ) : (
-              <View style={heroStyles.avatarFallback}>
-                <Text style={heroStyles.avatarInitials}>
-                  {getInitials(firstName, lastName)}
-                </Text>
-              </View>
-            )}
-          </View>
-          <View style={heroStyles.creditsBadge}>
-            <View style={heroStyles.creditsGreenDot} />
-            <Text style={heroStyles.creditsText}>{credits} credits</Text>
+              {avatarUrl ? (
+                <Image
+                  source={{ uri: avatarUri }}
+                  style={heroStyles.avatarImage}
+                />
+              ) : (
+                <View style={heroStyles.avatarFallback}>
+                  <Text style={heroStyles.avatarInitials}>
+                    {getInitials(firstName, lastName)}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <View style={heroStyles.creditsBadge}>
+              <View style={heroStyles.creditsGreenDot} />
+              <Text style={heroStyles.creditsText}>{credits} credits</Text>
+            </View>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     </View>
   );
 }

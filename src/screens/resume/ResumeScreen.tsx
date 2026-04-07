@@ -21,7 +21,6 @@ import Reanimated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PressableScale } from "../../components/atoms/PressableScale";
-import { Skeleton } from "../../components/atoms/Skeleton";
 import { useToast } from "../../components/atoms/Toast";
 import { useAtsScore } from "../../hooks/useAtsScore";
 import { useProfile } from "../../hooks/useProfile";
@@ -180,35 +179,11 @@ export default function ResumeScreen() {
   if (loading) {
     return (
       <Reanimated.View style={[{ flex: 1 }, screenStyle]}>
-        <View style={[styles.loadingWrap]}>
-          <Text style={styles.pageTitle}>Your resumes</Text>
-          <View style={styles.quickStatsSkWrap}>
-            {[0, 1, 2].map((i) => (
-              <View
-                key={i}
-                style={[
-                  styles.quickStatsSkCell,
-                  i > 0 && styles.quickStatsSkDivider,
-                ]}
-              ></View>
-            ))}
-          </View>
-          <View style={styles.resumeSkList}>
-            {[0, 1, 2].map((i) => (
-              <View key={i} style={styles.resumeSkCard}>
-                <Skeleton style={styles.resumeSkPdf} radius={10} />
-                <View style={{ flex: 1 }}>
-                  <Skeleton style={styles.resumeSkTitle} radius={8} />
-                  <Skeleton style={styles.resumeSkMeta} radius={8} />
-                  <Skeleton style={styles.resumeSkPill} radius={10} />
-                  <View style={styles.resumeSkBtnRow}>
-                    <Skeleton style={styles.resumeSkBtn} radius={10} />
-                    <Skeleton style={styles.resumeSkBtn} radius={10} />
-                  </View>
-                </View>
-              </View>
-            ))}
-          </View>
+        <View style={[styles.center, { paddingTop: insets.top }]}>
+          <ActivityIndicator color={colors.primary} />
+          <Text style={{ marginTop: 12, color: colors.textSecondary }}>
+            Loading...
+          </Text>
         </View>
       </Reanimated.View>
     );
@@ -228,8 +203,19 @@ export default function ResumeScreen() {
           <View style={styles.emptyIllustration} />
 
           <View style={styles.emptyBadge}>
-            <View style={styles.emptyBadgeDot} />
-            <Text style={styles.emptyBadgeTxt}>AI-powered analysis ready</Text>
+            <Ionicons
+              name="newspaper-outline"
+              size={60}
+              color={colors.accent}
+            />
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+            >
+              <View style={styles.emptyBadgeDot} />
+              <Text style={styles.emptyBadgeTxt}>
+                AI-powered analysis ready
+              </Text>
+            </View>
           </View>
 
           <Text style={styles.emptyHeading}>No resume uploaded yet</Text>

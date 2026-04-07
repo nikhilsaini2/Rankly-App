@@ -1,9 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useHeaderHeight } from "@react-navigation/elements";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -19,6 +23,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, {
   Circle,
   Defs,
@@ -284,6 +289,7 @@ function InputBar({
           if (canSend) pressScale.value = withTiming(0.92, { duration: 80 });
         }}
         onPressOut={() => {
+          Keyboard.dismiss();
           pressScale.value = withSpring(1, { damping: 20, stiffness: 200 });
         }}
         onPress={onSend}
@@ -329,10 +335,14 @@ export function ChatTab({
   setInput,
   onSend,
   onSendPrompt,
-  insetsBottom,
+  insetsBottom, // you can still pass this if needed
 }: ChatTabProps) {
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const reversed = [...messages].reverse();
+
+  // Better safe area handling
+  const safeInsets = useSafeAreaInsets();
+  const headerHeight = useHeaderHeight(); // remove if no header or not using @react-navigation
 
   if (!ready) {
     return (
@@ -342,70 +352,85 @@ export function ChatTab({
     );
   }
 
-  if (messages.length === 0) {
-    return (
-      <View style={[styles.chatBody, styles.chatEmptyOuter]}>
-        <View style={styles.chatEmptyWrap}>
-          <View style={styles.chatEmptyAvatarGlow}>
-            <AICoachAvatarIllustration />
-          </View>
-          <Text style={styles.chatEmptyTitle}>Your AI Career Coach</Text>
-          <Text style={styles.chatEmptySubtitle}>
-            Ask me anything about your resume, job search, salary negotiation,
-            or interview prep.
-          </Text>
-          <View style={styles.chatSuggestionList}>
-            {AI_STARTER_PROMPTS.map((prompt, idx) => (
-              <SuggestionChip
-                key={prompt}
-                prompt={prompt}
-                index={idx}
-                onSend={() => onSendPrompt(prompt)}
-                disabled={loading}
-              />
-            ))}
-          </View>
-        </View>
-        {loading && <TypingIndicator />}
-        <InputBar
-          input={input}
-          setInput={setInput}
-          onSend={onSend}
-          disabled={loading}
-          insetsBottom={insetsBottom}
-        />
-      </View>
-    );
-  }
+  const keyboardVerticalOffset =
+    Platform.OS === "ios" ? headerHeight + safeInsets.top : 0;
 
   return (
-    <View style={styles.chatBody}>
-      <FlatList
-        ref={listRef}
-        inverted
-        data={reversed}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        onContentSizeChange={() =>
-          listRef.current?.scrollToOffset({ offset: 0, animated: true })
-        }
-        renderItem={({ item, index }) => {
-          const older = reversed[index + 1];
-          const showRanklyLabel =
-            item.role === "assistant" && (!older || older.role !== "assistant");
-          return (
-            <MessageBubble item={item} showRanklyLabel={showRanklyLabel} />
-          );
-        }}
-      />
-      {loading && <TypingIndicator />}
-      <InputBar
-        input={input}
-        setInput={setInput}
-        onSend={onSend}
-        disabled={loading}
-        insetsBottom={insetsBottom}
-      />
-    </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={keyboardVerticalOffset}
+      enabled={true}
+    >
+      {messages.length === 0 ? (
+        // Empty state
+        <View style={[styles.chatBody, styles.chatEmptyOuter]}>
+          <View style={styles.chatEmptyWrap}>
+            <View style={styles.chatEmptyAvatarGlow}>
+              <AICoachAvatarIllustration />
+            </View>
+            <Text style={styles.chatEmptyTitle}>Your AI Career Coach</Text>
+            <Text style={styles.chatEmptySubtitle}>
+              Ask me anything about your resume, job search, salary negotiation,
+              or interview prep.
+            </Text>
+            <View style={styles.chatSuggestionList}>
+              {AI_STARTER_PROMPTS.map((prompt, idx) => (
+                <SuggestionChip
+                  key={prompt}
+                  prompt={prompt}
+                  index={idx}
+                  onSend={() => onSendPrompt(prompt)}
+                  disabled={loading}
+                />
+              ))}
+            </View>
+          </View>
+
+          {loading && <TypingIndicator />}
+
+          <InputBar
+            input={input}
+            setInput={setInput}
+            onSend={onSend}
+            disabled={loading}
+            insetsBottom={safeInsets.bottom} // use real safe area
+          />
+        </View>
+      ) : (
+        // Chat with messages
+        <View style={styles.chatBody}>
+          <FlatList
+            ref={listRef}
+            inverted
+            data={reversed}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            onContentSizeChange={() =>
+              listRef.current?.scrollToOffset({ offset: 0, animated: true })
+            }
+            renderItem={({ item, index }) => {
+              const older = reversed[index + 1];
+              const showRanklyLabel =
+                item.role === "assistant" &&
+                (!older || older.role !== "assistant");
+              return (
+                <MessageBubble item={item} showRanklyLabel={showRanklyLabel} />
+              );
+            }}
+          />
+
+          {loading && <TypingIndicator />}
+
+          <InputBar
+            input={input}
+            setInput={setInput}
+            onSend={onSend}
+            disabled={loading}
+            insetsBottom={safeInsets.bottom}
+          />
+        </View>
+      )}
+    </KeyboardAvoidingView>
   );
 }

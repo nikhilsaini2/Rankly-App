@@ -55,7 +55,6 @@ export default function ProfileScreen() {
 
   // Resume History state
   const [recentResumes, setRecentResumes] = useState<ResumeHistoryItem[]>([]);
-  const [resumesLoading, setResumesLoading] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -68,7 +67,6 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       const fetchRecentResumes = async () => {
-        setResumesLoading(true);
         try {
           let userId: string | undefined;
           const { data: sessionData } = await supabase.auth.getSession();
@@ -95,7 +93,6 @@ export default function ProfileScreen() {
         } catch {
           setRecentResumes([]);
         } finally {
-          setResumesLoading(false);
         }
       };
 
@@ -394,34 +391,8 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Content */}
-              {resumesLoading ? (
-                <View style={profileStyles.resumeLoadingRow}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                  <Text style={profileStyles.resumeLoadingText}>
-                    Loading...
-                  </Text>
-                </View>
-              ) : recentResumes.length === 0 ? (
-                <TouchableOpacity
-                  style={profileStyles.resumeEmptyCard}
-                  onPress={() => {
-                    // Navigate to ResumeBuilder
-                    navigation.navigate("ResumeBuilder");
-                  }}
-                >
-                  <Ionicons
-                    name="add-circle-outline"
-                    size={24}
-                    color={colors.textMuted}
-                  />
-                  <Text style={profileStyles.resumeEmptyText}>
-                    No resumes built yet
-                  </Text>
-                  <Text style={profileStyles.resumeEmptyAction}>
-                    Tap to build your first →
-                  </Text>
-                </TouchableOpacity>
+              {recentResumes.length === 0 ? (
+                <View />
               ) : (
                 <>
                   {recentResumes.map((item, index) => (

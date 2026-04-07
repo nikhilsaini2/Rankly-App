@@ -18,6 +18,7 @@ export type RootStackParamList = {
   };
   SalaryNegotiation: undefined;
   ResumeBuilder: undefined;
+  PdfViewer: { url: string; fileName: string };
 };
 
 export type RootTabParamList = {

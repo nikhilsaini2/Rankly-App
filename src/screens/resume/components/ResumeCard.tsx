@@ -11,6 +11,7 @@ import Reanimated, {
   withTiming,
 } from "react-native-reanimated";
 import { PressableScale } from "../../../components/atoms/PressableScale";
+import { getResumePublicUrl } from "../../../services/resume/resumeService";
 import { colors } from "../../../theme/color";
 import type { ResumeRow } from "../../../types/common.types";
 import { AtsScoreSummary } from "../../../types/common.types";
@@ -55,6 +56,25 @@ export function ResumeCard({
     transform: [{ translateY: (1 - anim.value) * 14 }],
   }));
 
+  const handleViewResume = async () => {
+    try {
+      const publicUrl = await getResumePublicUrl(item);
+      if (!publicUrl) {
+        console.error("Failed to get resume URL");
+        // Could show a toast or alert here
+        return;
+      }
+
+      rootNav?.navigate("PdfViewer", {
+        url: publicUrl,
+        fileName: item.fileName ?? item.title ?? "Resume.pdf",
+      });
+    } catch (error) {
+      console.error("Failed to view resume:", error);
+      // Could show a toast or alert here
+    }
+  };
+
   return (
     <Reanimated.View style={animStyle}>
       <View style={cardStyles.card}>
@@ -89,6 +109,36 @@ export function ResumeCard({
             <Text style={cardStyles.metaText}>
               {formatResumeDate(item.createdAt)}
             </Text>
+            {item.status && (
+              <>
+                <View style={cardStyles.metaDot} />
+                <View
+                  style={[
+                    cardStyles.statusPill,
+                    item.status === "analyzed"
+                      ? {
+                          backgroundColor: colors.success + "20",
+                          borderColor: colors.success + "40",
+                        }
+                      : {
+                          backgroundColor: colors.warning + "20",
+                          borderColor: colors.warning + "40",
+                        },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      cardStyles.statusText,
+                      item.status === "analyzed"
+                        ? { color: colors.success }
+                        : { color: colors.warning },
+                    ]}
+                  >
+                    {item.status === "analyzed" ? "Analyzed" : "Uploaded"}
+                  </Text>
+                </View>
+              </>
+            )}
             {score !== null && (
               <>
                 <View style={cardStyles.metaDot} />
@@ -123,6 +173,14 @@ export function ResumeCard({
           </View>
 
           <View style={cardStyles.actions}>
+            <PressableScale
+              style={cardStyles.viewBtn}
+              onPress={handleViewResume}
+            >
+              <Ionicons name="eye-outline" size={13} color={colors.accent} />
+              <Text style={cardStyles.viewBtnText}>View</Text>
+            </PressableScale>
+
             <PressableScale
               style={cardStyles.primaryBtn}
               onPress={() => onAnalyze(item.id)}

@@ -27,8 +27,12 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
   onBackToHistory,
 }) => (
   <ScrollView
-    style={resumeStyles.resultsScroll}
+    style={[
+      resumeStyles.resultsScroll,
+      { marginBottom: isHistoryView ? 0 : 50 },
+    ]}
     contentContainerStyle={resumeStyles.resultsContent}
+    bounces={false}
   >
     {/* History View Banner */}
     {isHistoryView && (

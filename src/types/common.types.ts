@@ -96,6 +96,8 @@ export type ResumeRow = {
   fileUrl: string | null;
   fileName: string | null;
   rawText: string | null;
+  extractedText: string | null; // New field for extracted text
+  status: "uploaded" | "analyzed"; // New field for resume status
   latestScore: number | null;
   latestScoreId: string | null;
   isPrimary: boolean;

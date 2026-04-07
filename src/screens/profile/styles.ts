@@ -435,8 +435,7 @@ export const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.06)",
-    marginHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 8,
     overflow: "hidden",
   },
   sectionHeader: {

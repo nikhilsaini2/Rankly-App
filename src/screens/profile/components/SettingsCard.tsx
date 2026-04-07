@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import React from "react";
-import { Switch, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { colors } from "../../../theme/color";
 import { styles } from "../styles";
@@ -14,19 +14,6 @@ interface SettingsCardProps {
 export function SettingsCard({ notif, onToggleNotif }: SettingsCardProps) {
   return (
     <Animated.View style={[styles.settingsCard]}>
-      <View style={styles.settingsRow}>
-        <View style={[styles.settingsIconBox, styles.settingsIconNotif]}>
-          <Feather name="bell" size={16} color={colors.primary} />
-        </View>
-        <Text style={styles.settingsLabel}>Notifications</Text>
-        <Switch
-          value={notif}
-          onValueChange={onToggleNotif}
-          trackColor={{ false: colors.surfaceAlt, true: colors.primary }}
-          thumbColor={colors.textPrimary}
-        />
-      </View>
-      <View style={styles.settingsDivider} />
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={() =>

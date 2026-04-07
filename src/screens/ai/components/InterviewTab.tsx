@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -255,32 +256,6 @@ function SetupPhase({
           )}
         </LinearGradient>
       </PressableScale>
-
-      {/* Voice Mode button */}
-      <TouchableOpacity
-        style={[
-          voiceStyles.voiceBtn,
-          !setupRole.trim() && voiceStyles.voiceBtnDisabled,
-        ]}
-        onPress={() => {
-          if (!setupRole.trim()) return;
-          const rootNav = navigation.getParent();
-          rootNav?.navigate("VoiceInterview", {
-            role: setupRole.trim(),
-            difficulty,
-            sessionType,
-            questionCount: numQ,
-          });
-        }}
-        disabled={!setupRole.trim()}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="mic-outline" size={18} color={colors.accent} />
-        <Text style={voiceStyles.voiceBtnTxt}>Voice Mode</Text>
-        <View style={voiceStyles.newBadge}>
-          <Text style={voiceStyles.newBadgeTxt}>NEW</Text>
-        </View>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -332,106 +307,117 @@ function LivePhase({
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={0}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
     >
-      <View style={[styles.liveBody, { paddingBottom: 24 + insetsBottom }]}>
-        <View style={styles.progressHeader}>
-          <Text style={styles.progressText}>
-            Question {iv.index + 1} of {iv.questions.length}
-          </Text>
-          <TouchableOpacity style={styles.endBtn} onPress={() => {}}>
-            <Text style={styles.endBtnText}>End</Text>
-          </TouchableOpacity>
-        </View>
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={{ paddingBottom: 40 + insetsBottom }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.liveBody, { paddingBottom: 24 + insetsBottom }]}>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressText}>
+              Question {iv.index + 1} of {iv.questions.length}
+            </Text>
+            <TouchableOpacity style={styles.endBtn} onPress={() => {}}>
+              <Text style={styles.endBtnText}>End</Text>
+            </TouchableOpacity>
+          </View>
 
-        <View style={styles.progressTrack}>
-          {progressWidth > 0 && (
+          <View style={styles.progressTrack}>
+            {progressWidth > 0 && (
+              <LinearGradient
+                colors={[colors.primary, colors.accent]}
+                style={[
+                  styles.progressFillGrad,
+                  { width: `${progressWidth}%` },
+                ]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              />
+            )}
+          </View>
+
+          <View style={styles.questionCard}>
             <LinearGradient
-              colors={[colors.primary, colors.accent]}
-              style={[styles.progressFillGrad, { width: `${progressWidth}%` }]}
+              colors={[colors.primary, colors.secondary]}
+              style={styles.questionAccentBar}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+              end={{ x: 0, y: 1 }}
             />
-          )}
-        </View>
-
-        <View style={styles.questionCard}>
-          <LinearGradient
-            colors={[colors.primary, colors.secondary]}
-            style={styles.questionAccentBar}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-          />
-          <Text style={styles.questionText}>{q.question}</Text>
-          <View style={styles.metaRow}>
-            <View style={styles.metaChipPrimary}>
-              <Text style={styles.metaChipTextPrimary}>{typeLabel}</Text>
-            </View>
-            <View
-              style={[
-                styles.metaChip,
-                { backgroundColor: diffBg, borderColor: diffBorder },
-              ]}
-            >
-              <Text style={[styles.metaChipText, { color: diffText }]}>
-                {diffLabel}
-              </Text>
+            <Text style={styles.questionText}>{q.question}</Text>
+            <View style={styles.metaRow}>
+              <View style={styles.metaChipPrimary}>
+                <Text style={styles.metaChipTextPrimary}>{typeLabel}</Text>
+              </View>
+              <View
+                style={[
+                  styles.metaChip,
+                  { backgroundColor: diffBg, borderColor: diffBorder },
+                ]}
+              >
+                <Text style={[styles.metaChipText, { color: diffText }]}>
+                  {diffLabel}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        <TextInput
-          multiline
-          numberOfLines={6}
-          placeholder="Type your answer here..."
-          placeholderTextColor={colors.textMuted}
-          value={answer}
-          onChangeText={setAnswer}
-          style={[
-            styles.answerInput,
-            answerFocused && styles.answerInputFocused,
-          ]}
-          textAlignVertical="top"
-          onFocus={() => setAnswerFocused(true)}
-          onBlur={() => setAnswerFocused(false)}
-        />
-
-        <View style={styles.actionRow}>
-          <PressableScale
-            style={styles.skipButton}
-            onPress={async () => {
-              setAnswer("");
-              await iv.submitAnswer("(skipped)");
-            }}
-            disabled={iv.busy}
-          >
-            <Text style={styles.skipText}>Skip</Text>
-          </PressableScale>
-          <PressableScale
+          <TextInput
+            multiline
+            numberOfLines={6}
+            placeholder="Type your answer here..."
+            placeholderTextColor={colors.textMuted}
+            value={answer}
+            onChangeText={setAnswer}
             style={[
-              styles.submitButton,
-              (!answer.trim() || iv.busy) && styles.submitButtonDisabled,
+              styles.answerInput,
+              answerFocused && styles.answerInputFocused,
             ]}
-            onPress={async () => {
-              const a = answer.trim();
-              if (!a || iv.busy) return;
-              await iv.submitAnswer(a);
-              setAnswer("");
-            }}
-            disabled={iv.busy || !answer.trim()}
-          >
-            <LinearGradient
-              colors={[colors.primary, colors.primaryDark]}
-              style={styles.submitGrad}
+            textAlignVertical="top"
+            onFocus={() => setAnswerFocused(true)}
+            onBlur={() => setAnswerFocused(false)}
+          />
+
+          <View style={styles.actionRow}>
+            <PressableScale
+              style={styles.skipButton}
+              onPress={async () => {
+                setAnswer("");
+                await iv.submitAnswer("(skipped)");
+              }}
+              disabled={iv.busy}
             >
-              <Text style={styles.submitText}>
-                {iv.busy ? "Evaluating…" : "Submit Answer"}
-              </Text>
-            </LinearGradient>
-          </PressableScale>
+              <Text style={styles.skipText}>Skip</Text>
+            </PressableScale>
+            <PressableScale
+              style={[
+                styles.submitButton,
+                (!answer.trim() || iv.busy) && styles.submitButtonDisabled,
+              ]}
+              onPress={async () => {
+                Keyboard.dismiss();
+                const a = answer.trim();
+                if (!a || iv.busy) return;
+                await iv.submitAnswer(a);
+                setAnswer("");
+              }}
+              disabled={iv.busy || !answer.trim()}
+            >
+              <LinearGradient
+                colors={[colors.primary, colors.primaryDark]}
+                style={styles.submitGrad}
+              >
+                <Text style={styles.submitText}>
+                  {iv.busy ? "Evaluating…" : "Submit Answer"}
+                </Text>
+              </LinearGradient>
+            </PressableScale>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

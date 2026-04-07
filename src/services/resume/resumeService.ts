@@ -63,6 +63,8 @@ export async function fetchResumeScreenData(): Promise<ResumeScreenData> {
       fileUrl: r.file_url as string | null,
       fileName: r.file_name as string | null,
       rawText: r.raw_text as string | null,
+      extractedText: r.extracted_text as string | null,
+      status: (r.status as "uploaded" | "analyzed") || "uploaded",
       latestScore: null, // Not using cache anymore
       latestScoreId: null, // Not using cache anymore
       isPrimary: Boolean(r.is_primary),
@@ -84,4 +86,21 @@ export async function fetchResumeScreenData(): Promise<ResumeScreenData> {
   }
 
   return { resumes, scores };
+}
+
+export async function getResumePublicUrl(
+  resume: ResumeRow,
+): Promise<string | null> {
+  if (!resume.fileUrl) return null;
+
+  try {
+    const { data } = supabase.storage
+      .from("resumes")
+      .getPublicUrl(resume.fileUrl);
+
+    return data.publicUrl;
+  } catch (error) {
+    console.error("[getResumePublicUrl] Error getting public URL:", error);
+    return null;
+  }
 }

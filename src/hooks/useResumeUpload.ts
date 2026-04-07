@@ -123,22 +123,14 @@ Return extracted text content only.
       if (upErr) throw upErr;
       setProgress(0.8);
 
-      // Extract text from PDF for ATS scoring
-      console.log("[uploadResume] Extracting text from PDF...");
-      console.log("[uploadResume] File URI:", file.uri);
-
-      const extractedText = await extractTextFromPdf(file.uri);
-
-      console.log("[uploadResume] Extraction result:", {
-        length: extractedText.length,
-        preview:
-          extractedText.slice(0, 100) +
-          (extractedText.length > 100 ? "..." : ""),
-        isEmpty: !extractedText.trim(),
-      });
+      // Get public URL for the uploaded file
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from(BUCKET).getPublicUrl(path);
 
       const title = name.replace(/\.pdf$/i, "") || "My Resume";
 
+      // Insert resume record WITHOUT text extraction - status is 'uploaded'
       const { data: row, error: insErr } = await supabase
         .from("resumes")
         .insert({
@@ -146,7 +138,9 @@ Return extracted text content only.
           title,
           file_url: path,
           file_name: name,
-          raw_text: extractedText,
+          raw_text: null, // Keep null for backward compatibility
+          extracted_text: null, // New field - null until analyzed
+          status: "uploaded", // New field - uploaded status
         })
         .select()
         .single();
@@ -200,6 +194,8 @@ function mapResume(r: Record<string, unknown>): ResumeRow {
     fileUrl: r.file_url as string | null,
     fileName: r.file_name as string | null,
     rawText: r.raw_text as string | null,
+    extractedText: r.extracted_text as string | null,
+    status: (r.status as "uploaded" | "analyzed") || "uploaded",
     latestScore: r.latest_score as number | null,
     latestScoreId: r.latest_score_id as string | null,
     isPrimary: Boolean(r.is_primary),

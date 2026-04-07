@@ -153,7 +153,6 @@ export const styles = StyleSheet.create({
     marginBottom: 20,
   },
   emptyBadge: {
-    flexDirection: "row",
     alignItems: "center",
     gap: 6,
     alignSelf: "center",

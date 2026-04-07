@@ -697,7 +697,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>

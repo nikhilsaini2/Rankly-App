@@ -196,6 +196,7 @@ export default function ResumeBuilderScreen() {
     <KeyboardAvoidingView
       style={resumeStyles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
     >
       {/* Header */}
       <View style={resumeStyles.header}>
@@ -210,7 +211,7 @@ export default function ResumeBuilderScreen() {
       </View>
 
       <ScrollView
-        style={resumeStyles.scrollContent}
+        style={[resumeStyles.scrollContent, { marginBottom: 20 }]}
         contentContainerStyle={resumeStyles.scrollContentContainer}
         showsVerticalScrollIndicator={false}
       >
