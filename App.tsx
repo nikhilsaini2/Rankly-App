@@ -20,9 +20,8 @@ const AppProviders = ({ children }: { children: React.ReactNode }) => (
 
 export default function App() {
   useEffect(() => {
-    NavigationBar.setStyle("light");
+    NavigationBar.setStyle("dark");
   }, []);
-
   return (
     <AppProviders>
       <NavigationContainer>

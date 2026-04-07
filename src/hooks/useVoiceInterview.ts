@@ -54,27 +54,62 @@ export function useVoiceInterview(user: User | null) {
   const questionsRef = useRef<string[]>([]);
   const resultsRef = useRef<VoiceResult[]>([]);
   const roleRef = useRef("");
-  const handleAnswerSubmitRef = useRef<(transcript: string) => void>(() => {});
-  const currentTranscriptRef = useRef("");
+  const phaseRef = useRef<VoicePhase>("idle");
+  const transcriptRef = useRef("");
+  const submittedRef = useRef(false);
+  const ignoreSttRef = useRef(true); // starts as true — no events processed until session explicitly starts
+  const sessionActiveRef = useRef(false); // true only after startSession is called
+  const handleAnswerSubmitRef = useRef<(t: string) => Promise<void>>(
+    async () => {},
+  );
+
+  const speak = useCallback((text: string, onDone?: () => void) => {
+    Speech.stop();
+    Speech.speak(text, {
+      language: "en-US",
+      pitch: 1.0,
+      rate: 0.95,
+      onDone,
+      onError: () => onDone?.(),
+    });
+  }, []);
 
   useSpeechRecognitionEvent("result", (event) => {
+    if (ignoreSttRef.current || !sessionActiveRef.current) return;
     const transcript = event.results[0]?.transcript ?? "";
-    currentTranscriptRef.current = transcript;
-
-    // Always update live transcript for interim results
+    transcriptRef.current = transcript;
     setState((s) => ({ ...s, liveTranscript: transcript }));
   });
 
-  useSpeechRecognitionEvent("error", (event) => {
-    if (event.error === "aborted") {
-      // Silently ignore - this happens when stopListeningNow() is called
+  useSpeechRecognitionEvent("end", () => {
+    if (ignoreSttRef.current || !sessionActiveRef.current) return;
+    if (submittedRef.current) return;
+    if (phaseRef.current !== "listening" && phaseRef.current !== "processing")
       return;
-    }
-    if (event.error === "no-speech") {
-      // Allow user to retry by going back to waitingForUser
+
+    const transcript = transcriptRef.current.trim();
+
+    if (!transcript) {
+      phaseRef.current = "waitingForUser";
       setState((s) => ({ ...s, phase: "waitingForUser" }));
       return;
     }
+
+    submittedRef.current = true;
+    phaseRef.current = "processing";
+    setState((s) => ({ ...s, phase: "processing" }));
+    handleAnswerSubmitRef.current(transcript);
+  });
+
+  useSpeechRecognitionEvent("error", (event) => {
+    if (ignoreSttRef.current || !sessionActiveRef.current) return;
+    if (event.error === "aborted") return;
+    if (event.error === "no-speech") {
+      phaseRef.current = "waitingForUser";
+      setState((s) => ({ ...s, phase: "waitingForUser" }));
+      return;
+    }
+    phaseRef.current = "idle";
     setState((s) => ({
       ...s,
       phase: "idle",
@@ -82,19 +117,12 @@ export function useVoiceInterview(user: User | null) {
     }));
   });
 
-  const speak = useCallback((text: string, onDone?: () => void) => {
-    Speech.stop();
-    Speech.speak(text, {
-      language: "en-US",
-      pitch: 1.0,
-      rate: 0.9,
-      onDone,
-      onError: () => onDone?.(),
-    });
-  }, []);
-
   const startListening = useCallback(() => {
-    currentTranscriptRef.current = ""; // Clear previous transcript
+    if (!sessionActiveRef.current) return;
+    transcriptRef.current = "";
+    submittedRef.current = false;
+    ignoreSttRef.current = false;
+    phaseRef.current = "listening";
     setState((s) => ({ ...s, phase: "listening", liveTranscript: "" }));
     ExpoSpeechRecognitionModule.start({
       lang: "en-US",
@@ -103,56 +131,40 @@ export function useVoiceInterview(user: User | null) {
       requiresOnDeviceRecognition: false,
       androidIntentOptions: { EXTRA_LANGUAGE_MODEL: "web_search" },
     });
-  }, []);
 
-  const stopListening = useCallback(() => {
-    ExpoSpeechRecognitionModule.stop();
+    setTimeout(() => {
+      if (!submittedRef.current && transcriptRef.current.trim()) {
+        submittedRef.current = true;
+        handleAnswerSubmitRef.current(transcriptRef.current.trim());
+      }
+    }, 500);
   }, []);
 
   const stopListeningNow = useCallback(() => {
+    if (phaseRef.current !== "listening") return;
+    phaseRef.current = "processing";
     setState((s) => ({ ...s, phase: "processing" }));
     ExpoSpeechRecognitionModule.stop();
-
-    // Submit the current transcript when user manually stops
-    setTimeout(() => {
-      const transcript = currentTranscriptRef.current;
-      if (transcript.trim()) {
-        handleAnswerSubmitRef.current?.(transcript);
-      } else {
-        setState((s) => ({ ...s, phase: "waitingForUser" }));
-      }
-    }, 100); // Small delay to ensure stop() completes
   }, []);
-
-  const askQuestion = useCallback(
-    (question: string) => {
-      currentTranscriptRef.current = ""; // Clear previous transcript
-      setState((s) => ({ ...s, phase: "speaking", liveTranscript: "" }));
-      speak(question, () => {
-        setState((s) => ({ ...s, phase: "waitingForUser" }));
-      });
-    },
-    [speak],
-  );
 
   const finishSession = useCallback(async () => {
     const results = resultsRef.current;
-    const avg = Math.round(
-      (results.reduce((sum, r) => sum + r.score, 0) / results.length) * 10,
-    );
+    const avg =
+      results.length === 0
+        ? 0
+        : Math.round(
+            (results.reduce((sum, r) => sum + r.score, 0) / results.length) *
+              10,
+          );
 
-    setState((s) => ({
-      ...s,
-      phase: "complete",
-      sessionScore: avg,
-      results: results,
-    }));
+    phaseRef.current = "complete";
+    setState((s) => ({ ...s, phase: "complete", sessionScore: avg, results }));
 
-    const msg =
+    speak(
       avg >= 70
         ? `Great session! You scored ${avg} out of 100.`
-        : `Session complete. You scored ${avg} out of 100. Review the feedback to improve.`;
-    speak(msg);
+        : `Session complete. You scored ${avg} out of 100. Review the feedback to improve.`,
+    );
 
     if (!user?.id) return;
 
@@ -185,14 +197,29 @@ export function useVoiceInterview(user: User | null) {
           })),
         );
       }
-    } catch {
-      // persistence failure is non-fatal
-    }
+    } catch {}
   }, [user, speak]);
+
+  const askQuestion = useCallback(
+    (question: string) => {
+      transcriptRef.current = "";
+      submittedRef.current = false;
+      ignoreSttRef.current = false;
+      phaseRef.current = "speaking";
+      setState((s) => ({ ...s, phase: "speaking", liveTranscript: "" }));
+      speak(question, () => {
+        if (ignoreSttRef.current) return;
+        phaseRef.current = "waitingForUser";
+        setState((s) => ({ ...s, phase: "waitingForUser" }));
+      });
+    },
+    [speak],
+  );
 
   const handleAnswerSubmit = useCallback(
     async (transcript: string) => {
       if (!transcript.trim()) {
+        phaseRef.current = "waitingForUser";
         setState((s) => ({ ...s, phase: "waitingForUser" }));
         return;
       }
@@ -200,10 +227,19 @@ export function useVoiceInterview(user: User | null) {
       const idx = indexRef.current;
       const questions = questionsRef.current;
 
+      if (!questions[idx]) {
+        phaseRef.current = "waitingForUser";
+        setState((s) => ({ ...s, phase: "waitingForUser" }));
+        return;
+      }
+
+      phaseRef.current = "processing";
       setState((s) => ({ ...s, phase: "processing" }));
       Speech.stop();
 
       try {
+        const start = Date.now();
+
         const raw = await generateGeminiText(
           `You are an expert interview coach evaluating a candidate's spoken answer.
 Role: ${roleRef.current}
@@ -214,10 +250,17 @@ Return JSON only — no markdown, no preamble:
 Scoring: 9-10=excellent, 7-8=good, 5-6=adequate, 3-4=weak, 0-2=poor.`,
         );
 
+        const elapsed = Date.now() - start;
+        if (elapsed < 1200) {
+          await new Promise((r) => setTimeout(r, 1200 - elapsed));
+        }
+
+        if (ignoreSttRef.current) return;
+
         const parsed = parseGeminiJson<{ score: number; feedback: string }>(
           raw,
         );
-        const score = parsed?.score ?? 5;
+        const score = Math.max(0, Math.min(10, parsed?.score ?? 5));
         const feedback =
           parsed?.feedback ??
           "Good attempt. Try being more specific next time.";
@@ -230,14 +273,11 @@ Scoring: 9-10=excellent, 7-8=good, 5-6=adequate, 3-4=weak, 0-2=poor.`,
           score,
         };
 
-        // STEP 1: Save result
         resultsRef.current = [...resultsRef.current, result];
-
-        // STEP 2: Increment index BEFORE speak()
         const nextIndex = idx + 1;
         indexRef.current = nextIndex;
 
-        // STEP 3: Set phase to 'feedback' with updated results and index
+        phaseRef.current = "feedback";
         setState((s) => ({
           ...s,
           phase: "feedback",
@@ -245,28 +285,27 @@ Scoring: 9-10=excellent, 7-8=good, 5-6=adequate, 3-4=weak, 0-2=poor.`,
           currentIndex: nextIndex,
         }));
 
-        // STEP 4: Speak feedback with onDone callback using captured nextIndex
         speak(feedback, () => {
+          if (ignoreSttRef.current) return;
           if (nextIndex < questions.length) {
-            // More questions remain — ask the next one
             askQuestion(questions[nextIndex]);
           } else {
-            // All questions done — finish session
             finishSession();
           }
         });
       } catch {
+        if (ignoreSttRef.current) return;
+        phaseRef.current = "idle";
         setState((s) => ({
           ...s,
           phase: "idle",
-          error: "Could not evaluate answer. Check your connection.",
+          error: "Could not evaluate answer. Please try again.",
         }));
       }
     },
     [speak, askQuestion, finishSession],
   );
 
-  // Update ref to prevent stale closure in STT listener
   useEffect(() => {
     handleAnswerSubmitRef.current = handleAnswerSubmit;
   }, [handleAnswerSubmit]);
@@ -278,11 +317,16 @@ Scoring: 9-10=excellent, 7-8=good, 5-6=adequate, 3-4=weak, 0-2=poor.`,
       sessionType: "behavioral" | "technical" | "mixed",
       questionCount: number,
     ) => {
+      sessionActiveRef.current = true;
+      ignoreSttRef.current = false;
+      submittedRef.current = false;
       indexRef.current = 0;
       resultsRef.current = [];
       questionsRef.current = [];
       roleRef.current = role;
+      transcriptRef.current = "";
 
+      phaseRef.current = "generating";
       setState({
         phase: "generating",
         questions: [],
@@ -298,15 +342,12 @@ Scoring: 9-10=excellent, 7-8=good, 5-6=adequate, 3-4=weak, 0-2=poor.`,
         const perm =
           await ExpoSpeechRecognitionModule.requestPermissionsAsync();
         if (!perm.granted) {
-          setState((s) => ({
-            ...s,
-            phase: "idle",
-            permissionDenied: true,
-            error: null,
-          }));
+          phaseRef.current = "idle";
+          setState((s) => ({ ...s, phase: "idle", permissionDenied: true }));
           return;
         }
       } catch {
+        phaseRef.current = "idle";
         setState((s) => ({
           ...s,
           phase: "idle",
@@ -316,18 +357,27 @@ Scoring: 9-10=excellent, 7-8=good, 5-6=adequate, 3-4=weak, 0-2=poor.`,
       }
 
       try {
+        const start = Date.now();
         const raw = await generateGeminiText(
           `Generate exactly ${questionCount} interview questions for a ${role} position.
 Difficulty: ${difficulty}
-Type: ${sessionType} (behavioral=STAR method, technical=practical knowledge, mixed=both)
+Type: ${sessionType}
 Return a JSON array only — no markdown, no preamble:
 ["question 1","question 2",...]
 Make questions conversational — they will be read aloud. No bullet points or special characters.`,
         );
 
+        const elapsed = Date.now() - start;
+        if (elapsed < 1200) {
+          await new Promise((r) => setTimeout(r, 1200 - elapsed));
+        }
+
+        if (ignoreSttRef.current) return;
+
         const questions = parseGeminiJson<string[]>(raw);
 
         if (!questions?.length) {
+          phaseRef.current = "idle";
           setState((s) => ({
             ...s,
             phase: "idle",
@@ -340,10 +390,18 @@ Make questions conversational — they will be read aloud. No bullet points or s
         setState((s) => ({ ...s, questions }));
 
         speak(
-          `Welcome to your mock interview for the ${role} position. I will ask you ${questionCount} questions. Speak your answer clearly after each question. Let's begin.`,
-          () => setTimeout(() => askQuestion(questions[0]), 400),
+          `Starting your ${role} interview. ${questionCount} questions. Answer clearly after each one.`,
+          () => {
+            if (ignoreSttRef.current) return;
+            setTimeout(() => {
+              if (!ignoreSttRef.current && questionsRef.current.length > 0) {
+                askQuestion(questionsRef.current[0]);
+              }
+            }, 300);
+          },
         );
       } catch {
+        phaseRef.current = "idle";
         setState((s) => ({
           ...s,
           phase: "idle",
@@ -354,47 +412,58 @@ Make questions conversational — they will be read aloud. No bullet points or s
     [speak, askQuestion],
   );
 
-  const submitManually = useCallback(() => {
-    stopListening();
-    if (state.liveTranscript.trim()) {
-      handleAnswerSubmit(state.liveTranscript);
-    }
-  }, [stopListening, state.liveTranscript, handleAnswerSubmit]);
-
   const skipQuestion = useCallback(() => {
+    submittedRef.current = true;
+    ignoreSttRef.current = true;
     Speech.stop();
-    stopListening();
+    try {
+      ExpoSpeechRecognitionModule.abort();
+    } catch {}
 
     const idx = indexRef.current;
     const questions = questionsRef.current;
 
     const skipped: VoiceResult = {
       id: `q-${idx}`,
-      question: questions[idx],
+      question: questions[idx] ?? "",
       userAnswer: "[Skipped]",
       feedback: "Question was skipped.",
       score: 0,
     };
 
-    const newResults = [...resultsRef.current, skipped];
-    resultsRef.current = newResults;
+    resultsRef.current = [...resultsRef.current, skipped];
 
-    if (idx >= questions.length - 1) {
-      finishSession();
-    } else {
-      const next = idx + 1;
-      indexRef.current = next;
-      setState((s) => ({ ...s, currentIndex: next, results: newResults }));
-      askQuestion(questions[next]);
-    }
-  }, [stopListening, finishSession, askQuestion]);
+    setTimeout(() => {
+      ignoreSttRef.current = false;
+      submittedRef.current = false;
+      if (idx >= questions.length - 1) {
+        finishSession();
+      } else {
+        const next = idx + 1;
+        indexRef.current = next;
+        setState((s) => ({
+          ...s,
+          currentIndex: next,
+          results: resultsRef.current,
+        }));
+        askQuestion(questions[next]);
+      }
+    }, 200);
+  }, [finishSession, askQuestion]);
 
   const stopSession = useCallback(() => {
+    sessionActiveRef.current = false;
+    ignoreSttRef.current = true;
+    submittedRef.current = true;
     Speech.stop();
-    stopListening();
+    try {
+      ExpoSpeechRecognitionModule.abort();
+    } catch {}
     indexRef.current = 0;
     resultsRef.current = [];
     questionsRef.current = [];
+    transcriptRef.current = "";
+    phaseRef.current = "idle";
     setState({
       phase: "idle",
       questions: [],
@@ -405,7 +474,7 @@ Make questions conversational — they will be read aloud. No bullet points or s
       error: null,
       permissionDenied: false,
     });
-  }, [stopListening]);
+  }, []);
 
   const dismissError = useCallback(() => {
     setState((s) => ({ ...s, error: null }));
@@ -416,7 +485,6 @@ Make questions conversational — they will be read aloud. No bullet points or s
     startSession,
     startListening,
     stopListeningNow,
-    submitManually,
     skipQuestion,
     stopSession,
     dismissError,

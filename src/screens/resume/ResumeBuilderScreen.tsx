@@ -200,7 +200,7 @@ export default function ResumeBuilderScreen() {
       {/* Header */}
       <View style={resumeStyles.header}>
         <TouchableOpacity
-          style={{ position: "absolute", marginLeft: 18 }}
+          style={{ position: "absolute", marginLeft: 18, zIndex: 10 }}
           onPress={() => resume.handleBack(() => navigation.goBack())}
         >
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />

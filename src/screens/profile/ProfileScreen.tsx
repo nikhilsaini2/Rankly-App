@@ -510,13 +510,6 @@ export default function ProfileScreen() {
             <DangerZone appVersion={appVersion} />
           </>
         )}
-
-        {!editing && (
-          <>
-            <SettingsCard notif={notif} onToggleNotif={onToggleNotif} />
-            <DangerZone appVersion={appVersion} />
-          </>
-        )}
       </ScrollView>
 
       {editing && (
