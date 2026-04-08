@@ -1,6 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-let currentTheme = "dark";
+// This will be updated by the theme context
+let currentTheme: "dark" | "light" = "dark";
+
+export const updateThemeColors = (theme: "dark" | "light") => {
+  currentTheme = theme;
+};
 
 const loadSavedTheme = async () => {
   try {

@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import React from "react";
-import { Switch, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useTheme } from "../../../context/themeContext";
 import { colors } from "../../../theme/color";
@@ -59,7 +59,7 @@ export function SettingsCard({ notif, onToggleNotif }: SettingsCardProps) {
 
       <View style={styles.settingsDivider} />
 
-      <View style={styles.settingsRow}>
+      {/* <View style={styles.settingsRow}>
         <View style={[styles.settingsIconBox, styles.settingsIconTheme]}>
           <Feather name="moon" size={16} color={colors.textSecondary} />
         </View>
@@ -70,7 +70,7 @@ export function SettingsCard({ notif, onToggleNotif }: SettingsCardProps) {
           trackColor={{ false: "#767577", true: "#8B5CF6" }}
           thumbColor={theme === "dark" ? "#FAF9FF" : "#f4f3f4"}
         />
-      </View>
+      </View> */}
     </Animated.View>
   );
 }

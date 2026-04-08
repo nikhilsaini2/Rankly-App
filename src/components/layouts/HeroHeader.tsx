@@ -69,7 +69,6 @@ const heroStyles = StyleSheet.create({
   heroContainer: {
     overflow: "hidden",
     position: "relative",
-    marginTop: 8,
     marginBottom: 20,
     paddingBottom: 4,
   },
