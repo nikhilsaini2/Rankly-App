@@ -48,6 +48,7 @@ function getLatestAtsScore(resume: ResumeRow): AtsScoreSummary | null {
 }
 
 export default function ResumeScreen() {
+  const needsReload = useRef(false);
   const insets = useSafeAreaInsets();
   const toast = useToast();
   const { user } = useProfile();
@@ -96,7 +97,13 @@ export default function ResumeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      void load();
+      if (!didInitialLoad.current) {
+        didInitialLoad.current = true;
+        void load();
+      } else if (needsReload.current) {
+        needsReload.current = false;
+        void load();
+      }
     }, [load]),
   );
 
@@ -114,6 +121,7 @@ export default function ResumeScreen() {
       if (!file) return;
       await uploadResume(file);
       toast("Resume uploaded successfully", "success");
+      needsReload.current = true;
       load();
     } catch (e) {
       toast(e instanceof Error ? e.message : "Upload failed", "error");
@@ -130,6 +138,7 @@ export default function ResumeScreen() {
         jobDescription.trim() || undefined,
       );
       toast("ATS score ready", "success");
+      needsReload.current = true;
       await load();
       await new Promise((r) => setTimeout(r, 100));
       if (mapped) {
@@ -158,6 +167,7 @@ export default function ResumeScreen() {
             try {
               await deleteResume(item.id, item.fileUrl);
               toast("Resume removed", "success");
+              needsReload.current = true;
               load();
             } catch {
               toast("Delete failed", "error");
