@@ -140,7 +140,7 @@ export default function AtsScoreScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingTop: insets.top,
+          paddingTop: insets.top + 20,
           paddingBottom: bottomInset,
         }}
         showsVerticalScrollIndicator={false}
