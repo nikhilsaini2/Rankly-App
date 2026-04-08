@@ -109,7 +109,7 @@ export default function AIScreen() {
             onSendPrompt={(p) => {
               if (!chat.loading) void chat.send(p);
             }}
-            insetsBottom={3}
+            insetsBottom={insets.bottom}
           />
         ) : (
           <InterviewTab
