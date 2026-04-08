@@ -167,7 +167,6 @@ export default function ResumeScreen() {
             try {
               await deleteResume(item.id, item.fileUrl);
               toast("Resume removed", "success");
-              needsReload.current = true;
               load();
             } catch {
               toast("Delete failed", "error");
