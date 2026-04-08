@@ -13,7 +13,7 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
   return (
     <ScrollView
       style={styles.container}
-      bounces={false}
+      // bounces={false}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 50 }}
     >

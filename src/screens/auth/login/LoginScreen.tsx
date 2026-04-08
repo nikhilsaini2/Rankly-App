@@ -16,6 +16,7 @@ import {
   View,
 } from "react-native";
 
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppName from "../../../components/atoms/AppName";
 import { colors } from "../../../theme/color";
 import { loginSchema } from "../../../validation/auth.schema";
@@ -29,6 +30,7 @@ import {
 import type { AuthScreenProps } from "../../../types/navigation.types";
 
 const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
+  const insets = useSafeAreaInsets();
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
 
@@ -116,7 +118,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
           />
 
           <ScrollView
-            contentContainerStyle={{ flexGrow: 1 }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             bounces={false}

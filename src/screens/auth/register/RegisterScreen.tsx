@@ -16,6 +16,7 @@ import {
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppName from "../../../components/atoms/AppName";
 import { roles } from "../../../constants/all";
 import {
@@ -30,6 +31,7 @@ import { RegisterSchema } from "../../../validation/auth.schema";
 import { styles } from "./styles";
 
 const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
+  const insets = useSafeAreaInsets();
   const firstNameRef = useRef<TextInput>(null);
   const lastNameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
@@ -113,7 +115,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
           />
 
           <ScrollView
-            contentContainerStyle={{ flexGrow: 1 }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             bounces={false}
