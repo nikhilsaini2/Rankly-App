@@ -12,7 +12,7 @@ export const TabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { marginBottom: insets.bottom + 10 }]}>
+    <View style={[styles.container, { marginBottom: insets.bottom }]}>
       {TABS.map((tab) => {
         const isFocused = currentRoute === tab.name;
 

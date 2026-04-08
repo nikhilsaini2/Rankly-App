@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   FlatList,
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
@@ -356,12 +355,7 @@ export function ChatTab({
     Platform.OS === "ios" ? headerHeight + safeInsets.top : 0;
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={keyboardVerticalOffset}
-      enabled={true}
-    >
+    <View style={{ flex: 1 }}>
       {messages.length === 0 ? (
         // Empty state
         <View style={[styles.chatBody, styles.chatEmptyOuter]}>
@@ -394,7 +388,7 @@ export function ChatTab({
             setInput={setInput}
             onSend={onSend}
             disabled={loading}
-            insetsBottom={safeInsets.bottom} // use real safe area
+            insetsBottom={safeInsets.bottom}
           />
         </View>
       ) : (
@@ -427,10 +421,10 @@ export function ChatTab({
             setInput={setInput}
             onSend={onSend}
             disabled={loading}
-            insetsBottom={safeInsets.bottom}
+            insetsBottom={0}
           />
         </View>
       )}
-    </KeyboardAvoidingView>
+    </View>
   );
 }
