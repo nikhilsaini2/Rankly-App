@@ -1,7 +1,5 @@
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { NavigationContainer } from "@react-navigation/native";
-import * as NavigationBar from "expo-navigation-bar";
-import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ToastProvider } from "./src/components/atoms/Toast";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
@@ -19,10 +17,6 @@ const AppProviders = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function App() {
-  useEffect(() => {
-    NavigationBar.setStyle("dark");
-  }, []);
-
   return (
     <AppProviders>
       <NavigationContainer>
