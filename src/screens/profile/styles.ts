@@ -540,6 +540,9 @@ export const styles = StyleSheet.create({
     color: colors.accent,
     fontWeight: "600",
   },
+  settingsIconTheme: {
+    backgroundColor: "rgba(139, 92, 246, 0.15)",
+  },
   resumeLoadingRow: {
     flexDirection: "row",
     alignItems: "center",

@@ -1,8 +1,9 @@
 import { Feather } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Switch, Text, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
+import { useTheme } from "../../../context/themeContext";
 import { colors } from "../../../theme/color";
 import { styles } from "../styles";
 
@@ -12,6 +13,8 @@ interface SettingsCardProps {
 }
 
 export function SettingsCard({ notif, onToggleNotif }: SettingsCardProps) {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <Animated.View style={[styles.settingsCard]}>
       <TouchableOpacity
@@ -32,7 +35,9 @@ export function SettingsCard({ notif, onToggleNotif }: SettingsCardProps) {
           />
         </View>
       </TouchableOpacity>
+
       <View style={styles.settingsDivider} />
+
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={() =>
@@ -51,6 +56,21 @@ export function SettingsCard({ notif, onToggleNotif }: SettingsCardProps) {
           />
         </View>
       </TouchableOpacity>
+
+      <View style={styles.settingsDivider} />
+
+      <View style={styles.settingsRow}>
+        <View style={[styles.settingsIconBox, styles.settingsIconTheme]}>
+          <Feather name="moon" size={16} color={colors.textSecondary} />
+        </View>
+        <Text style={styles.settingsLabel}>Dark Mode</Text>
+        <Switch
+          value={theme === "dark"}
+          onValueChange={toggleTheme}
+          trackColor={{ false: "#767577", true: "#8B5CF6" }}
+          thumbColor={theme === "dark" ? "#FAF9FF" : "#f4f3f4"}
+        />
+      </View>
     </Animated.View>
   );
 }

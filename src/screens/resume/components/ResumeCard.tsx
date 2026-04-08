@@ -43,6 +43,9 @@ export function ResumeCard({
   const score = latestScore?.overall_score ?? null;
   const scoreColor = score !== null ? scoreTierColor(score) : colors.textMuted;
 
+  // Determine if this resume came from builder or from upload
+  const isBuilderResume = !item.fileUrl;
+
   const anim = useSharedValue(0);
   useEffect(() => {
     anim.value = withDelay(
@@ -86,11 +89,11 @@ export function ResumeCard({
             end={{ x: 1, y: 1 }}
           >
             <Ionicons
-              name="document-text"
+              name="document-text-outline"
               size={20}
               color={colors.textPrimary}
             />
-            <Text style={cardStyles.pdfLabel}>PDF</Text>
+            <Text style={cardStyles.pdfLabel}>{"PDF"}</Text>
           </LinearGradient>
         </View>
 
@@ -173,44 +176,38 @@ export function ResumeCard({
           </View>
 
           <View style={cardStyles.actions}>
-            <PressableScale
-              style={cardStyles.viewBtn}
-              onPress={handleViewResume}
-            >
-              <Ionicons name="eye-outline" size={13} color={colors.accent} />
-              <Text style={cardStyles.viewBtnText}>View</Text>
-            </PressableScale>
-
-            <PressableScale
-              style={cardStyles.primaryBtn}
-              onPress={() => onAnalyze(item.id)}
-              disabled={scoring}
-            >
-              <LinearGradient
-                colors={
-                  scoring
-                    ? [colors.surfaceAlt, colors.surfaceAlt]
-                    : ["rgba(108,99,255,0.22)", "rgba(108,99,255,0.12)"]
-                }
-                style={cardStyles.primaryBtnInner}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+            {!isBuilderResume && (
+              <PressableScale
+                style={cardStyles.primaryBtn}
+                onPress={() => onAnalyze(item.id)}
+                disabled={scoring}
               >
-                <Ionicons
-                  name="flash-outline"
-                  size={13}
-                  color={scoring ? colors.textMuted : colors.primary}
-                />
-                <Text
-                  style={[
-                    cardStyles.primaryBtnText,
-                    scoring && { color: colors.textMuted },
-                  ]}
+                <LinearGradient
+                  colors={
+                    scoring
+                      ? [colors.surfaceAlt, colors.surfaceAlt]
+                      : ["rgba(108,99,255,0.22)", "rgba(108,99,255,0.12)"]
+                  }
+                  style={cardStyles.primaryBtnInner}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
                 >
-                  {score !== null ? "Re-analyze" : "Get ATS Score"}
-                </Text>
-              </LinearGradient>
-            </PressableScale>
+                  <Ionicons
+                    name="flash-outline"
+                    size={13}
+                    color={scoring ? colors.textMuted : colors.primary}
+                  />
+                  <Text
+                    style={[
+                      cardStyles.primaryBtnText,
+                      scoring && { color: colors.textMuted },
+                    ]}
+                  >
+                    {score !== null ? "Re-analyze" : "Get ATS Score"}
+                  </Text>
+                </LinearGradient>
+              </PressableScale>
+            )}
 
             {score !== null && (
               <PressableScale

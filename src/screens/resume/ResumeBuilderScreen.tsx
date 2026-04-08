@@ -18,6 +18,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../theme/color";
 import { ExperienceCard } from "./components/ExperienceCard";
 import { FieldInput } from "./components/FieldInput";
@@ -40,6 +41,9 @@ import { useResumeBuilder } from "./hooks/useResumeBuilder";
 import { resumeStyles } from "./styles/resume.styles";
 
 export default function ResumeBuilderScreen() {
+  const insets = useSafeAreaInsets();
+  const bottomInset =
+    Platform.OS === "android" ? Math.max(insets.bottom, 48) : insets.bottom;
   const navigation = useNavigation();
   const resume = useResumeBuilder();
 
@@ -196,7 +200,7 @@ export default function ResumeBuilderScreen() {
     <KeyboardAvoidingView
       style={resumeStyles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
+      // keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
     >
       {/* Header */}
       <View style={resumeStyles.header}>
@@ -211,8 +215,11 @@ export default function ResumeBuilderScreen() {
       </View>
 
       <ScrollView
-        style={[resumeStyles.scrollContent, { marginBottom: 20 }]}
-        contentContainerStyle={resumeStyles.scrollContentContainer}
+        style={[resumeStyles.scrollContent]}
+        contentContainerStyle={[
+          resumeStyles.scrollContentContainer,
+          { paddingBottom: bottomInset + 20 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <StepIndicator
@@ -220,58 +227,6 @@ export default function ResumeBuilderScreen() {
           totalSteps={TOTAL_STEPS}
           stepTitle={STEP_TITLES[resume.currentStep - 1]}
         />
-
-        {/* Tab Bar — only on step 1 */}
-        {resume.currentStep === 1 && (
-          <View style={resumeStyles.tabBar}>
-            <TouchableOpacity
-              style={[
-                resumeStyles.tab,
-                resume.inputTab === "form" && resumeStyles.tabActive,
-              ]}
-              onPress={() => resume.setInputTab("form")}
-            >
-              <Ionicons
-                name="add-circle-outline"
-                size={15}
-                color={
-                  resume.inputTab === "form" ? "#fff" : colors.textSecondary
-                }
-              />
-              <Text
-                style={[
-                  resumeStyles.tabText,
-                  resume.inputTab === "form" && resumeStyles.tabTextActive,
-                ]}
-              >
-                New Resume
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                resumeStyles.tab,
-                resume.inputTab === "history" && resumeStyles.tabActive,
-              ]}
-              onPress={() => resume.setInputTab("history")}
-            >
-              <Ionicons
-                name="time-outline"
-                size={15}
-                color={
-                  resume.inputTab === "history" ? "#fff" : colors.textSecondary
-                }
-              />
-              <Text
-                style={[
-                  resumeStyles.tabText,
-                  resume.inputTab === "history" && resumeStyles.tabTextActive,
-                ]}
-              >
-                History
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
         {/* History Tab Content */}
         {resume.inputTab === "history" ? (

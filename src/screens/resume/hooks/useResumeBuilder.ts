@@ -254,19 +254,58 @@ export function useResumeBuilder() {
       const userId = await getUserId();
       if (!userId) return;
       const formData = getFormData();
-      await supabase.from("resume_builds").insert({
-        user_id: userId,
-        full_name: formData.fullName,
-        target_role: formData.targetRole,
-        experience_level: formData.experienceLevel || null,
-        industry: formData.industry || null,
-        tone: formData.tone || null,
-        skills: formData.skills || null,
-        professional_summary: generatedResume?.professionalSummary || null,
-        core_skills: generatedResume?.coreSkills || [],
-        enhanced_experiences: generatedResume?.enhancedExperiences || [],
-        ats_keywords: generatedResume?.atsKeywords || [],
-        pdf_uri: uri,
+
+      // Check if a resumes row already exists for this builder session
+      let resumeId = selectedResume?.id;
+
+      if (!resumeId) {
+        // Create parent resumes row first
+        const { data: resumeRow, error: resumeError } = await supabase
+          .from("resumes")
+          .insert({
+            user_id: userId,
+            title: formData.fullName || "My Resume",
+            file_url: null, // builder resumes have no file
+            file_name: null,
+            raw_text: null,
+            is_primary: false,
+          })
+          .select()
+          .single();
+
+        if (resumeError) throw resumeError;
+        resumeId = resumeRow.id;
+
+        // Persist resumeId in builder state so re-saves update rather than duplicate
+        setSelectedResume({
+          id: resumeId,
+          user_id: userId,
+          full_name: formData.fullName,
+          target_role: formData.targetRole,
+          experience_level: formData.experienceLevel || null,
+          industry: formData.industry || null,
+          tone: formData.tone || null,
+          skills: formData.skills || null,
+          professional_summary: generatedResume?.professionalSummary || null,
+          core_skills: generatedResume?.coreSkills || null,
+          enhanced_experiences: generatedResume?.enhancedExperiences || null,
+          ats_keywords: generatedResume?.atsKeywords || null,
+          pdf_uri: uri,
+          created_at: new Date().toISOString(),
+        });
+      }
+
+      // Insert or update resume sections
+      await supabase.from("resume_sections").insert({
+        resume_id: resumeId,
+        section_type: "builder_data",
+        title: "Resume Content",
+        content: JSON.stringify({
+          formData,
+          generatedResume,
+          pdfUri: uri,
+        }),
+        display_order: 1,
       });
     } catch {}
   };

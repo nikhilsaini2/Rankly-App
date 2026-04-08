@@ -1,3 +1,6 @@
+import { decode } from "base64-arraybuffer";
+import * as FileSystem from "expo-file-system/legacy";
+
 import type { ExperienceLevel, User } from "../../types/common.types";
 import { supabase } from "../supabase/supabase";
 
@@ -16,8 +19,7 @@ function mapUserRow(data: Record<string, unknown>, authUserId: string): User {
     plan: (data.plan as "free" | "pro") ?? "free",
     credits: typeof data.credits === "number" ? data.credits : 5,
     onboardingDone: Boolean(data.onboarding_done),
-    createdAt:
-      (data.created_at as string) ?? new Date().toISOString(),
+    createdAt: (data.created_at as string) ?? new Date().toISOString(),
   };
 }
 
@@ -35,7 +37,6 @@ export const getUserProfile = async (): Promise<User | null> => {
     .single();
 
   if (error) {
-    // PGRST116 = no rows found (single()) — treat as "no profile yet"
     if (error.code === "PGRST116") return null;
     throw error;
   }
@@ -65,8 +66,7 @@ export const updateUserProfile = async (
   if (!user) throw new Error("Not authenticated");
 
   const payload: Record<string, unknown> = {};
-  if (fields.firstName !== undefined)
-    payload.first_name = fields.firstName;
+  if (fields.firstName !== undefined) payload.first_name = fields.firstName;
   if (fields.lastName !== undefined) payload.last_name = fields.lastName;
   if (fields.bio !== undefined) payload.bio = fields.bio;
   if (fields.role !== undefined) payload.target_role = fields.role;
@@ -98,7 +98,10 @@ export const deleteUserAccountData = async (): Promise<void> => {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  const { error } = await supabase.from("users").delete().eq("auth_id", user.id);
+  const { error } = await supabase
+    .from("users")
+    .delete()
+    .eq("auth_id", user.id);
   if (error) throw error;
   await supabase.auth.signOut();
 };
@@ -133,11 +136,7 @@ export async function getProfileStatsForUser(
   let interviews = 0;
 
   const r0 = results[0];
-  if (
-    r0.status === "fulfilled" &&
-    !r0.value.error &&
-    r0.value.count != null
-  ) {
+  if (r0.status === "fulfilled" && !r0.value.error && r0.value.count != null) {
     resumes = r0.value.count;
   }
 
@@ -148,11 +147,7 @@ export async function getProfileStatsForUser(
   }
 
   const r2 = results[2];
-  if (
-    r2.status === "fulfilled" &&
-    !r2.value.error &&
-    r2.value.count != null
-  ) {
+  if (r2.status === "fulfilled" && !r2.value.error && r2.value.count != null) {
     interviews = r2.value.count;
   }
 
@@ -162,24 +157,61 @@ export async function getProfileStatsForUser(
 export async function uploadAvatarFromUri(
   authUserId: string,
   uri: string,
+  mimeType?: string,
 ): Promise<string> {
-  const fileRes = await fetch(uri);
-  const blob = await fileRes.blob();
+  try {
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: "base64",
+    });
 
-  const path = `${authUserId}/avatar.jpg`;
-  const { error: upErr } = await supabase.storage
-    .from("avatars")
-    .upload(path, blob, { upsert: true, contentType: "image/jpeg" });
+    const buffer = decode(base64);
+    const uint8Array = new Uint8Array(buffer);
 
-  if (upErr) {
-    throw new Error("Avatar storage upload failed");
+    const fileExtension = mimeType?.includes("png") ? "png" : "jpg";
+    const timestamp = Date.now();
+    const path = `${authUserId}/avatar_${timestamp}.${fileExtension}`;
+
+    // Delete old avatar files before uploading new one
+    const { data: existingFiles } = await supabase.storage
+      .from("avatars")
+      .list(authUserId);
+
+    if (existingFiles && existingFiles.length > 0) {
+      const filesToDelete = existingFiles.map((f) => `${authUserId}/${f.name}`);
+      await supabase.storage.from("avatars").remove(filesToDelete);
+    }
+
+    const { error: upErr } = await supabase.storage
+      .from("avatars")
+      .upload(path, uint8Array, {
+        upsert: true,
+        contentType: mimeType || "image/jpeg",
+      });
+
+    if (upErr) {
+      throw new Error("Avatar storage upload failed");
+    }
+
+    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+    const publicUrl = pub?.publicUrl;
+    if (!publicUrl?.startsWith("http")) {
+      throw new Error("Could not get avatar URL");
+    }
+
+    // Append timestamp as cache buster so Image component re-fetches
+    return `${publicUrl}?t=${timestamp}`;
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes("Unable to read the file")) {
+        throw new Error("Failed to read image file");
+      }
+      if (error.message.includes("Avatar storage upload failed")) {
+        throw new Error("Storage upload failed - check bucket permissions");
+      }
+      if (error.message.includes("Could not get avatar URL")) {
+        throw new Error("Failed to get public URL");
+      }
+    }
+    throw error;
   }
-
-  const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-  const publicUrl = pub?.publicUrl;
-  if (!publicUrl?.startsWith("http")) {
-    throw new Error("Could not get avatar URL");
-  }
-
-  return publicUrl;
 }

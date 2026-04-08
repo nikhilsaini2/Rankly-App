@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { NavigationProp } from "@react-navigation/native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -198,10 +197,12 @@ export default function ProfileScreen() {
       quality: 0.85,
     });
     if (res.canceled || !res.assets[0]) return;
-    const uri = res.assets[0].uri;
+    const asset = res.assets[0];
+    const uri = asset.uri;
+    const mimeType = asset.mimeType;
     try {
       setSavingAvatar(true);
-      const publicUrl = await uploadAvatarFromUri(user.id, uri);
+      const publicUrl = await uploadAvatarFromUri(user.id, uri, mimeType);
       try {
         await updateUserProfile({ avatarUrl: publicUrl });
       } catch (e) {
@@ -219,12 +220,16 @@ export default function ProfileScreen() {
             ? String((e as { message?: unknown }).message ?? "")
             : "";
       if (__DEV__) console.error("Avatar upload failed", e);
-      if (message === "Could not get avatar URL") {
-        toast("Could not get avatar URL", "error");
+      if (message === "Failed to read image file") {
+        toast("Could not read image file", "error");
         return;
       }
-      if (message === "Avatar storage upload failed") {
-        toast("Avatar upload failed — check Storage bucket 'avatars'", "error");
+      if (message === "Storage upload failed - check bucket permissions") {
+        toast("Avatar upload failed - check Storage bucket 'avatars'", "error");
+        return;
+      }
+      if (message === "Failed to get public URL") {
+        toast("Could not get avatar URL", "error");
         return;
       }
       toast("Avatar upload failed", "error");
@@ -358,124 +363,6 @@ export default function ProfileScreen() {
           <>
             <StatsStrip statsDisplay={statsDisplay} />
             <BioCard user={user} />
-
-            {/* Resume History Section */}
-            <View style={profileStyles.sectionContainer}>
-              {/* Section Header */}
-              <View style={profileStyles.sectionHeader}>
-                <View style={profileStyles.sectionHeaderLeft}>
-                  <View style={profileStyles.sectionIconCircle}>
-                    <Ionicons
-                      name="document-text-outline"
-                      size={16}
-                      color={colors.accent}
-                    />
-                  </View>
-                  <Text style={profileStyles.sectionTitle}>Resume History</Text>
-                </View>
-                <TouchableOpacity
-                  style={profileStyles.viewAllBtn}
-                  onPress={() => {
-                    // Navigate to ResumeBuilder
-                    navigation.navigate("ResumeBuilder");
-                    // Note: ResumeBuilder will default to form tab
-                    // User can tap History tab once inside
-                  }}
-                >
-                  <Text style={profileStyles.viewAllText}>View All</Text>
-                  <Ionicons
-                    name="arrow-forward"
-                    size={13}
-                    color={colors.accent}
-                  />
-                </TouchableOpacity>
-              </View>
-
-              {recentResumes.length === 0 ? (
-                <View />
-              ) : (
-                <>
-                  {recentResumes.map((item, index) => (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={[
-                        profileStyles.resumeMiniCard,
-                        index === recentResumes.length - 1 &&
-                          profileStyles.resumeMiniCardLast,
-                      ]}
-                      onPress={() => {
-                        // Navigate to ResumeBuilder
-                        navigation.navigate("ResumeBuilder");
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      {/* Left accent bar */}
-                      <View style={profileStyles.resumeMiniAccent} />
-
-                      {/* Content */}
-                      <View style={profileStyles.resumeMiniContent}>
-                        <View style={profileStyles.resumeMiniTop}>
-                          <Text
-                            style={profileStyles.resumeMiniName}
-                            numberOfLines={1}
-                          >
-                            {item.full_name}
-                          </Text>
-                          <Text style={profileStyles.resumeMiniDate}>
-                            {new Date(item.created_at).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "short",
-                                day: "numeric",
-                              },
-                            )}
-                          </Text>
-                        </View>
-                        <Text
-                          style={profileStyles.resumeMiniRole}
-                          numberOfLines={1}
-                        >
-                          {item.target_role}
-                        </Text>
-                        {item.core_skills && item.core_skills.length > 0 && (
-                          <Text
-                            style={profileStyles.resumeMiniSkills}
-                            numberOfLines={1}
-                          >
-                            {item.core_skills.slice(0, 3).join(" • ")}
-                          </Text>
-                        )}
-                      </View>
-
-                      {/* Right arrow */}
-                      <Ionicons
-                        name="chevron-forward"
-                        size={16}
-                        color={colors.textMuted}
-                      />
-                    </TouchableOpacity>
-                  ))}
-
-                  {/* Build New button */}
-                  <TouchableOpacity
-                    style={profileStyles.buildNewBtn}
-                    onPress={() => {
-                      // Navigate to ResumeBuilder
-                      navigation.navigate("ResumeBuilder");
-                    }}
-                  >
-                    <Ionicons
-                      name="add-outline"
-                      size={16}
-                      color={colors.primary}
-                    />
-                    <Text style={profileStyles.buildNewBtnText}>
-                      Build New Resume
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
 
             <SettingsCard notif={notif} onToggleNotif={onToggleNotif} />
             <DangerZone appVersion={appVersion} />

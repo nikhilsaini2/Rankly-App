@@ -99,9 +99,20 @@ export default function AtsScoreScreen() {
     setter(!current);
   }
 
+  const bottomInset =
+    Platform.OS === "android" ? Math.max(insets.bottom, 48) : insets.bottom;
+
   if (loading || !data) {
     return (
-      <View style={[styles.center, { paddingTop: insets.top }]}>
+      <View
+        style={[
+          styles.center,
+          {
+            paddingTop: insets.top,
+            paddingBottom: bottomInset,
+          },
+        ]}
+      >
         <Text style={{ color: colors.textSecondary }}>
           {loading ? "Loading report…" : "No score for this resume yet."}
         </Text>
@@ -122,7 +133,6 @@ export default function AtsScoreScreen() {
   const improvements = data.feedback?.improvements ?? [];
   const kwF = data.keywordsFound ?? [];
   const kwM = data.keywordsMissing ?? [];
-  const ctxKw = kwM.length ? kwM.join(", ") : "none listed";
 
   return (
     <Animated.View style={[{ flex: 1 }, screenAnim]}>
@@ -130,7 +140,7 @@ export default function AtsScoreScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingBottom: 40,
+          paddingBottom: bottomInset,
         }}
         showsVerticalScrollIndicator={false}
       >

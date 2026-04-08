@@ -67,7 +67,7 @@ export function DangerZone({ appVersion }: DangerZoneProps) {
       <Text style={styles.footerCaption}>
         Version {appVersion} · Made with{" "}
         <Text style={styles.footerHeart}>♥ </Text>
-        by Rankly
+        by Nikhil
       </Text>
     </Animated.View>
   );

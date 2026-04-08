@@ -96,8 +96,6 @@ export default function ResumeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (didInitialLoad.current) return;
-      didInitialLoad.current = true;
       void load();
     }, [load]),
   );

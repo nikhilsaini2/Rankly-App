@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ToastProvider } from "./src/components/atoms/Toast";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
 import { GlobalBackground } from "./src/components/GlobalBackground";
+import { ThemeProvider } from "./src/context/themeContext";
 import RootNavigator from "./src/navigation/RootNavigator";
 
 GoogleSignin.configure({
@@ -22,15 +23,18 @@ export default function App() {
   useEffect(() => {
     NavigationBar.setStyle("dark");
   }, []);
+
   return (
-    <AppProviders>
-      <NavigationContainer>
-        <ErrorBoundary>
-          <GlobalBackground>
-            <RootNavigator />
-          </GlobalBackground>
-        </ErrorBoundary>
-      </NavigationContainer>
-    </AppProviders>
+    <ThemeProvider>
+      <AppProviders>
+        <NavigationContainer>
+          <ErrorBoundary>
+            <GlobalBackground>
+              <RootNavigator />
+            </GlobalBackground>
+          </ErrorBoundary>
+        </NavigationContainer>
+      </AppProviders>
+    </ThemeProvider>
   );
 }

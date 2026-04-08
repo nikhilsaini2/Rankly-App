@@ -10,6 +10,7 @@ export const GlobalBackground = ({
   children: React.ReactNode;
 }) => {
   const insets = useSafeAreaInsets();
+
   return (
     <View style={{ flex: 1 }}>
       <LinearGradient

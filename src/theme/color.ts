@@ -1,42 +1,58 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+let currentTheme = "dark";
+
+const loadSavedTheme = async () => {
+  try {
+    const saved = await AsyncStorage.getItem("@app_theme");
+    if (saved === "light" || saved === "dark") {
+      currentTheme = saved;
+    }
+  } catch (e) {}
+};
+
+loadSavedTheme();
+
 export const colors = {
-  background: "#0A0812",
-  surface: "#130F1F",
-  surfaceAlt: "#1C1830",
+  background: currentTheme === "dark" ? "#0A0812" : "#F8F9FA",
+  surface: currentTheme === "dark" ? "#130F1F" : "#FFFFFF",
+  surfaceAlt: currentTheme === "dark" ? "#1C1830" : "#F1F3F5",
 
-  bgPrimary: "#0A0812",
-  bgSecondary: "#130F1F",
-  glass: "rgba(19, 15, 31, 0.96)",
+  bgPrimary: currentTheme === "dark" ? "#0A0812" : "#F8F9FA",
+  bgSecondary: currentTheme === "dark" ? "#130F1F" : "#FFFFFF",
+  glass:
+    currentTheme === "dark"
+      ? "rgba(19, 15, 31, 0.96)"
+      : "rgba(255, 255, 255, 0.95)",
 
-  primary: "#8B5CF6",
-  primaryDark: "#6D28D9",
+  primary: currentTheme === "dark" ? "#8B5CF6" : "#6D28D9",
+  primaryDark: currentTheme === "dark" ? "#6D28D9" : "#4C1D95",
 
-  secondary: "#A78BFA",
-  secondaryDark: "#7C3AED",
+  secondary: currentTheme === "dark" ? "#A78BFA" : "#7C3AED",
+  secondaryDark: currentTheme === "dark" ? "#7C3AED" : "#5B21B6",
 
-  primaryLight: "#C4B5FD",
+  primaryLight: currentTheme === "dark" ? "#C4B5FD" : "#DDD6FE",
+
   accent: "#10B981",
   danger: "#EF4444",
   warning: "#F97316",
 
-  textPrimary: "#FAF9FF",
-  textSecondary: "#A09ABA",
-  textMuted: "#6B6480",
+  textPrimary: currentTheme === "dark" ? "#FAF9FF" : "#111827",
+  textSecondary: currentTheme === "dark" ? "#A09ABA" : "#4B5563",
+  textMuted: currentTheme === "dark" ? "#6B6480" : "#6B7280",
 
-  border: "#2A2440",
-  borderStrong: "rgba(139, 92, 246, 0.5)",
+  border: currentTheme === "dark" ? "#2A2440" : "#E5E7EB",
+  borderStrong:
+    currentTheme === "dark"
+      ? "rgba(139, 92, 246, 0.5)"
+      : "rgba(109, 40, 217, 0.3)",
 
   success: "#10B981",
   successDark: "#064E3B",
   error: "#EF4444",
 
-  glow: "#8B5CF6",
-};
-
-export const gradients = {
-  primary: ["#C4B5FD", "#8B5CF6", "#6D28D9"] as const,
-  success: ["#10B981", "#064E3B"] as const,
-  card: ["rgba(28, 24, 48, 0.98)", "rgba(19, 15, 31, 0.98)"] as const,
-};
+  glow: currentTheme === "dark" ? "#8B5CF6" : "#6D28D9",
+} as const;
 
 export const shadows = {
   glow: {
