@@ -90,7 +90,7 @@ export function useVoiceInterview() {
 
       // Try to load model with proper error handling
       try {
-        RNVosk.loadModel("model"); // synchronous, no await
+        RNVosk.loadModel("model-en-us"); // synchronous, no await
         setIsVoskReady(true);
       } catch (modelError: any) {
         console.error("[Vosk] Model loading error:", modelError);
