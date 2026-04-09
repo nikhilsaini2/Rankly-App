@@ -474,7 +474,7 @@ function DonePhase({
   insetsBottom: number;
   onDiscussCoach: () => void;
 }) {
-  const completed = iv.questions.filter((x) => x.userAnswer != null);
+  const completed = iv.questions.filter((x: any) => x.userAnswer != null);
   const ringScore = iv.sessionScore ?? 0;
 
   return (

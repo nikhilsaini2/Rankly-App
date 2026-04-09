@@ -4,6 +4,7 @@ import { buildCareerCoachSystemPrompt } from "../services/gemini/prompts";
 import { supabase } from "../services/supabase/supabase";
 import type { ChatMessage, User } from "../types/common.types";
 import { handleGeminiError } from "../utils/geminiErrorHandler";
+import { isGreeting, RANKLY_GREETING } from "../utils/greetingDetection";
 
 export function useAIChat(profile: User | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -41,7 +42,16 @@ export function useAIChat(profile: User | null) {
         createdAt: r.created_at as string,
       }));
 
-      setMessages(mapped);
+      // Add welcome message if chat is empty
+      const welcomeMessage: ChatMessage = {
+        id: "rankly-welcome",
+        role: "assistant",
+        content:
+          "Hey! 👋 I'm Rankly — your AI career coach. Ask me anything about resumes, interviews, salary negotiation, or career growth. I'm here to help! 🚀",
+        createdAt: new Date().toISOString(),
+      };
+
+      setMessages(mapped.length === 0 ? [welcomeMessage] : mapped);
       setReady(true);
     })();
 
@@ -69,7 +79,29 @@ export function useAIChat(profile: User | null) {
             industry: null as null,
           };
 
-      // ── 1. Insert user message and get back the real DB id ──
+      // ── 1. Handle greetings locally (no API call) ──
+      if (isGreeting(userText)) {
+        // Add user message to chat
+        const greetingMsg: ChatMessage = {
+          id: `local-${Date.now()}`,
+          role: "user",
+          content: userText,
+          createdAt: new Date().toISOString(),
+        };
+
+        // Add instant Rankly greeting response
+        const ranklyReply: ChatMessage = {
+          id: `rankly-reply-${Date.now()}`,
+          role: "assistant",
+          content: RANKLY_GREETING,
+          createdAt: new Date().toISOString(),
+        };
+
+        setMessages((prev) => [...prev, greetingMsg, ranklyReply]);
+        return;
+      }
+
+      // ── 2. Insert user message and get back to real DB id ──
       const { data: userRow, error: userInsertError } = await supabase
         .from("ai_chats")
         .insert({ user_id: authUser.id, role: "user", content: userText })

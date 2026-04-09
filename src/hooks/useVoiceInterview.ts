@@ -258,7 +258,7 @@ export function useVoiceInterview() {
     setRecordingStartTime(Date.now());
 
     try {
-      RNVosk.start(); // synchronous, no await
+      RNVosk.start({}); // synchronous, no await
     } catch (error: any) {
       console.error("Vosk start error:", error);
       setPhase("error");
@@ -276,8 +276,36 @@ export function useVoiceInterview() {
 
     try {
       RNVosk.stop(); // synchronous, no await
+
+      // Set up a one-time listener for the final result with fallback
+      let resolved = false;
+      let finalListener: any = null;
+
+      finalListener = VoskEmitter?.addListener("onResult", (res: any) => {
+        if (resolved) return;
+        resolved = true;
+        finalListener?.remove();
+        const transcript = (res?.text ?? "").trim();
+        if (transcript) {
+          evaluateAnswer(transcript, currentQuestionRef.current);
+        } else {
+          // Fallback to live transcript if final result is empty
+          evaluateAnswer(liveTranscript, currentQuestionRef.current);
+        }
+      });
+
+      // Fallback timeout if onResult never fires (2 seconds)
+      setTimeout(() => {
+        if (resolved) return;
+        resolved = true;
+        finalListener?.remove();
+        console.warn(
+          "[Vosk] onResult timeout, using live transcript as fallback",
+        );
+        evaluateAnswer(liveTranscript, currentQuestionRef.current);
+      }, 2000);
+
       setPhase("processing");
-      // evaluateAnswer will fire when onResult listener receives the result
     } catch (error: any) {
       console.error("Vosk stop error:", error);
       setPhase("error");
@@ -286,20 +314,30 @@ export function useVoiceInterview() {
   };
 
   const evaluateAnswer = async (transcript: string, question: string) => {
-    if (!transcript || transcript.trim().length === 0) {
-      setErrorMessage("No speech detected. Please try again.");
-      setPhase("ready_to_record");
+    // Guard against empty or too short transcript
+    const cleanTranscript = transcript?.trim() || liveTranscript?.trim() || "";
+
+    if (!cleanTranscript || cleanTranscript.length < 3) {
+      setAiFeedback({
+        score: 0,
+        overall: "No answer detected. Please try again.",
+        strengths: [],
+        improvements: ["Speak clearly and provide a complete answer"],
+        tip: "Try to speak for at least 3 seconds.",
+      });
+      setAiScore(0);
+      setPhase("showing_feedback");
       return;
     }
 
-    setFinalTranscript(transcript);
+    setFinalTranscript(cleanTranscript);
     setPhase("processing");
 
     const prompt = `You are an expert interview coach evaluating a candidate's answer.
         
 Question: ${question}
 
-Candidate's Answer: ${transcript}
+Candidate's Answer: ${cleanTranscript}
 
 Provide a JSON response with this exact structure:
 {
@@ -310,10 +348,22 @@ Provide a JSON response with this exact structure:
   "tip": "<one specific actionable tip>"
 }
 
-Respond with JSON only. No markdown, no explanation outside the JSON.`;
+Respond with JSON only. No markdown, no explanation outside of JSON.`;
+
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Evaluation timed out after 15 seconds")),
+        15000,
+      ),
+    );
 
     try {
-      const responseText = await generateGeminiText(prompt);
+      const responseText = await Promise.race([
+        generateGeminiText(prompt),
+        timeoutPromise,
+      ]);
+
       let parsed: AIFeedbackData;
 
       try {
@@ -340,15 +390,26 @@ Respond with JSON only. No markdown, no explanation outside the JSON.`;
       // Store answer
       const newAnswer: SessionAnswer = {
         question,
-        transcript,
+        transcript: cleanTranscript,
         score,
         feedback: parsed.overall || "Good effort overall.",
       };
       setAnswers((prev) => [...prev, newAnswer]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Gemini evaluation error:", error);
-      setPhase("error");
-      setErrorMessage("Failed to evaluate answer. Please try again.");
+      setAiFeedback({
+        score: 0,
+        overall: error?.message?.includes("timed out")
+          ? "Evaluation took too long. Moving to next question."
+          : "Evaluation failed. Please try again.",
+        strengths: [],
+        improvements: [],
+        tip: "Check your internet connection and try again.",
+      });
+      setAiScore(0);
+    } finally {
+      // ALWAYS exit processing state, regardless of success or failure
+      setPhase("showing_feedback");
     }
   };
 
