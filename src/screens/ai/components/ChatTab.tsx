@@ -1,12 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Keyboard,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -22,7 +20,6 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, {
   Circle,
   Defs,
@@ -37,8 +34,6 @@ import { colors } from "../../../theme/color";
 import type { ChatMessage } from "../../../types/common.types";
 import { formatTime } from "../../../utils/date";
 import { styles } from "../styles";
-
-// ── Avatar illustration ──────────────────────────────────────
 
 function AICoachAvatarIllustration() {
   return (
@@ -89,8 +84,6 @@ function AICoachAvatarIllustration() {
   );
 }
 
-// ── Suggestion chip ──────────────────────────────────────────
-
 function SuggestionChip({
   prompt,
   index,
@@ -138,8 +131,6 @@ function SuggestionChip({
   );
 }
 
-// ── Message bubble ───────────────────────────────────────────
-
 function MessageBubble({
   item,
   showRanklyLabel,
@@ -179,7 +170,6 @@ function MessageBubble({
           </View>
         </View>
       )}
-
       {isUser ? (
         <LinearGradient
           colors={[colors.primary, colors.primaryDark]}
@@ -194,15 +184,12 @@ function MessageBubble({
           <Text style={styles.aiBubbleText}>{item.content}</Text>
         </View>
       )}
-
       <Text style={[styles.msgTime, isUser && styles.msgTimeRight]}>
         {item.createdAt ? formatTime(item.createdAt) : ""}
       </Text>
     </Animated.View>
   );
 }
-
-// ── Typing indicator ─────────────────────────────────────────
 
 function TypingIndicator() {
   const y1 = useSharedValue(0);
@@ -242,8 +229,6 @@ function TypingIndicator() {
   );
 }
 
-// ── Input bar ────────────────────────────────────────────────
-
 function InputBar({
   input,
   setInput,
@@ -266,7 +251,12 @@ function InputBar({
   const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
   return (
-    <View style={[styles.inputRow, { paddingBottom: 12 + insetsBottom }]}>
+    <View
+      style={[
+        styles.inputRow,
+        { paddingBottom: insetsBottom > 0 ? insetsBottom : 12 },
+      ]}
+    >
       <TextInput
         style={[styles.input, focused && styles.inputFocused]}
         placeholder="Ask your career coach..."
@@ -313,8 +303,6 @@ function InputBar({
   );
 }
 
-// ── ChatTab (exported) ────────────────────────────────────────
-
 type ChatTabProps = {
   messages: ChatMessage[];
   loading: boolean;
@@ -334,14 +322,10 @@ export function ChatTab({
   setInput,
   onSend,
   onSendPrompt,
-  insetsBottom, // you can still pass this if needed
+  insetsBottom,
 }: ChatTabProps) {
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const reversed = [...messages].reverse();
-
-  // Better safe area handling
-  const safeInsets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight(); // remove if no header or not using @react-navigation
 
   if (!ready) {
     return (
@@ -351,13 +335,9 @@ export function ChatTab({
     );
   }
 
-  const keyboardVerticalOffset =
-    Platform.OS === "ios" ? headerHeight + safeInsets.top : 0;
-
   return (
     <View style={{ flex: 1 }}>
       {messages.length === 0 ? (
-        // Empty state
         <View style={[styles.chatBody, styles.chatEmptyOuter]}>
           <View style={styles.chatEmptyWrap}>
             <View style={styles.chatEmptyAvatarGlow}>
@@ -388,11 +368,10 @@ export function ChatTab({
             setInput={setInput}
             onSend={onSend}
             disabled={loading}
-            insetsBottom={safeInsets.bottom}
+            insetsBottom={insetsBottom}
           />
         </View>
       ) : (
-        // Chat with messages
         <View style={styles.chatBody}>
           <FlatList
             ref={listRef}

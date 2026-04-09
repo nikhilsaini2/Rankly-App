@@ -15,19 +15,17 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppName from "../../../components/atoms/AppName";
-import { colors } from "../../../theme/color";
-import { loginSchema } from "../../../validation/auth.schema";
-import { styles } from "./styles";
-
 import {
   handleUserProfile,
   signInWithEmailPassword,
   signInWithGoogle,
 } from "../../../services/supabase/auth.supabase";
+import { colors } from "../../../theme/color";
 import type { AuthScreenProps } from "../../../types/navigation.types";
+import { loginSchema } from "../../../validation/auth.schema";
+import { styles } from "./styles";
 
 const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
   const insets = useSafeAreaInsets();
@@ -83,21 +81,9 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
 
   if (loading) {
     return (
-      <View
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text
-          style={{ color: "white", fontSize: 18, marginTop: 15, marginLeft: 3 }}
-        >
+        <Text style={{ color: "white", fontSize: 18, marginTop: 15 }}>
           Loading...
         </Text>
       </View>
@@ -108,7 +94,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
+      keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
@@ -118,7 +104,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
           />
 
           <ScrollView
-            contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             bounces={false}

@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppName from "../../../components/atoms/AppName";
 import ProgressRing from "../../../components/atoms/ProgressRing";
 import { BARS, FEATURES } from "../../../constants/all";
@@ -10,12 +11,13 @@ import type { AuthScreenProps } from "../../../types/navigation.types";
 import { styles } from "./styles";
 
 const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
+  const insets = useSafeAreaInsets();
+
   return (
     <ScrollView
       style={styles.container}
-      // bounces={false}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: 50 }}
+      contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
     >
       <View style={styles.header}>
         <AppName size={30} />
@@ -30,11 +32,9 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
             <View style={styles.ringOuter}>
               <ProgressRing progress={82} />
             </View>
-
             <View>
               <Text style={styles.title}>Resume Score</Text>
               <Text style={styles.meta}>SWE · Google · L4</Text>
-
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>+19 pts gained</Text>
               </View>
@@ -44,14 +44,12 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
           {BARS.map((item) => (
             <View key={item.label} style={styles.barRow}>
               <Text style={styles.barLabel}>{item.label}</Text>
-
               <View style={styles.barTrack}>
                 <LinearGradient
                   colors={item.colors}
                   style={[styles.barFill, { width: `${item.value}%` }]}
                 />
               </View>
-
               <Text style={styles.barValue}>{item.value}</Text>
             </View>
           ))}
@@ -64,7 +62,6 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
             <View style={[styles.iconBox, { borderColor: f.color + "40" }]}>
               <Ionicons name={f.icon} size={18} color={f.color} />
             </View>
-
             <View>
               <Text style={styles.featureTitle}>{f.title}</Text>
               <Text style={styles.featureSub}>{f.sub}</Text>
@@ -74,9 +71,7 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
       </View>
 
       <TouchableOpacity
-        onPress={() => {
-          navigation.replace("Register");
-        }}
+        onPress={() => navigation.replace("Register")}
         activeOpacity={0.85}
       >
         <LinearGradient
@@ -92,9 +87,7 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
       <TouchableOpacity
         activeOpacity={0.85}
         style={styles.ghostBtn}
-        onPress={() => {
-          navigation.replace("Login");
-        }}
+        onPress={() => navigation.replace("Login")}
       >
         <Text style={styles.ghostText}>I already have an account</Text>
       </TouchableOpacity>

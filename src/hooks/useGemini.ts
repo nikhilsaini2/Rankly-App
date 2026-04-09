@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { generateGeminiText, parseGeminiJson } from '../services/gemini/gemini';
+import { useState } from "react";
+import { generateGeminiText, parseGeminiJson } from "../services/gemini/gemini";
 
 export function useGemini() {
   const [loading, setLoading] = useState(false);
@@ -11,7 +11,8 @@ export function useGemini() {
     try {
       return await generateGeminiText(prompt);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'AI request failed';
+      handleGeminiError(e, () => generateText(prompt));
+      const msg = e instanceof Error ? e.message : "AI request failed";
       setError(msg);
       throw e;
     } finally {
@@ -24,7 +25,7 @@ export function useGemini() {
     try {
       return parseGeminiJson<T>(text);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Invalid AI JSON';
+      const msg = e instanceof Error ? e.message : "Invalid AI JSON";
       setError(msg);
       throw e;
     }

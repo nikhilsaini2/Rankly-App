@@ -9,23 +9,31 @@ const STEPS = [
   "Scoring & building report",
 ];
 
-const STEP_DURATION = 10000;
+const STEP_DURATION = 2000;
 
 export function ResumeAnalyzingOverlay({ visible }: { visible: boolean }) {
   const [activeStep, setActiveStep] = React.useState(0);
   const progressAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  const dotAnims = useRef(STEPS.map(() => new Animated.Value(0))).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+  const stepperRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const spinLoop = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
+    if (stepperRef.current) clearTimeout(stepperRef.current);
+    spinLoop.current?.stop();
+
     if (!visible) {
       setActiveStep(0);
       progressAnim.setValue(0);
       fadeAnim.setValue(0);
-      dotAnims.forEach((a) => a.setValue(0));
+      spinAnim.setValue(0);
       return;
     }
+
+    setActiveStep(0);
+    progressAnim.setValue(0);
+    spinAnim.setValue(0);
 
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -33,32 +41,37 @@ export function ResumeAnalyzingOverlay({ visible }: { visible: boolean }) {
       useNativeDriver: true,
     }).start();
 
+    spinLoop.current = Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 1200,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+    spinLoop.current.start();
+
     let step = 0;
     const tick = () => {
       if (step >= STEPS.length) return;
       setActiveStep(step);
-
-      // Expand active dot
-      dotAnims.forEach((a, i) => {
-        Animated.timing(a, {
-          toValue: i <= step ? 1 : 0,
-          duration: 350,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: false,
-        }).start();
-      });
-
       Animated.timing(progressAnim, {
         toValue: ((step + 1) / STEPS.length) * 0.88,
         duration: 500,
         easing: Easing.out(Easing.quad),
         useNativeDriver: false,
       }).start();
-
       step++;
-      if (step < STEPS.length) setTimeout(tick, STEP_DURATION);
+      if (step < STEPS.length) {
+        stepperRef.current = setTimeout(tick, STEP_DURATION);
+      }
     };
     tick();
+
+    return () => {
+      if (stepperRef.current) clearTimeout(stepperRef.current);
+      spinLoop.current?.stop();
+    };
   }, [visible]);
 
   const progressWidth = progressAnim.interpolate({
@@ -66,17 +79,22 @@ export function ResumeAnalyzingOverlay({ visible }: { visible: boolean }) {
     outputRange: ["0%", "100%"],
   });
 
+  const rotate = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
   return (
     <Modal visible={visible} transparent animationType="fade">
       <Animated.View style={[s.backdrop, { opacity: fadeAnim }]}>
         <View style={s.card}>
-          {/* Icon */}
           <View style={s.iconWrap}>
             <View style={s.iconRing}>
               <Text style={s.docEmoji}>📄</Text>
             </View>
-            {/* Rotating arc */}
-            <SpinnerRing />
+            <Animated.View
+              style={[s.spinnerRing, { transform: [{ rotate }] }]}
+            />
           </View>
 
           <Text style={s.title}>Analyzing your resume</Text>
@@ -84,40 +102,25 @@ export function ResumeAnalyzingOverlay({ visible }: { visible: boolean }) {
             {STEPS[Math.min(activeStep, STEPS.length - 1)]}…
           </Text>
 
-          {/* Pagination dots */}
           <View style={s.dotsRow}>
-            {STEPS.map((_, i) => {
-              const isDone = i < activeStep;
-              const isActive = i === activeStep;
-
-              const dotWidth = dotAnims[i].interpolate({
-                inputRange: [0, 1],
-                outputRange: [8, isActive ? 24 : 8],
-              });
-
-              const bg = isDone
-                ? colors.success
-                : isActive
-                  ? colors.primary
-                  : colors.border;
-
-              return (
-                <Animated.View
-                  key={i}
-                  style={[s.dot, { width: dotWidth, backgroundColor: bg }]}
-                />
-              );
-            })}
+            {STEPS.map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  s.dot,
+                  i < activeStep && s.dotDone,
+                  i === activeStep && s.dotActive,
+                ]}
+              />
+            ))}
           </View>
 
-          {/* Step label rows */}
           <View style={s.stepsWrap}>
             {STEPS.map((label, i) => {
               const isDone = i < activeStep;
               const isActive = i === activeStep;
               return (
                 <View key={label} style={s.stepRow}>
-                  {/* Left indicator line */}
                   <View
                     style={[
                       s.stepLine,
@@ -140,7 +143,6 @@ export function ResumeAnalyzingOverlay({ visible }: { visible: boolean }) {
             })}
           </View>
 
-          {/* Progress bar */}
           <View style={s.progressBg}>
             <Animated.View style={[s.progressFill, { width: progressWidth }]} />
           </View>
@@ -154,29 +156,6 @@ export function ResumeAnalyzingOverlay({ visible }: { visible: boolean }) {
   );
 }
 
-// Rotating arc ring using Animated
-function SpinnerRing() {
-  const rotation = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.timing(rotation, {
-        toValue: 1,
-        duration: 1200,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }),
-    ).start();
-  }, []);
-
-  const rotate = rotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "360deg"],
-  });
-
-  return <Animated.View style={[s.spinnerRing, { transform: [{ rotate }] }]} />;
-}
-
 const s = StyleSheet.create({
   backdrop: {
     flex: 1,
@@ -188,15 +167,13 @@ const s = StyleSheet.create({
   card: {
     width: "100%",
     maxWidth: 340,
-    backgroundColor: colors.surface, // #130F1F
+    backgroundColor: colors.surface,
     borderRadius: 24,
     padding: 28,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: colors.border, // #2A2440
+    borderColor: colors.border,
   },
-
-  // Icon
   iconWrap: {
     width: 80,
     height: 80,
@@ -208,7 +185,7 @@ const s = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: colors.surfaceAlt, // #1C1830
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: "center",
@@ -221,30 +198,26 @@ const s = StyleSheet.create({
     borderRadius: 40,
     borderWidth: 2,
     borderColor: "transparent",
-    borderTopColor: colors.primary, // #8B5CF6
-    borderRightColor: colors.primaryLight, // #C4B5FD (fades off)
+    borderTopColor: colors.primary,
+    borderRightColor: colors.primaryLight,
   },
   docEmoji: {
     fontSize: 26,
   },
-
-  // Text
   title: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.textPrimary, // #FAF9FF
+    color: colors.textPrimary,
     marginBottom: 6,
     textAlign: "center",
   },
   subtitle: {
     fontSize: 13,
-    color: colors.textSecondary, // #A09ABA
+    color: colors.textSecondary,
     textAlign: "center",
     marginBottom: 22,
     lineHeight: 18,
   },
-
-  // Pagination dots
   dotsRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -252,11 +225,19 @@ const s = StyleSheet.create({
     marginBottom: 22,
   },
   dot: {
+    width: 8,
     height: 8,
     borderRadius: 99,
+    backgroundColor: colors.border,
   },
-
-  // Step rows
+  dotActive: {
+    width: 24,
+    backgroundColor: colors.primary,
+  },
+  dotDone: {
+    width: 8,
+    backgroundColor: colors.success,
+  },
   stepsWrap: {
     width: "100%",
     gap: 6,
@@ -288,7 +269,7 @@ const s = StyleSheet.create({
   stepText: {
     flex: 1,
     fontSize: 13,
-    color: colors.textMuted, // #6B6480
+    color: colors.textMuted,
   },
   stepTextActive: {
     color: colors.textPrimary,
@@ -302,8 +283,6 @@ const s = StyleSheet.create({
     color: colors.success,
     fontWeight: "600",
   },
-
-  // Progress
   progressBg: {
     width: "100%",
     height: 3,

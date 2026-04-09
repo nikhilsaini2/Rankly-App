@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Formik } from "formik";
 import React, { useEffect, useRef, useState } from "react";
@@ -14,8 +15,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppName from "../../../components/atoms/AppName";
 import { roles } from "../../../constants/all";
@@ -80,21 +79,9 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
 
   if (loading) {
     return (
-      <View
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text
-          style={{ color: "white", fontSize: 18, marginTop: 15, marginLeft: 3 }}
-        >
+        <Text style={{ color: "white", fontSize: 18, marginTop: 15 }}>
           Loading...
         </Text>
       </View>
@@ -105,7 +92,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
+      keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
@@ -115,7 +102,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
           />
 
           <ScrollView
-            contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             bounces={false}
@@ -242,7 +229,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                     </View>
 
                     <View>
-                      <Text style={styles.label}>Password</Text>
+                      <Text style={styles.label}>PASSWORD</Text>
                       <View style={styles.inputRow}>
                         <TextInput
                           ref={passwordRef}
@@ -267,7 +254,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                     </View>
 
                     <View>
-                      <Text style={styles.label}>Confirm Password</Text>
+                      <Text style={styles.label}>CONFIRM PASSWORD</Text>
                       <View style={styles.inputRow}>
                         <TextInput
                           ref={confirmPasswordRef}

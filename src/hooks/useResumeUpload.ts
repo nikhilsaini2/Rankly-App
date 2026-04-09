@@ -60,6 +60,7 @@ Return extracted text content only.
 
       return cleanText;
     } catch (error) {
+      handleGeminiError(error);
       console.error("[extractTextFromPdf] Extraction failed:", error);
       // Return empty string on failure rather than null - ATS scorer can handle empty text
       return "";

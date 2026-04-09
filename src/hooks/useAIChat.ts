@@ -3,6 +3,7 @@ import { generateGeminiWithContext } from "../services/gemini/gemini";
 import { buildCareerCoachSystemPrompt } from "../services/gemini/prompts";
 import { supabase } from "../services/supabase/supabase";
 import type { ChatMessage, User } from "../types/common.types";
+import { handleGeminiError } from "../utils/geminiErrorHandler";
 
 export function useAIChat(profile: User | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -133,6 +134,8 @@ export function useAIChat(profile: User | null) {
         };
 
         setMessages((m) => [...m, asst]);
+      } catch (err) {
+        handleGeminiError(err, () => send(userText));
       } finally {
         setLoading(false);
       }

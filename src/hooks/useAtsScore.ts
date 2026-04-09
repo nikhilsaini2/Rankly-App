@@ -382,6 +382,7 @@ export function useAtsScore() {
         setScore(mapped);
         return mapped;
       } catch (e: unknown) {
+        handleGeminiError(e, () => scoreResume(resumeId, jobDescription));
         const message = e instanceof Error ? e.message : String(e);
         console.error("[scoreResume] FULL ERROR:", {
           message,

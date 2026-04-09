@@ -396,6 +396,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
       setAnalysis(parsed);
       setPhase("results");
     } catch (err) {
+      handleGeminiError(err, () => analyzeOffer());
       setError("Could not analyze offer. Please try again.");
       setPhase("input");
     }

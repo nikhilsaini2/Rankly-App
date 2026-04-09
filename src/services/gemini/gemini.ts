@@ -1,6 +1,23 @@
 import { GenerateParams } from "../../types";
 import { supabase } from "../supabase/supabase";
 
+export class GeminiError extends Error {
+  constructor(
+    public readonly code:
+      | "invalid_key"
+      | "invalid_request"
+      | "rate_limit"
+      | "unavailable"
+      | "server_error"
+      | "empty_response"
+      | "unknown",
+    message: string,
+  ) {
+    super(message);
+    this.name = "GeminiError";
+  }
+}
+
 const GEMINI_MODEL = "gemini-2.5-flash";
 let cachedApiKey: string = "";
 
@@ -67,17 +84,17 @@ export async function generateGeminiWithContext(
   });
 }
 
-async function generateGeminiRequest(body: {
-  systemInstruction?: string;
-  contents: { role: string; parts: { text: string }[] }[];
-}): Promise<string> {
+async function generateGeminiRequest(
+  body: {
+    systemInstruction?: string;
+    contents: { role: string; parts: { text: string }[] }[];
+  },
+  retries = 2,
+): Promise<string> {
   const key = await getApiKey();
   const url = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${key}`;
 
-  const requestBody: Record<string, unknown> = {
-    contents: body.contents,
-  };
-
+  const requestBody: Record<string, unknown> = { contents: body.contents };
   if (body.systemInstruction) {
     requestBody.contents = [
       { role: "user", parts: [{ text: body.systemInstruction }] },
@@ -93,32 +110,44 @@ async function generateGeminiRequest(body: {
 
   if (!res.ok) {
     const errText = await res.text();
-    console.error("[Gemini API] Error:", {
-      status: res.status,
-      errorBody: errText,
-    });
+
+    // Auto-retry on 503 with backoff
+    if (res.status === 503 && retries > 0) {
+      await new Promise((r) => setTimeout(r, 1500));
+      return generateGeminiRequest(body, retries - 1);
+    }
 
     if (res.status === 401) {
       clearApiKeyCache();
-      throw new Error(
-        "Gemini API: Invalid API key. Update it in Supabase app_config.",
+      throw new GeminiError(
+        "invalid_key",
+        "Invalid API key. Please try again later.",
       );
     } else if (res.status === 400) {
-      throw new Error(
-        "Gemini API: Invalid request. The prompt may be malformed.",
+      throw new GeminiError(
+        "invalid_request",
+        "Request could not be processed. Please try again.",
       );
     } else if (res.status === 429) {
       clearApiKeyCache();
-      throw new Error(
-        "Gemini API: Rate limit exceeded. Update key in Supabase if needed.",
+      throw new GeminiError(
+        "rate_limit",
+        "AI service is busy. Please wait a moment and try again.",
       );
-    } else if (res.status >= 500) {
-      throw new Error(
-        "Gemini API: Service temporarily unavailable. Please try again later.",
+    } else if (res.status === 503) {
+      throw new GeminiError(
+        "unavailable",
+        "AI service is temporarily unavailable. Please try again in a few minutes.",
+      );
+    } else if (res.status === 500) {
+      throw new GeminiError(
+        "server_error",
+        "AI service encountered an error. Please try again.",
       );
     } else {
-      throw new Error(
-        `Gemini request failed: ${res.status} - ${errText.slice(0, 200)}`,
+      throw new GeminiError(
+        "unknown",
+        `Something went wrong (${res.status}). Please try again.`,
       );
     }
   }
@@ -128,13 +157,11 @@ async function generateGeminiRequest(body: {
   };
 
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-  if (!text) {
-    console.error(
-      "[Gemini API] Empty response:",
-      JSON.stringify(data, null, 2),
+  if (!text)
+    throw new GeminiError(
+      "empty_response",
+      "AI returned an empty response. Please try again.",
     );
-    throw new Error("Empty response from Gemini");
-  }
 
   return text;
 }

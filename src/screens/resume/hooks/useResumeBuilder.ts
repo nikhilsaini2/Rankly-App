@@ -211,7 +211,8 @@ export function useResumeBuilder() {
       if (!parsed) throw new Error("Invalid response");
       setGeneratedResume(parsed);
       setPhase("preview");
-    } catch {
+    } catch (err) {
+      handleGeminiError(err, () => buildResume());
       setError("Could not build resume. Please try again.");
       setPhase("input");
     }
