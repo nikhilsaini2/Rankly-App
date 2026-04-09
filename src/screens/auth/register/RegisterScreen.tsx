@@ -102,7 +102,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
           />
 
           <ScrollView
-            contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+            contentContainerStyle={{ paddingBottom: 50 + insets.bottom }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             bounces={false}

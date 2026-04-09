@@ -92,7 +92,7 @@ export default function AIScreen() {
     <KeyboardAvoidingView
       style={[styles.root]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={49}
+      keyboardVerticalOffset={30}
     >
       <Animated.View style={[styles.flex, screenAnim]}>
         <PremiumHeader />

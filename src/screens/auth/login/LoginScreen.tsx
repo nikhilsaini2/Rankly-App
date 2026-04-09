@@ -104,7 +104,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
           />
 
           <ScrollView
-            contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             bounces={false}
