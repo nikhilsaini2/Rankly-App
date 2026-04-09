@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { generateGeminiText, parseGeminiJson } from "../services/gemini/gemini";
+import { handleGeminiError } from "../utils/gemini";
 
 export function useGemini() {
   const [loading, setLoading] = useState(false);

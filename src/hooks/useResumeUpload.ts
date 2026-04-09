@@ -6,6 +6,7 @@ import { MAX_FREE_RESUMES } from "../constants/options";
 import { generateGeminiText } from "../services/gemini/gemini";
 import { supabase } from "../services/supabase/supabase";
 import type { AtsScoreSummary, ResumeRow } from "../types/common.types";
+import { handleGeminiError } from "../utils/gemini";
 
 const BUCKET = "resumes";
 

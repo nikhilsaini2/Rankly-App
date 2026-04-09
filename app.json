@@ -34,7 +34,8 @@
       "expo-font",
       "@react-native-google-signin/google-signin",
       "expo-speech-recognition",
-      "expo-sharing"
+      "expo-sharing",
+      "react-native-vosk"
     ],
     "extra": {
       "eas": {

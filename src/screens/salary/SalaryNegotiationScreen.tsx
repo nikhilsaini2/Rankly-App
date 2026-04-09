@@ -27,8 +27,7 @@ import { useProfile } from "../../hooks/index";
 import { generateGeminiText } from "../../services/gemini";
 import { supabase } from "../../services/supabase";
 import { colors } from "../../theme/color";
-import { parseGeminiJson } from "../../utils/gemini";
-
+import { handleGeminiError, parseGeminiJson } from "../../utils/gemini";
 interface SalaryAnalysis {
   verdict: "Below Market" | "Fair Offer" | "Above Market";
   marketMin: number;
@@ -1152,7 +1151,7 @@ const styles = StyleSheet.create({
   },
   loadingHeader: {
     position: "absolute",
-    top: 60,
+    top: 25,
     left: 20,
     zIndex: 1,
   },

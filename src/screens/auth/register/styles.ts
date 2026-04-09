@@ -182,4 +182,30 @@ export const styles = StyleSheet.create({
     fontSize: 10,
     paddingTop: 2,
   },
+
+  errorBanner: {
+    backgroundColor: colors.error + "20",
+    borderColor: colors.error,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+
+  errorBannerText: {
+    color: colors.error,
+    fontSize: 12,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+
+  inputError: {
+    borderColor: colors.error,
+  },
+
+  passwordToggle: {
+    position: "absolute",
+    right: 12,
+    padding: 8,
+  },
 });

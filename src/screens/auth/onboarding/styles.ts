@@ -187,6 +187,16 @@ export const styles = StyleSheet.create({
     fontSize: 16,
   },
 
+  ctaContainer: {
+    marginTop: 30,
+  },
+
+  loadingContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
   ghostBtn: {
     marginTop: 20,
     padding: 18,

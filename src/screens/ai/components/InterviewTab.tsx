@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -24,9 +25,14 @@ import Animated, {
 } from "react-native-reanimated";
 import { PressableScale } from "../../../components/atoms/PressableScale";
 import { ScoreRing } from "../../../components/atoms/ScoreRing";
+import { VoiceInterviewSession } from "../../../components/molecules/VoiceInterviewSession";
 import { useInterview } from "../../../hooks/useInterview";
+import { useVoiceInterview } from "../../../hooks/useVoiceInterview";
 import { colors } from "../../../theme/color";
-import type { RootStackParamList } from "../../../types/navigation.types";
+import type {
+  RootStackParamList,
+  SessionAnswer,
+} from "../../../types/navigation.types";
 import {
   getInterviewResultMessage,
   getQuestionScoreColor,
@@ -123,6 +129,9 @@ type SetupProps = {
   setSessionType: (v: "behavioral" | "technical" | "mixed") => void;
   numQ: number;
   setNumQ: (v: number) => void;
+  voiceMode: boolean;
+  setVoiceMode: (v: boolean) => void;
+  hasModelError: boolean;
 };
 
 function SetupPhase({
@@ -136,12 +145,15 @@ function SetupPhase({
   setSessionType,
   numQ,
   setNumQ,
+  voiceMode,
+  setVoiceMode,
+  hasModelError,
 }: SetupProps) {
   const [roleFocused, setRoleFocused] = useState(false);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
-  const opacities = [0, 0, 0, 0].map(() => useSharedValue(0));
-  const ys = [0, 0, 0, 0].map(() => useSharedValue(10));
+  const opacities = [0, 0, 0, 0, 0].map(() => useSharedValue(0));
+  const ys = [0, 0, 0, 0, 0].map(() => useSharedValue(10));
 
   useEffect(() => {
     opacities.forEach((op, i) => {
@@ -229,6 +241,38 @@ function SetupPhase({
               onPress={() => setNumQ(n)}
             />
           ))}
+        </View>
+      </Animated.View>
+
+      <Animated.View style={[styles.setupCard, cardStyles[4]]}>
+        <View style={styles.voiceModeRow}>
+          <View style={styles.voiceModeText}>
+            <Text style={styles.fieldLabel}>Voice Mode</Text>
+            <Text style={styles.voiceModeSubLabel}>
+              Questions read aloud, answer by speaking
+            </Text>
+            {hasModelError && (
+              <Text
+                style={{ color: colors.warning, fontSize: 11, marginTop: 4 }}
+              >
+                ⚠ Voice mode unavailable — model not found
+              </Text>
+            )}
+          </View>
+          <Switch
+            value={voiceMode}
+            onValueChange={(value) => {
+              // Prevent enabling voice mode if Vosk has issues
+              if (value && hasModelError) {
+                return;
+              }
+              setVoiceMode(value);
+            }}
+            trackColor={{ false: colors.border, true: colors.primary + "30" }}
+            thumbColor={voiceMode ? colors.primary : colors.textSecondary}
+            ios_backgroundColor={colors.border}
+            disabled={hasModelError}
+          />
         </View>
       </Animated.View>
 
@@ -518,10 +562,75 @@ type InterviewTabProps = {
 export function InterviewTab(props: InterviewTabProps) {
   const { iv, insetsBottom, answer, setAnswer, onDiscussCoach, ...setupProps } =
     props;
+  const [voiceMode, setVoiceMode] = useState(false);
+
+  // Initialize voice interview hook at component level
+  const voiceInterview = useVoiceInterview();
+
+  // Get questions array for voice mode
+  const questions = iv.questions.map((q) => q.question);
+
+  // Check if voice mode should be disabled due to Vosk issues
+  const hasModelError = Boolean(
+    voiceInterview.errorMessage?.includes("model not found") ||
+    voiceInterview.errorMessage?.includes("model not"),
+  );
+
+  useEffect(() => {
+    if (hasModelError) {
+      setVoiceMode(false);
+    }
+  }, [hasModelError]);
+
+  const handleVoiceSessionComplete = (answers: SessionAnswer[]) => {
+    // Store voice session results or navigate to summary
+    console.log("Voice session completed:", answers);
+    setVoiceMode(false);
+    iv.reset();
+  };
+
+  const handleVoiceExit = () => {
+    setVoiceMode(false);
+    iv.reset();
+  };
 
   if (iv.phase === "setup") {
-    return <SetupPhase iv={iv} insetsBottom={insetsBottom} {...setupProps} />;
+    return (
+      <SetupPhase
+        iv={iv}
+        insetsBottom={insetsBottom}
+        voiceMode={voiceMode}
+        setVoiceMode={setVoiceMode}
+        hasModelError={hasModelError}
+        setupRole={setupProps.setupRole}
+        setSetupRole={setupProps.setSetupRole}
+        difficulty={setupProps.difficulty}
+        setDifficulty={setupProps.setDifficulty}
+        sessionType={setupProps.sessionType}
+        setSessionType={setupProps.setSessionType}
+        numQ={setupProps.numQ}
+        setNumQ={setupProps.setNumQ}
+      />
+    );
   }
+
+  // If voice mode is enabled and session is live, show voice interview session
+  if (voiceMode && iv.phase === "live" && questions.length > 0) {
+    return (
+      <VoiceInterviewSession
+        questions={questions}
+        sessionConfig={{
+          role: setupProps.setupRole,
+          difficulty: setupProps.difficulty,
+          sessionType: setupProps.sessionType,
+        }}
+        voiceInterview={voiceInterview}
+        onSessionComplete={handleVoiceSessionComplete}
+        onExit={handleVoiceExit}
+      />
+    );
+  }
+
   if (iv.phase === "live") {
     return (
       <LivePhase
@@ -532,6 +641,7 @@ export function InterviewTab(props: InterviewTabProps) {
       />
     );
   }
+
   if (iv.phase === "done") {
     return (
       <DonePhase
@@ -541,6 +651,7 @@ export function InterviewTab(props: InterviewTabProps) {
       />
     );
   }
+
   return null;
 }
 

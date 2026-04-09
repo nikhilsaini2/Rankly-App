@@ -46,6 +46,36 @@ export type RegisterPayload = {
 
 export type ExperienceLevel = "student" | "entry" | "mid" | "senior" | "lead";
 
+export interface VoiceSessionAnswer {
+  question: string;
+  transcript: string;
+  score: number;
+  overallFeedback: string;
+  strengths: string[];
+  improvements: string[];
+  tip: string;
+  answeredAt: string; // ISO timestamp
+}
+
+export type VoiceInterviewPhase =
+  | "idle"
+  | "requesting_permission"
+  | "permission_denied"
+  | "speaking_question"
+  | "ready_to_record"
+  | "recording"
+  | "processing"
+  | "showing_feedback"
+  | "session_complete"
+  | "error";
+
+export interface SessionAnswer {
+  question: string;
+  transcript: string;
+  score: number;
+  feedback: string;
+}
+
 export interface User {
   id: string;
   firstName: string;

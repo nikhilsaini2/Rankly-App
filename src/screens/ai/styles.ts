@@ -444,34 +444,59 @@ export const styles = StyleSheet.create({
     fontSize: 11,
   },
   metaChipText: { fontWeight: "600", fontSize: 11 },
-  answerInput: {
-    minHeight: 120,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
-    color: colors.textPrimary,
-    fontSize: 15,
-    marginBottom: 16,
-    maxHeight: 200,
-  },
-  answerInputFocused: { borderColor: colors.primary },
-  actionRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  skipButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
   skipText: { color: colors.textPrimary, fontWeight: "600" },
+  skipButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  actionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 16,
+  },
   submitButton: { flex: 1, borderRadius: 14, overflow: "hidden" },
   submitButtonDisabled: { opacity: 0.45 },
   submitGrad: { paddingVertical: 14, alignItems: "center", borderRadius: 14 },
   submitText: { color: colors.textPrimary, fontWeight: "700", fontSize: 16 },
 
-  // ─── Results ──────────────────────────────────────────────
+  // Voice mode styles
+  voiceModeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  voiceModeText: {
+    flex: 1,
+    marginRight: 16,
+  },
+  voiceModeSubLabel: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
+  },
+
+  // Answer input styles
+  answerInput: {
+    minHeight: 120,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 14,
+    fontSize: 15,
+    color: colors.textPrimary,
+    textAlignVertical: "top",
+  },
+  answerInputFocused: {
+    borderColor: colors.primary,
+  },
+
+  // Results styles
   resultsContent: { paddingHorizontal: 20, paddingTop: 8 },
   resultsHeader: { alignItems: "center", marginBottom: 24 },
   ringWrap: { marginBottom: 12 },

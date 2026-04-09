@@ -43,3 +43,10 @@ export type AuthScreenProps<T extends keyof AuthStackParamList> =
 
 export type AppStackScreenProps<T extends keyof RootStackParamList> =
   NativeStackScreenProps<RootStackParamList, T>;
+
+export interface SessionAnswer {
+  question: string;
+  transcript: string;
+  score: number;
+  feedback: string;
+}

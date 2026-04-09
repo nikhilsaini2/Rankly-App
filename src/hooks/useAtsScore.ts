@@ -3,6 +3,7 @@ import { generateGeminiText, parseGeminiJson } from "../services/gemini/gemini";
 import { buildAtsScorePrompt } from "../services/gemini/prompts";
 import { supabase } from "../services/supabase/supabase";
 import type { AtsScoreRow } from "../types/common.types";
+import { handleGeminiError } from "../utils/gemini";
 
 type GeminiAts = {
   overall_score: number;
@@ -190,14 +191,11 @@ export function useAtsScore() {
       setScoring(true);
       setError(null);
 
-      let user: { id: string } | null = null;
-
       try {
         const {
-          data: { user: authUser },
+          data: { user },
         } = await supabase.auth.getUser();
-        if (!authUser) throw new Error("Not signed in");
-        user = authUser;
+        if (!user) throw new Error("Not signed in");
 
         const { data: res, error: rErr } = await supabase
           .from("resumes")
@@ -388,7 +386,7 @@ export function useAtsScore() {
           message,
           error: e,
           resumeId,
-          userId: user?.id,
+          userId: "unknown",
         });
 
         // Map specific errors to user-friendly messages
