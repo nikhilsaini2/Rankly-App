@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { ChatMessage } from '../types/common.types';
-import type { User } from '../types/common.types';
-import { generateGeminiWithContext } from '../services/gemini/gemini';
-import { buildCareerCoachSystemPrompt } from '../services/gemini/prompts';
-import { supabase } from '../services/supabase/supabase';
+import { useCallback, useEffect, useState } from "react";
+import { generateGeminiWithContext } from "../services/gemini/gemini";
+import { buildCareerCoachSystemPrompt } from "../services/gemini/prompts";
+import { supabase } from "../services/supabase/supabase";
+import type { ChatMessage, User } from "../types/common.types";
 
 export function useAIChat(profile: User | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -12,30 +11,39 @@ export function useAIChat(profile: User | null) {
 
   useEffect(() => {
     let alive = true;
-    (async () => {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
-      if (!authUser || !alive) return;
+    setReady(false);
 
-      const { data } = await supabase
-        .from('ai_chats')
-        .select('*')
-        .eq('user_id', authUser.id)
-        .order('created_at', { ascending: true })
-        .limit(50);
+    (async () => {
+      // ── Wait for session to be fully restored ──
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user || !alive) return;
+
+      const { data, error } = await supabase
+        .from("ai_chats")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: true })
+        .limit(100);
 
       if (!alive) return;
 
+      if (error) {
+        console.error("[useAIChat] fetch error:", error.message);
+      }
+
       const mapped = (data ?? []).map((r) => ({
         id: r.id as string,
-        role: r.role as 'user' | 'assistant',
+        role: r.role as "user" | "assistant",
         content: r.content as string,
         createdAt: r.created_at as string,
       }));
+
       setMessages(mapped);
       setReady(true);
     })();
+
     return () => {
       alive = false;
     };
@@ -46,25 +54,40 @@ export function useAIChat(profile: User | null) {
       const {
         data: { user: authUser },
       } = await supabase.auth.getUser();
-      if (!authUser) throw new Error('Not signed in');
+      if (!authUser) throw new Error("Not signed in");
 
-      const coachProfile: Pick<User, 'role' | 'experienceLevel' | 'industry'> = profile
+      const coachProfile = profile
         ? {
             role: profile.role,
             experienceLevel: profile.experienceLevel ?? null,
             industry: profile.industry ?? null,
           }
         : {
-            role: 'Not specified',
-            experienceLevel: null,
-            industry: null,
+            role: "Not specified",
+            experienceLevel: null as null,
+            industry: null as null,
           };
 
+      // ── 1. Insert user message and get back the real DB id ──
+      const { data: userRow, error: userInsertError } = await supabase
+        .from("ai_chats")
+        .insert({ user_id: authUser.id, role: "user", content: userText })
+        .select("id, created_at")
+        .single();
+
+      if (userInsertError) {
+        console.error(
+          "[useAIChat] user insert error:",
+          userInsertError.message,
+        );
+        throw userInsertError;
+      }
+
       const userMsg: ChatMessage = {
-        id: `local-${Date.now()}`,
-        role: 'user',
+        id: userRow.id, // ← real DB id, not local-xxx
+        role: "user",
         content: userText,
-        createdAt: new Date().toISOString(),
+        createdAt: userRow.created_at,
       };
 
       let threadSnapshot: ChatMessage[] = [];
@@ -75,15 +98,9 @@ export function useAIChat(profile: User | null) {
 
       setLoading(true);
       try {
-        await supabase.from('ai_chats').insert({
-          user_id: authUser.id,
-          role: 'user',
-          content: userText,
-        });
-
         const system = buildCareerCoachSystemPrompt(coachProfile);
         const history = threadSnapshot.slice(-10).map((m) => ({
-          role: m.role === 'assistant' ? ('model' as const) : ('user' as const),
+          role: m.role === "assistant" ? ("model" as const) : ("user" as const),
           text: m.content,
         }));
 
@@ -93,18 +110,28 @@ export function useAIChat(profile: User | null) {
           history,
         });
 
-        await supabase.from('ai_chats').insert({
-          user_id: authUser.id,
-          role: 'assistant',
-          content: reply,
-        });
+        // ── 2. Insert assistant message and get real id back ──
+        const { data: asstRow, error: asstInsertError } = await supabase
+          .from("ai_chats")
+          .insert({ user_id: authUser.id, role: "assistant", content: reply })
+          .select("id, created_at")
+          .single();
+
+        if (asstInsertError) {
+          console.error(
+            "[useAIChat] assistant insert error:",
+            asstInsertError.message,
+          );
+          throw asstInsertError;
+        }
 
         const asst: ChatMessage = {
-          id: `local-a-${Date.now()}`,
-          role: 'assistant',
+          id: asstRow.id, // ← real DB id
+          role: "assistant",
           content: reply,
-          createdAt: new Date().toISOString(),
+          createdAt: asstRow.created_at,
         };
+
         setMessages((m) => [...m, asst]);
       } finally {
         setLoading(false);
@@ -113,18 +140,21 @@ export function useAIChat(profile: User | null) {
     [profile],
   );
 
-  const clearChat = useCallback(() => {
+  const clearChat = useCallback(async () => {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    if (authUser) {
+      await supabase.from("ai_chats").delete().eq("user_id", authUser.id);
+    }
     setMessages([]);
   }, []);
 
   return {
-    // existing fields (used by current AIScreen)
     messages,
     loading,
     ready,
     send,
-
-    // aliases (for premium UI spec compatibility)
     isGenerating: loading,
     sendMessage: send,
     clearChat,

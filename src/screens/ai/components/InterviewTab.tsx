@@ -321,9 +321,6 @@ function LivePhase({
             <Text style={styles.progressText}>
               Question {iv.index + 1} of {iv.questions.length}
             </Text>
-            <TouchableOpacity style={styles.endBtn} onPress={() => {}}>
-              <Text style={styles.endBtnText}>End</Text>
-            </TouchableOpacity>
           </View>
 
           <View style={styles.progressTrack}>

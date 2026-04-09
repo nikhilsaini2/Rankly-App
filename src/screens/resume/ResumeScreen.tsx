@@ -35,6 +35,7 @@ import type {
 } from "../../types/navigation.types";
 import { AnalyzeModal } from "./components/AnalyzeModal";
 import { FeatureRow } from "./components/FeatureRow";
+import { ResumeAnalyzingOverlay } from "./components/ResumeAnalyzingOverlay";
 import { ResumeCard } from "./components/ResumeCard";
 import { UploadingOverlay } from "./components/Uploadingoverlay";
 import { styles } from "./styles";
@@ -323,18 +324,7 @@ export default function ResumeScreen() {
           </PressableScale>
         </View>
 
-        {analyzingInProgress && (
-          <View style={styles.analyzingBanner}>
-            <View style={styles.analyzingPulse} />
-            <ActivityIndicator color={colors.primary} size="small" />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.analyzingTxt}>Analyzing your resume…</Text>
-              <Text style={styles.analyzingSubTxt}>
-                AI is scanning keywords, format & content
-              </Text>
-            </View>
-          </View>
-        )}
+        <ResumeAnalyzingOverlay visible={analyzingInProgress} />
 
         <FlatList
           data={resumes}

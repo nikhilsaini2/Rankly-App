@@ -20,6 +20,7 @@ import { styles } from "./styles";
 
 export default function AIScreen() {
   const insets = useSafeAreaInsets();
+  const TAB_BAR_HEIGHT = 49;
   const route = useRoute<RouteProp<RootTabParamList, "AI">>();
   const atsContext = route.params?.atsContext;
   const initialSegment = route.params?.initialSegment;
@@ -92,7 +93,7 @@ export default function AIScreen() {
     <KeyboardAvoidingView
       style={[styles.root]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={0}
+      keyboardVerticalOffset={TAB_BAR_HEIGHT + insets.bottom}
     >
       <Animated.View style={[styles.flex, screenAnim]}>
         <PremiumHeader />
