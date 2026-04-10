@@ -1,5 +1,8 @@
 import { useCallback, useState } from "react";
-import { generateGeminiText, parseGeminiJson } from "../services/gemini/gemini";
+import {
+  generateGeminiTextWithRetry,
+  parseGeminiJson,
+} from "../services/gemini";
 import { buildAtsScorePrompt } from "../services/gemini/prompts";
 import { supabase } from "../services/supabase/supabase";
 import type { AtsScoreRow } from "../types/common.types";
@@ -282,7 +285,7 @@ export function useAtsScore() {
         );
         console.log("[scoreResume] Prompt built, sending to Gemini...");
 
-        const raw = await generateGeminiText(prompt);
+        const raw = await generateGeminiTextWithRetry(prompt, 1);
         console.log(
           "[scoreResume] Gemini API Response preview:",
           raw.slice(0, 500),

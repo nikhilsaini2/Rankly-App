@@ -1,14 +1,20 @@
 export {
   extractJsonPayload,
   generateGeminiText,
+  generateGeminiTextWithFallback,
+  generateGeminiTextWithRetry,
   generateGeminiWithContext,
+  getGeminiErrorMessage,
+  isGeminiQuotaError,
   parseGeminiJson,
-} from './gemini';
-export type { GeminiChatTurn } from './gemini';
+  testGeminiConnection,
+  trackQuotaError,
+} from "./gemini";
+export type { GeminiChatTurn } from "./gemini";
 
 export {
   buildAtsScorePrompt,
-  buildInterviewQuestionsPrompt,
-  buildInterviewEvalPrompt,
   buildCareerCoachSystemPrompt,
-} from './prompts';
+  buildInterviewEvalPrompt,
+  buildInterviewQuestionsPrompt,
+} from "./prompts";

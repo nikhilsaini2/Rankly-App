@@ -3,8 +3,30 @@ import { generateGeminiWithContext } from "../services/gemini/gemini";
 import { buildCareerCoachSystemPrompt } from "../services/gemini/prompts";
 import { supabase } from "../services/supabase/supabase";
 import type { ChatMessage, User } from "../types/common.types";
-import { handleGeminiError } from "../utils/geminiErrorHandler";
 import { isGreeting, RANKLY_GREETING } from "../utils/greetingDetection";
+
+function makeErrorMessage(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  const lower = msg.toLowerCase();
+  if (
+    lower.includes("503") ||
+    lower.includes("high demand") ||
+    lower.includes("overloaded")
+  ) {
+    return "⚠️ AI is experiencing high demand right now. Please try again in a moment.";
+  }
+  if (
+    lower.includes("429") ||
+    lower.includes("quota") ||
+    lower.includes("rate limit")
+  ) {
+    return "⚠️ AI request limit reached. Please wait a minute and try again.";
+  }
+  if (lower.includes("network") || lower.includes("fetch failed")) {
+    return "⚠️ Network error. Please check your connection and try again.";
+  }
+  return "⚠️ Something went wrong. Please try again.";
+}
 
 export function useAIChat(profile: User | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -16,7 +38,6 @@ export function useAIChat(profile: User | null) {
     setReady(false);
 
     (async () => {
-      // ── Wait for session to be fully restored ──
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -30,10 +51,7 @@ export function useAIChat(profile: User | null) {
         .limit(100);
 
       if (!alive) return;
-
-      if (error) {
-        console.error("[useAIChat] fetch error:", error.message);
-      }
+      if (error) console.error("[useAIChat] fetch error:", error.message);
 
       const mapped = (data ?? []).map((r) => ({
         id: r.id as string,
@@ -42,7 +60,6 @@ export function useAIChat(profile: User | null) {
         createdAt: r.created_at as string,
       }));
 
-      // Add welcome message if chat is empty
       const welcomeMessage: ChatMessage = {
         id: "rankly-welcome",
         role: "assistant",
@@ -79,53 +96,39 @@ export function useAIChat(profile: User | null) {
             industry: null as null,
           };
 
-      // ── 1. Handle greetings locally (no API call) ──
+      // ── 1. Handle greetings locally ──
       if (isGreeting(userText)) {
-        // Add user message to chat
-        const greetingMsg: ChatMessage = {
-          id: `local-${Date.now()}`,
-          role: "user",
-          content: userText,
-          createdAt: new Date().toISOString(),
-        };
-
-        // Add instant Rankly greeting response
-        const ranklyReply: ChatMessage = {
-          id: `rankly-reply-${Date.now()}`,
-          role: "assistant",
-          content: RANKLY_GREETING,
-          createdAt: new Date().toISOString(),
-        };
-
-        setMessages((prev) => [...prev, greetingMsg, ranklyReply]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `local-${Date.now()}`,
+            role: "user",
+            content: userText,
+            createdAt: new Date().toISOString(),
+          },
+          {
+            id: `rankly-reply-${Date.now()}`,
+            role: "assistant",
+            content: RANKLY_GREETING,
+            createdAt: new Date().toISOString(),
+          },
+        ]);
         return;
       }
 
-      // ── 2. Insert user message and get back to real DB id ──
-      const { data: userRow, error: userInsertError } = await supabase
-        .from("ai_chats")
-        .insert({ user_id: authUser.id, role: "user", content: userText })
-        .select("id, created_at")
-        .single();
-
-      if (userInsertError) {
-        console.error(
-          "[useAIChat] user insert error:",
-          userInsertError.message,
-        );
-        throw userInsertError;
-      }
-
-      const userMsg: ChatMessage = {
-        id: userRow.id, // ← real DB id, not local-xxx
-        role: "user",
-        content: userText,
-        createdAt: userRow.created_at,
-      };
-
+      // ── 2. Optimistically add user message to UI only (no DB yet) ──
+      const tempUserMsgId = `temp-${Date.now()}`;
       let threadSnapshot: ChatMessage[] = [];
       setMessages((prev) => {
-        threadSnapshot = [...prev, userMsg];
+        threadSnapshot = [
+          ...prev,
+          {
+            id: tempUserMsgId,
+            role: "user",
+            content: userText,
+            createdAt: new Date().toISOString(),
+          },
+        ];
         return threadSnapshot;
       });
 
@@ -137,37 +140,65 @@ export function useAIChat(profile: User | null) {
           text: m.content,
         }));
 
+        // ── 3. Call AI first, save to DB only on success ──
         const reply = await generateGeminiWithContext({
           systemInstruction: system,
           userMessage: userText,
           history,
         });
 
-        // ── 2. Insert assistant message and get real id back ──
+        // ── 4. Save both messages to DB now that we have a reply ──
+        const { data: userRow, error: userInsertError } = await supabase
+          .from("ai_chats")
+          .insert({ user_id: authUser.id, role: "user", content: userText })
+          .select("id, created_at")
+          .single();
+
+        if (userInsertError) throw userInsertError;
+
         const { data: asstRow, error: asstInsertError } = await supabase
           .from("ai_chats")
           .insert({ user_id: authUser.id, role: "assistant", content: reply })
           .select("id, created_at")
           .single();
 
-        if (asstInsertError) {
-          console.error(
-            "[useAIChat] assistant insert error:",
-            asstInsertError.message,
-          );
-          throw asstInsertError;
-        }
+        if (asstInsertError) throw asstInsertError;
 
-        const asst: ChatMessage = {
-          id: asstRow.id, // ← real DB id
-          role: "assistant",
-          content: reply,
-          createdAt: asstRow.created_at,
-        };
-
-        setMessages((m) => [...m, asst]);
+        // ── 5. Replace temp message with real DB ids ──
+        setMessages((prev) =>
+          prev
+            .filter((m) => m.id !== tempUserMsgId)
+            .concat([
+              {
+                id: userRow.id,
+                role: "user",
+                content: userText,
+                createdAt: userRow.created_at,
+              },
+              {
+                id: asstRow.id,
+                role: "assistant",
+                content: reply,
+                createdAt: asstRow.created_at,
+              },
+            ]),
+        );
       } catch (err) {
-        handleGeminiError(err, () => send(userText));
+        // ── 6. Remove temp message, show inline error bubble — no Alert popup ──
+        const errorContent = makeErrorMessage(err);
+        setMessages((prev) =>
+          prev
+            .filter((m) => m.id !== tempUserMsgId)
+            .concat([
+              {
+                id: `error-${Date.now()}`,
+                role: "assistant",
+                content: errorContent,
+                createdAt: new Date().toISOString(),
+              },
+            ]),
+        );
+        console.error("[useAIChat] send error:", err);
       } finally {
         setLoading(false);
       }

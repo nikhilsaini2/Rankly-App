@@ -3,9 +3,9 @@ import * as Sharing from "expo-sharing";
 import { useEffect, useState } from "react";
 import { Alert } from "react-native";
 import { useProfile } from "../../../hooks";
-import { generateGeminiText } from "../../../services/gemini";
+import { generateGeminiText, parseGeminiJson } from "../../../services/gemini";
 import { supabase } from "../../../services/supabase";
-import { parseGeminiJson } from "../../../utils/gemini";
+import { handleGeminiError } from "../../../utils/gemini";
 import { EMPTY_EXPERIENCE, TOTAL_STEPS } from "../constants/resume.constants";
 import type {
   GeneratedResume,
@@ -277,6 +277,11 @@ export function useResumeBuilder() {
         if (resumeError) throw resumeError;
         resumeId = resumeRow.id;
 
+        // Ensure we have a valid resume ID before proceeding
+        if (!resumeId) {
+          throw new Error("Failed to create resume record");
+        }
+
         // Persist resumeId in builder state so re-saves update rather than duplicate
         setSelectedResume({
           id: resumeId,
@@ -287,10 +292,10 @@ export function useResumeBuilder() {
           industry: formData.industry || null,
           tone: formData.tone || null,
           skills: formData.skills || null,
-          professional_summary: generatedResume?.professionalSummary || null,
-          core_skills: generatedResume?.coreSkills || null,
+          professional_summary: generatedResume?.professionalSummary || "",
+          core_skills: generatedResume?.coreSkills || [],
           enhanced_experiences: generatedResume?.enhancedExperiences || null,
-          ats_keywords: generatedResume?.atsKeywords || null,
+          ats_keywords: generatedResume?.atsKeywords || [],
           pdf_uri: uri,
           created_at: new Date().toISOString(),
         });

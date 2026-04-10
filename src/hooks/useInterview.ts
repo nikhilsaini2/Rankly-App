@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { generateGeminiText, parseGeminiJson } from "../services/gemini/gemini";
+import {
+  generateGeminiTextWithRetry,
+  parseGeminiJson,
+} from "../services/gemini";
 import {
   buildInterviewEvalPrompt,
   buildInterviewQuestionsPrompt,
@@ -96,7 +99,7 @@ export function useInterview() {
         sessionType,
         totalQuestions,
       );
-      const raw = await generateGeminiText(prompt);
+      const raw = await generateGeminiTextWithRetry(prompt, 1);
       const list = parseInterviewQuestionList(raw).slice(0, totalQuestions);
       if (list.length === 0)
         throw new Error("AI response was unclear. Please try again.");
@@ -147,7 +150,7 @@ export function useInterview() {
         text,
         sessionRole || "professional",
       );
-      const raw = await generateGeminiText(evalPrompt);
+      const raw = await generateGeminiTextWithRetry(evalPrompt);
       const parsed = parseGeminiJson<{ score: number; feedback: string }>(raw);
       const questionScore = Math.max(0, Math.min(10, Math.round(parsed.score)));
 

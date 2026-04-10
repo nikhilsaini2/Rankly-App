@@ -1,11 +1,11 @@
 import { decode } from "base64-arraybuffer";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system/legacy";
+import * as FileSystem from "expo-file-system";
 import { useState } from "react";
 import { MAX_FREE_RESUMES } from "../constants/options";
-import { generateGeminiText } from "../services/gemini/gemini";
-import { supabase } from "../services/supabase/supabase";
-import type { AtsScoreSummary, ResumeRow } from "../types/common.types";
+import { generateGeminiText } from "../services/gemini";
+import { supabase } from "../services/supabase";
+import type { AtsScoreSummary, ResumeRow } from "../types";
 import { handleGeminiError } from "../utils/gemini";
 
 const BUCKET = "resumes";

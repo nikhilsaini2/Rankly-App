@@ -2,7 +2,7 @@ import * as Speech from "expo-speech";
 import { ExpoSpeechRecognitionModule } from "expo-speech-recognition";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Linking, Platform } from "react-native";
-import { generateGeminiText } from "../services/gemini/gemini";
+import { generateGeminiText } from "../services/gemini";
 import type { SessionAnswer, VoiceInterviewPhase } from "../types/common.types";
 
 interface AIFeedbackData {
@@ -37,6 +37,7 @@ export function useVoiceInterview() {
   >(async () => {});
   const hasEvaluatedRef = useRef<boolean>(false);
   const accumulatedTranscriptRef = useRef<string>("");
+  const isEvaluatingRef = useRef<boolean>(false);
 
   // Sync helpers
   const updatePhase = (p: VoiceInterviewPhase) => {
@@ -66,18 +67,19 @@ export function useVoiceInterview() {
   }, []);
 
   const handleSpeechEnd = useCallback(() => {
-    // Only trigger evaluation if stopRecording() hasn't already done it
-    // Give a 300ms grace period for stopRecording's async path to win
-    if (phaseRef.current !== "recording") return;
-    setTimeout(() => {
-      if (!hasEvaluatedRef.current && phaseRef.current === "recording") {
-        hasEvaluatedRef.current = true;
-        const transcript =
-          accumulatedTranscriptRef.current || liveTranscriptRef.current;
-        updatePhase("processing");
-        evaluateAnswerRef.current(transcript, currentQuestionRef.current);
-      }
-    }, 300);
+    // stopRecording() sets hasEvaluatedRef.current = true BEFORE calling stop().
+    // So by the time the "end" event fires, the guard is already set.
+    // We only need to handle the case where recognition ended on its own
+    // (e.g., silence timeout, Android auto-stop) without stopRecording being called.
+    if (hasEvaluatedRef.current) return; // stopRecording already handled this
+    if (phaseRef.current !== "recording") return; // not in recording state
+
+    // Recognition ended naturally - evaluate what we have
+    hasEvaluatedRef.current = true;
+    const transcript =
+      accumulatedTranscriptRef.current || liveTranscriptRef.current;
+    updatePhase("processing");
+    evaluateAnswerRef.current(transcript, currentQuestionRef.current);
   }, []);
 
   const handleSpeechResult = useCallback((event: any) => {
@@ -230,97 +232,141 @@ export function useVoiceInterview() {
     );
   }, []);
 
-  const evaluateAnswer = async (transcript: string, question: string) => {
-    const cleanTranscript = transcript?.trim() ?? "";
+  const evaluateAnswer = useCallback(
+    async (transcript: string, question: string) => {
+      // Semaphore — block if already evaluating (handles any surviving race)
+      if (isEvaluatingRef.current) {
+        console.warn("[evaluateAnswer] blocked — already evaluating");
+        return;
+      }
+      isEvaluatingRef.current = true;
 
-    if (!cleanTranscript || cleanTranscript.length < 3) {
-      setAiFeedback({
-        score: 0,
-        overall: "No answer detected. Please try again.",
-        strengths: [],
-        improvements: ["Speak clearly and provide a complete answer"],
-        tip: "Try to speak for at least 3 seconds.",
-      });
-      setAiScore(0);
-      updatePhase("showing_feedback");
-      return;
-    }
+      const cleanTranscript = transcript?.trim() ?? "";
 
-    setFinalTranscript(cleanTranscript);
-    updatePhase("processing");
-
-    const prompt = `You are an expert interview coach evaluating a candidate's answer.
-
-Question: ${question}
-
-Candidate's Answer: ${cleanTranscript}
-
-Provide a JSON response with this exact structure:
-{
-  "score": <number 0-100>,
-  "overall": "<2-3 sentence overall assessment>",
-  "strengths": ["<strength 1>", "<strength 2>"],
-  "improvements": ["<improvement 1>", "<improvement 2>"],
-  "tip": "<one specific actionable tip>"
-}
-
-Respond with JSON only. No markdown, no explanation outside of JSON.`;
-
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new Error("Evaluation timed out after 15 seconds")),
-        15000,
-      ),
-    );
-
-    try {
-      const responseText = await Promise.race([
-        generateGeminiText(prompt),
-        timeoutPromise,
-      ]);
-
-      let parsed: AIFeedbackData;
-      try {
-        parsed = JSON.parse(responseText);
-      } catch {
-        const clean = responseText.replace(/```json|```/g, "").trim();
-        parsed = JSON.parse(clean);
+      if (!cleanTranscript || cleanTranscript.length < 3) {
+        setFinalTranscript("(No answer recorded)");
+        setAiFeedback({
+          score: 0,
+          overall: "No answer was detected for this question.",
+          strengths: [],
+          improvements: ["Speak clearly into the microphone and try again."],
+          tip: "Tap the mic, wait for it to turn red, then speak.",
+        });
+        setAiScore(0);
+        updatePhase("showing_feedback");
+        isEvaluatingRef.current = false;
+        return;
       }
 
-      const score = Math.max(0, Math.min(100, Math.round(parsed.score || 0)));
+      setFinalTranscript(cleanTranscript);
+      updatePhase("processing");
 
-      setAiScore(score);
-      setAiFeedback({
-        score,
-        overall: parsed.overall || "Good effort overall.",
-        strengths: parsed.strengths || [],
-        improvements: parsed.improvements || [],
-        tip: parsed.tip || "Continue practicing to improve.",
-      });
+      // MINIMAL PROMPT - ~80 tokens max vs ~400 tokens before.
+      // Truncate inputs hard: question to 150 chars, answer to 300 chars.
+      // This is the single most important change for quota conservation.
+      const q = question.slice(0, 150);
+      const a = cleanTranscript.slice(0, 300);
+      const prompt = `Evaluate interview answer. Reply ONLY valid JSON, no markdown.
+Q: ${q}
+A: ${a}
+{"score":0-100,"overall":"2 sentences","strengths":["s1","s2"],"improvements":["i1","i2"],"tip":"1 sentence"}`;
 
-      const newAnswer: SessionAnswer = {
-        question,
-        transcript: cleanTranscript,
-        score,
-        feedback: parsed.overall || "Good effort overall.",
-      };
-      setAnswers((prev) => [...prev, newAnswer]);
-    } catch (error: any) {
-      console.error("Gemini evaluation error:", error);
-      setAiFeedback({
-        score: 0,
-        overall: error?.message?.includes("timed out")
-          ? "Evaluation took too long. Moving to next question."
-          : "Evaluation failed. Please try again.",
-        strengths: [],
-        improvements: [],
-        tip: "Check your internet connection and try again.",
-      });
-      setAiScore(0);
-    } finally {
-      updatePhase("showing_feedback");
-    }
-  };
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("TIMEOUT")),
+          30000, // 30s covers up to 3 retries with backoff
+        ),
+      );
+
+      try {
+        const responseText = await Promise.race([
+          generateGeminiText(prompt),
+          timeoutPromise,
+        ]);
+
+        // Robust JSON parse - strips accidental markdown fences
+        const cleaned = responseText.replace(/```json|```/g, "").trim();
+        let parsed: AIFeedbackData;
+        try {
+          parsed = JSON.parse(cleaned);
+        } catch {
+          const match = cleaned.match(/\{[\s\S]*\}/);
+          if (!match) throw new Error("Could not parse AI response");
+          parsed = JSON.parse(match[0]);
+        }
+
+        const score = Math.max(
+          0,
+          Math.min(100, Math.round(Number(parsed.score) || 0)),
+        );
+
+        setAiScore(score);
+        setAiFeedback({
+          score,
+          overall: parsed.overall || "Good effort overall.",
+          strengths: Array.isArray(parsed.strengths)
+            ? parsed.strengths.slice(0, 3)
+            : [],
+          improvements: Array.isArray(parsed.improvements)
+            ? parsed.improvements.slice(0, 3)
+            : [],
+          tip: parsed.tip || "Keep practicing consistently.",
+        });
+
+        setAnswers((prev) => [
+          ...prev,
+          {
+            question,
+            transcript: cleanTranscript,
+            score,
+            feedback: parsed.overall || "Good effort overall.",
+          },
+        ]);
+      } catch (error: any) {
+        console.error("[evaluateAnswer] final failure:", error?.message);
+
+        const msg = error?.message?.toLowerCase() ?? "";
+        const isTimeout = msg.includes("timeout");
+        const isRateLimit =
+          msg.includes("429") ||
+          msg.includes("rate limit") ||
+          msg.includes("quota") ||
+          msg.includes("resource_exhausted");
+
+        setAiFeedback({
+          score: 0,
+          overall: isRateLimit
+            ? "AI is temporarily busy — your answer was recorded. Score will show as 0."
+            : isTimeout
+              ? "Evaluation took too long. Your answer was saved but could not be scored."
+              : "Could not evaluate this answer. Moving on.",
+          strengths: [],
+          improvements: isRateLimit
+            ? ["Try fewer questions per session to avoid API limits."]
+            : ["Ensure a stable internet connection for scoring."],
+          tip: isRateLimit
+            ? "Use 3–5 questions per session for best results."
+            : "Your spoken answer was still recorded correctly.",
+        });
+        setAiScore(0);
+
+        // Still save the answer even on failure so session isn't lost
+        setAnswers((prev) => [
+          ...prev,
+          {
+            question,
+            transcript: cleanTranscript,
+            score: 0,
+            feedback: "Evaluation failed — answer was recorded.",
+          },
+        ]);
+      } finally {
+        isEvaluatingRef.current = false;
+        updatePhase("showing_feedback");
+      }
+    },
+    [],
+  ); // empty deps - all state access via refs
 
   const nextQuestion = async () => {
     const questions = questionsRef.current;
@@ -362,6 +408,7 @@ Respond with JSON only. No markdown, no explanation outside of JSON.`;
     questionsRef.current = [];
     accumulatedTranscriptRef.current = "";
     hasEvaluatedRef.current = false;
+    isEvaluatingRef.current = false;
   };
 
   const speakCurrentQuestion = () => {
@@ -395,7 +442,7 @@ Respond with JSON only. No markdown, no explanation outside of JSON.`;
 
   useEffect(() => {
     evaluateAnswerRef.current = evaluateAnswer;
-  });
+  }, [evaluateAnswer]); // only updates when function identity changes
 
   useEffect(() => {
     if (phase !== "recording") {
