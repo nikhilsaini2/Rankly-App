@@ -1,0 +1,16 @@
+{
+  "README": "238063f4-72b3-4b37-8fa2-a8b7c5cdb1aa",
+  "am/final.mdl": "28f2b510-21a0-40e8-9e79-d36983911242",
+  "conf/mfcc.conf": "5c75d1d6-9236-495f-aec5-9fa97ce76423",
+  "conf/model.conf": "692b72a5-60c0-4fe5-b089-4ab9c6d88316",
+  "graph/Gr.fst": "864574ef-8da2-4410-8adf-af514244fa81",
+  "graph/HCLr.fst": "18018257-2036-4eeb-9163-1624b736111b",
+  "graph/disambig_tid.int": "ed9341f2-b194-4397-b516-6bd025751de0",
+  "graph/phones/word_boundary.int": "cf2efeb1-6d9d-4936-a106-4a728535046b",
+  "ivector/final.dubm": "8d481935-67d3-4acc-aee7-ba468a7e29fe",
+  "ivector/final.ie": "75cad1c5-2b08-4767-a01c-5777ea69beb5",
+  "ivector/final.mat": "c72b9266-2b84-42ca-a70c-9161b1c33364",
+  "ivector/global_cmvn.stats": "9eeb677c-d797-46d1-8b94-f1f2c4211083",
+  "ivector/online_cmvn.conf": "60c8da85-077b-498e-a3d1-2dda86c9a843",
+  "ivector/splice.conf": "c6db107b-989d-4448-8d01-31a4726341e9"
+}
