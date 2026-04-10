@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Alert } from "react-native";
 import { generateGeminiWithContext } from "../services/gemini/gemini";
 import { buildCareerCoachSystemPrompt } from "../services/gemini/prompts";
 import { supabase } from "../services/supabase/supabase";
@@ -13,7 +14,7 @@ function makeErrorMessage(err: unknown): string {
     lower.includes("high demand") ||
     lower.includes("overloaded")
   ) {
-    return "⚠️ AI is experiencing high demand right now. Please try again in a moment.";
+    return "⚠️ Gemini is experiencing high demand right now. Please try again in a moment.";
   }
   if (
     lower.includes("429") ||
@@ -184,21 +185,14 @@ export function useAIChat(profile: User | null) {
             ]),
         );
       } catch (err) {
-        // ── 6. Remove temp message, show inline error bubble — no Alert popup ──
-        const errorContent = makeErrorMessage(err);
-        setMessages((prev) =>
-          prev
-            .filter((m) => m.id !== tempUserMsgId)
-            .concat([
-              {
-                id: `error-${Date.now()}`,
-                role: "assistant",
-                content: errorContent,
-                createdAt: new Date().toISOString(),
-              },
-            ]),
-        );
+        setMessages((prev) => prev.filter((m) => m.id !== tempUserMsgId));
+        setLoading(false); // must set before Alert so UI unfreezes
+        Alert.alert("Gemini 503 Error", makeErrorMessage(err), [
+          { text: "OK", style: "cancel" },
+          { text: "Retry", onPress: () => send(userText) },
+        ]);
         console.error("[useAIChat] send error:", err);
+        return; // prevent finally from running setLoading again
       } finally {
         setLoading(false);
       }

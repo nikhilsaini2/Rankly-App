@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Alert } from "react-native";
 import {
   generateGeminiTextWithRetry,
   parseGeminiJson,
@@ -8,7 +9,6 @@ import {
   buildInterviewQuestionsPrompt,
 } from "../services/gemini/prompts";
 import { supabase } from "../services/supabase/supabase";
-import { handleGeminiError } from "../utils/geminiErrorHandler";
 
 function parseInterviewQuestionList(raw: string): string[] {
   try {
@@ -132,9 +132,25 @@ export function useInterview() {
       setIndex(0);
       setPhase("live");
     } catch (err) {
-      handleGeminiError(err, () =>
-        startSession(role, difficulty, sessionType, totalQuestions),
-      );
+      const msg = (
+        err instanceof Error ? err.message : String(err)
+      ).toLowerCase();
+      const friendlyMsg =
+        msg.includes("503") || msg.includes("high demand")
+          ? "AI is experiencing high demand. Please try again in a moment."
+          : msg.includes("429") || msg.includes("quota")
+            ? "AI request limit reached. Please wait a minute and try again."
+            : "Something went wrong. Please try again.";
+
+      Alert.alert("AI Unavailable", friendlyMsg, [
+        { text: "OK", style: "cancel" },
+        {
+          text: "Retry",
+          onPress: () =>
+            startSession(role, difficulty, sessionType, totalQuestions),
+        },
+      ]);
+      console.error("[useInterview] startSession error:", err);
     } finally {
       setBusy(false);
     }
@@ -202,7 +218,21 @@ export function useInterview() {
         setIndex(index + 1);
       }
     } catch (err) {
-      handleGeminiError(err, () => submitAnswer(text));
+      const msg = (
+        err instanceof Error ? err.message : String(err)
+      ).toLowerCase();
+      const friendlyMsg =
+        msg.includes("503") || msg.includes("high demand")
+          ? "Gemini experiencing high demand. Please try again in a moment."
+          : msg.includes("429") || msg.includes("quota")
+            ? "AI request limit reached. Please wait a minute and try again."
+            : "Something went wrong. Please try again.";
+
+      Alert.alert("Gemini 503 Error", friendlyMsg, [
+        { text: "OK", style: "cancel" },
+        { text: "Retry", onPress: () => submitAnswer(text) },
+      ]);
+      console.error("[useInterview] submitAnswer error:", err);
     } finally {
       setBusy(false);
     }

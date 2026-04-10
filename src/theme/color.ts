@@ -33,6 +33,12 @@ export const colors = {
   glow: "#8B5CF6",
 } as const;
 
+export const gradients = {
+  card: ["#8B5CF6", "#6D28D9"],
+  primary: ["#A78BFA", "#8B5CF6"],
+  secondary: ["#C4B5FD", "#A78BFA"],
+};
+
 export const shadows = {
   glow: {
     shadowColor: "#8B5CF6",

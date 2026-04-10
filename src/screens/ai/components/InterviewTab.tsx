@@ -179,12 +179,45 @@ function SetupPhase({
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.setupTitle}>Mock Interview</Text>
-      <Text style={styles.setupSubtitle}>
-        Practice common questions for your target role
-      </Text>
+      <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            marginBottom: 6,
+          }}
+        >
+          <View
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: colors.primaryDark,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="mic" size={18} color={colors.textPrimary} />
+          </View>
+          <Text
+            style={{
+              color: colors.textPrimary,
+              fontSize: 22,
+              fontWeight: "700",
+            }}
+          >
+            Mock Interview
+          </Text>
+        </View>
+        <Text style={{ color: colors.textMuted, fontSize: 14, lineHeight: 20 }}>
+          Practice real interview questions with AI feedback on your answers
+        </Text>
+      </View>
 
-      <Animated.View style={[styles.setupCard, cardStyles[0]]}>
+      <Animated.View
+        style={[styles.setupCard, cardStyles[0], { marginBottom: 12 }]}
+      >
         <Text style={styles.fieldLabel}>Role</Text>
         <TextInput
           style={[styles.ivInput, roleFocused && styles.ivInputFocused]}
@@ -197,7 +230,9 @@ function SetupPhase({
         />
       </Animated.View>
 
-      <Animated.View style={[styles.setupCard, cardStyles[1]]}>
+      <Animated.View
+        style={[styles.setupCard, cardStyles[1], { marginBottom: 12 }]}
+      >
         <Text style={styles.fieldLabel}>Difficulty</Text>
         <View style={styles.pillRow}>
           {(["easy", "medium", "hard"] as const).map((d) => (
@@ -212,7 +247,9 @@ function SetupPhase({
         </View>
       </Animated.View>
 
-      <Animated.View style={[styles.setupCard, cardStyles[2]]}>
+      <Animated.View
+        style={[styles.setupCard, cardStyles[2], { marginBottom: 12 }]}
+      >
         <Text style={styles.fieldLabel}>Session Type</Text>
         <View style={styles.pillRow}>
           {(["behavioral", "technical", "mixed"] as const).map((t) => (
@@ -227,7 +264,9 @@ function SetupPhase({
         </View>
       </Animated.View>
 
-      <Animated.View style={[styles.setupCard, cardStyles[3]]}>
+      <Animated.View
+        style={[styles.setupCard, cardStyles[3], { marginBottom: 12 }]}
+      >
         <Text style={styles.fieldLabel}>Questions</Text>
         <View style={styles.pillRow}>
           {[3, 5, 10].map((n) => (
@@ -242,10 +281,44 @@ function SetupPhase({
         </View>
       </Animated.View>
 
-      <Animated.View style={[styles.setupCard, cardStyles[4]]}>
+      <Animated.View
+        style={[
+          styles.setupCard,
+          cardStyles[4],
+          {
+            borderColor: voiceMode ? colors.borderStrong : colors.border,
+            backgroundColor: voiceMode
+              ? "rgba(139, 92, 246, 0.05)"
+              : colors.surface,
+          },
+        ]}
+      >
         <View style={styles.voiceModeRow}>
           <View style={styles.voiceModeText}>
-            <Text style={styles.fieldLabel}>Voice Mode</Text>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              <Text style={styles.fieldLabel}>Voice Mode</Text>
+              <View
+                style={{
+                  backgroundColor: colors.accent,
+                  borderRadius: 4,
+                  paddingHorizontal: 5,
+                  paddingVertical: 2,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#000",
+                    fontSize: 9,
+                    fontWeight: "800",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  NEW
+                </Text>
+              </View>
+            </View>
             <Text style={styles.voiceModeSubLabel}>
               Questions read aloud, answer by speaking
             </Text>
@@ -262,7 +335,7 @@ function SetupPhase({
       </Animated.View>
 
       <PressableScale
-        style={styles.startButtonWrap}
+        style={[styles.startButtonWrap, { marginHorizontal: 20, height: 56 }]}
         onPress={() =>
           iv.startSession(setupRole, difficulty, sessionType, numQ)
         }
@@ -281,6 +354,11 @@ function SetupPhase({
             <View style={styles.startBtnRow}>
               <Ionicons name="play" size={18} color={colors.textPrimary} />
               <Text style={styles.startBtnText}>Start Session</Text>
+              <Ionicons
+                name="arrow-forward"
+                size={16}
+                color={colors.textPrimary}
+              />
             </View>
           )}
         </LinearGradient>
@@ -367,12 +445,11 @@ function LivePhase({
           </View>
 
           <View style={styles.questionCard}>
-            <LinearGradient
-              colors={[colors.primary, colors.secondary]}
-              style={styles.questionAccentBar}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-            />
+            <View style={styles.questionHeader}>
+              <View style={styles.questionNumberBadge}>
+                <Text style={styles.questionNumberText}>Q{iv.index + 1}</Text>
+              </View>
+            </View>
             <Text style={styles.questionText}>{q.question}</Text>
             <View style={styles.metaRow}>
               <View style={styles.metaChipPrimary}>
@@ -393,8 +470,7 @@ function LivePhase({
 
           <TextInput
             multiline
-            numberOfLines={6}
-            placeholder="Type your answer here..."
+            placeholder="Type your answer here... Be specific and use examples."
             placeholderTextColor={colors.textMuted}
             value={answer}
             onChangeText={setAnswer}
@@ -406,10 +482,11 @@ function LivePhase({
             onFocus={() => setAnswerFocused(true)}
             onBlur={() => setAnswerFocused(false)}
           />
+          <Text style={styles.characterCounter}>{answer.length} chars</Text>
 
           <View style={styles.actionRow}>
             <PressableScale
-              style={styles.skipButton}
+              style={[styles.skipButton, { width: 80 }]}
               onPress={async () => {
                 setAnswer("");
                 await iv.submitAnswer("(skipped)");
@@ -421,6 +498,7 @@ function LivePhase({
             <PressableScale
               style={[
                 styles.submitButton,
+                { flex: 1, height: 52, borderRadius: 14 },
                 (!answer.trim() || iv.busy) && styles.submitButtonDisabled,
               ]}
               onPress={async () => {
@@ -437,7 +515,7 @@ function LivePhase({
                 style={styles.submitGrad}
               >
                 <Text style={styles.submitText}>
-                  {iv.busy ? "Evaluating…" : "Submit Answer"}
+                  {iv.busy ? "Evaluating..." : "Submit Answer"}
                 </Text>
               </LinearGradient>
             </PressableScale>

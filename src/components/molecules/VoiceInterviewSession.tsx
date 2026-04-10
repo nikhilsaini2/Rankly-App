@@ -1,21 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSpeechRecognitionEvent } from "expo-speech-recognition";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { useVoiceInterview } from "../../hooks/useVoiceInterview";
 import { colors } from "../../theme/color";
 import type { SessionAnswer } from "../../types/common.types";
@@ -30,6 +26,18 @@ interface VoiceInterviewSessionProps {
   voiceInterview: ReturnType<typeof useVoiceInterview>;
   onSessionComplete: (answers: SessionAnswer[]) => void;
   onExit: () => void;
+  onBack?: () => void;
+  onSkip?: () => void;
+  onListen?: () => void;
+  onStartRecording?: () => void;
+  onStopRecording?: () => void;
+  isRecording?: boolean;
+  liveTranscript?: string;
+  currentQuestion?: string;
+  currentQuestionIndex?: number;
+  totalQuestions?: number;
+  sessionType?: string;
+  difficulty?: string;
 }
 
 export function VoiceInterviewSession({
@@ -38,14 +46,26 @@ export function VoiceInterviewSession({
   voiceInterview,
   onSessionComplete,
   onExit,
+  onBack = onExit,
+  onSkip,
+  onListen,
+  onStartRecording,
+  onStopRecording,
+  isRecording,
+  liveTranscript: liveTranscriptProp,
+  currentQuestion: currentQuestionProp,
+  currentQuestionIndex: currentQuestionIndexProp,
+  totalQuestions: totalQuestionsProp,
+  sessionType: sessionTypeProp,
+  difficulty: difficultyProp,
 }: VoiceInterviewSessionProps) {
   const insets = useSafeAreaInsets();
   const {
     phase,
-    currentQuestion,
-    currentQuestionIndex,
-    totalQuestions,
-    liveTranscript,
+    currentQuestion: hookCurrentQuestion,
+    currentQuestionIndex: hookCurrentQuestionIndex,
+    totalQuestions: hookTotalQuestions,
+    liveTranscript: hookLiveTranscript,
     finalTranscript,
     aiFeedback,
     aiScore,
@@ -65,6 +85,17 @@ export function VoiceInterviewSession({
     handleSpeechResult,
     handleSpeechError,
   } = voiceInterview;
+
+  // Resolve values from props or hook - use ?? for numeric/boolean to handle falsy values correctly
+  const resolvedCurrentQuestion = currentQuestionProp ?? hookCurrentQuestion;
+  const resolvedCurrentQuestionIndex =
+    currentQuestionIndexProp ?? hookCurrentQuestionIndex;
+  const resolvedTotalQuestions = totalQuestionsProp ?? hookTotalQuestions;
+  const resolvedLiveTranscript = liveTranscriptProp ?? hookLiveTranscript;
+  const resolvedSessionType = sessionTypeProp ?? sessionConfig.sessionType;
+  const resolvedDifficulty = difficultyProp ?? sessionConfig.difficulty;
+  const resolvedIsRecording =
+    isRecording !== undefined ? isRecording : phase === "recording";
 
   // Component state
   const [showAnswer, setShowAnswer] = useState(true);
@@ -90,6 +121,7 @@ export function VoiceInterviewSession({
   const scoreAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
   const checkmarkAnim = useRef(new Animated.Value(0)).current;
+  const outerRingAnim = useRef(new Animated.Value(0.06)).current; // New animation for ready_to_record
 
   // Speech recognition event listeners - must be at component level
   useSpeechRecognitionEvent("start", handleSpeechStart);
@@ -107,15 +139,15 @@ export function VoiceInterviewSession({
   // Animate progress bar
   useEffect(() => {
     const progress =
-      totalQuestions > 0
-        ? (currentQuestionIndex + 1) / totalQuestions // +1 so Q1 shows some fill
+      resolvedTotalQuestions > 0
+        ? (resolvedCurrentQuestionIndex + 1) / resolvedTotalQuestions // +1 so Q1 shows some fill
         : 0;
     Animated.timing(progressAnim, {
       toValue: progress,
       duration: 300,
       useNativeDriver: false,
     }).start();
-  }, [currentQuestionIndex, totalQuestions]);
+  }, [resolvedCurrentQuestionIndex, resolvedTotalQuestions]);
 
   // Pulse animation for recording
   useEffect(() => {
@@ -130,6 +162,28 @@ export function VoiceInterviewSession({
           Animated.timing(pulseAnim, {
             toValue: 1,
             duration: 800,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }
+  }, [phase]);
+
+  // Outer ring pulse animation for ready_to_record
+  useEffect(() => {
+    if (phase === "ready_to_record") {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(outerRingAnim, {
+            toValue: 0.15,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(outerRingAnim, {
+            toValue: 0.06,
+            duration: 2000,
             useNativeDriver: true,
           }),
         ]),
@@ -197,24 +251,28 @@ export function VoiceInterviewSession({
   };
 
   const getSessionMessage = (averageScore: number) => {
-    if (averageScore >= 80) return "Outstanding performance! 🔥";
-    if (averageScore >= 60) return "Solid effort! Keep practicing 💪";
-    return "Good start! Practice makes perfect 🎯";
+    if (averageScore >= 80) return "Outstanding performance! \ud83d\udd25";
+    if (averageScore >= 60) return "Solid effort! Keep practicing \ud83d\udcaa";
+    return "Good start! Practice makes perfect \ud83c\udfaf";
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const renderHeader = () => (
-    <View style={[styles.header, { paddingTop: insets.top }]}>
-      <TouchableOpacity style={styles.backButton} onPress={onExit}>
-        <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
+    <View style={[styles.header, { paddingTop: 8 }]}>
+      <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <Ionicons name="arrow-back" size={18} color={colors.textPrimary} />
       </TouchableOpacity>
       <Text style={styles.headerProgress}>
-        Question {currentQuestionIndex + 1} / {totalQuestions}
+        Question {resolvedCurrentQuestionIndex + 1} / {resolvedTotalQuestions}
       </Text>
       <View style={styles.configPill}>
         <Text style={styles.configPillText}>
-          {sessionConfig.sessionType.charAt(0).toUpperCase() +
-            sessionConfig.sessionType.slice(1)}{" "}
-          • {sessionConfig.difficulty}
+          {resolvedSessionType} · {resolvedDifficulty}
         </Text>
       </View>
     </View>
@@ -222,119 +280,17 @@ export function VoiceInterviewSession({
 
   const renderProgressBar = () => (
     <View style={styles.progressBarContainer}>
-      <View style={styles.progressBarTrack}>
-        <Animated.View
-          style={[
-            styles.progressBarFill,
-            {
-              width: progressAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: ["0%", "100%"],
-              }),
-            },
-          ]}
-        />
-      </View>
-    </View>
-  );
-
-  const renderSpeakerButton = () => {
-    const isActive = phase === "speaking_question";
-    return (
-      <TouchableOpacity
-        style={[styles.speakerButton, isActive && styles.speakerButtonActive]}
-        onPress={isActive ? stopSpeaking : speakCurrentQuestion}
-      >
-        <Ionicons
-          name="volume-high-outline"
-          size={20}
-          color={isActive ? colors.textPrimary : colors.textSecondary}
-        />
-      </TouchableOpacity>
-    );
-  };
-
-  const renderRequestingPermission = () => (
-    <View style={styles.centerContainer}>
-      <ActivityIndicator size="large" color={colors.primary} />
-      <Text style={styles.statusText}>Setting up voice interview...</Text>
-    </View>
-  );
-
-  const renderPermissionDenied = () => (
-    <View style={styles.centerContainer}>
-      <Ionicons name="mic-off" size={48} color={colors.error} />
-      <Text style={styles.errorTitle}>Microphone Access Required</Text>
-      <Text style={styles.errorMessage}>
-        {errorMessage || "Voice interviews require microphone permission."}
-      </Text>
-      {errorMessage?.includes("Settings") && (
-        <TouchableOpacity style={styles.primaryButton} onPress={openSettings}>
-          <Text style={styles.primaryButtonText}>Open Settings</Text>
-        </TouchableOpacity>
-      )}
-      <TouchableOpacity style={styles.secondaryButton} onPress={onExit}>
-        <Text style={styles.secondaryButtonText}>Go Back</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const renderReadyToRecord = () => (
-    <View style={styles.contentContainer}>
-      <View style={styles.questionCard}>
-        <Text style={styles.questionText}>{currentQuestion}</Text>
-        <View style={styles.questionActions}>
-          {renderSpeakerButton()}
-          <View style={styles.speakerLabel}>
-            <Text style={styles.speakerLabelText}>Listen</Text>
-          </View>
-        </View>
-      </View>
-      <View style={styles.bottomActions}>
-        <TouchableOpacity style={styles.micButton} onPress={startRecording}>
-          <Ionicons name="mic" size={32} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.micLabel}>Tap to answer</Text>
-        <TouchableOpacity
-          style={styles.skipButton}
-          onPress={() => nextQuestion()}
-        >
-          <Text style={styles.skipButtonText}>Skip this question</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderSpeakingQuestion = () => (
-    <View style={styles.contentContainer}>
-      <View style={styles.questionCard}>
-        <Text style={styles.questionText}>{currentQuestion}</Text>
-        <View style={styles.questionActions}>
-          <TouchableOpacity
-            style={styles.speakerButtonActive}
-            onPress={stopSpeaking}
-          >
-            <Ionicons name="volume-high" size={20} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <View style={styles.speakingIndicator}>
-            {dotsAnim.map((anim, index) => (
-              <Animated.View
-                key={index}
-                style={[
-                  styles.speakingDot,
-                  {
-                    transform: [{ scale: anim }],
-                  },
-                ]}
-              />
-            ))}
-            <Text style={styles.speakingText}>Speaking...</Text>
-            <TouchableOpacity onPress={stopSpeaking}>
-              <Text style={styles.stopSpeakingText}>Stop</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <Animated.View
+        style={[
+          styles.progressBarFill,
+          {
+            width: progressAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: ["0%", "100%"],
+            }),
+          },
+        ]}
+      />
     </View>
   );
 
@@ -366,68 +322,190 @@ export function VoiceInterviewSession({
     }, []);
 
     return (
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 4,
-          height: 32,
-        }}
-      >
+      <View style={styles.waveformContainer}>
         {bars.map((bar, i) => (
           <Animated.View
             key={i}
-            style={{
-              width: 4,
-              height: 28,
-              borderRadius: 2,
-              backgroundColor: colors.primary,
-              transform: [{ scaleY: bar }],
-            }}
+            style={[
+              styles.waveformBar,
+              {
+                transform: [{ scaleY: bar }],
+                backgroundColor:
+                  phase === "recording" ? colors.danger : colors.primary,
+              },
+            ]}
           />
         ))}
       </View>
     );
   };
 
-  const renderRecording = () => (
-    <View style={styles.contentContainer}>
-      <View style={styles.questionCard}>
-        <Text style={styles.questionText}>{currentQuestion}</Text>
-      </View>
-      <View style={styles.transcriptCard}>
-        <Text style={styles.transcriptText}>
-          {liveTranscript || (
-            <Text style={styles.listeningText}>Listening...</Text>
-          )}
-        </Text>
-      </View>
-      <View style={styles.recordingIndicator}>
-        <WaveformBars />
-        <Text style={styles.recordingText}>Recording</Text>
-        <Text style={styles.timerText}>{recordingDuration}s</Text>
-      </View>
-      <View style={styles.bottomActions}>
-        <TouchableOpacity style={styles.stopButton} onPress={stopRecording}>
-          <Ionicons name="stop" size={32} color={colors.textPrimary} />
+  const renderRequestingPermission = () => (
+    <View style={styles.centerContainer}>
+      <ActivityIndicator size="large" color={colors.primary} />
+      <Text style={styles.setupTitle}>Setting up voice interview...</Text>
+      <Text style={styles.setupSubtitle}>
+        We need access to your microphone to record your answers
+      </Text>
+    </View>
+  );
+
+  const renderPermissionDenied = () => (
+    <View style={styles.centerContainer}>
+      <Ionicons name="mic-off" size={64} color={colors.error} />
+      <Text style={styles.errorTitle}>Microphone Access Required</Text>
+      <Text style={styles.errorMessage}>
+        {errorMessage || "Voice interviews require microphone permission."}
+      </Text>
+      {errorMessage?.includes("Settings") && (
+        <TouchableOpacity style={styles.primaryButton} onPress={openSettings}>
+          <Text style={styles.primaryButtonText}>Open Settings</Text>
         </TouchableOpacity>
-        <Text style={styles.stopLabel}>Tap to stop</Text>
+      )}
+      <TouchableOpacity style={styles.secondaryButton} onPress={onExit}>
+        <Text style={styles.secondaryButtonText}>Go Back</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderSpeakingQuestion = () => (
+    <View style={styles.fullScreenCenter}>
+      <View style={styles.purpleGlow}>
+        <WaveformBars />
+      </View>
+      <View style={styles.questionCardLarge}>
+        <Text style={styles.questionTextLarge}>{resolvedCurrentQuestion}</Text>
+      </View>
+      <Text style={styles.readingStatus}>Reading question aloud...</Text>
+      <TouchableOpacity style={styles.skipAudioButton} onPress={stopSpeaking}>
+        <Text style={styles.skipAudioText}>Tap to skip audio</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderReadyToRecord = () => (
+    <View style={styles.fullScreenCenter}>
+      <View style={styles.questionCard}>
+        <View style={styles.questionHeader}>
+          <View style={styles.questionBadge}>
+            <Text style={styles.questionBadgeText}>
+              Q{resolvedCurrentQuestionIndex + 1}
+            </Text>
+          </View>
+          <Text style={styles.questionLabel}>INTERVIEW QUESTION</Text>
+        </View>
+        <Text style={styles.questionText}>{resolvedCurrentQuestion}</Text>
+      </View>
+
+      <TouchableOpacity
+        style={styles.listenButton}
+        onPress={onListen || speakCurrentQuestion || (() => {})}
+      >
+        <Ionicons
+          name="volume-medium-outline"
+          size={16}
+          color={colors.secondary}
+        />
+        <Text style={styles.listenButtonText}>Listen again</Text>
+      </TouchableOpacity>
+
+      <View style={styles.micContainer}>
+        {/* Outer glow ring */}
+        <Animated.View style={[styles.outerRing, { opacity: outerRingAnim }]}>
+          {/* Middle ring */}
+          <View style={styles.middleRing}>
+            {/* Mic button */}
+            <TouchableOpacity
+              style={styles.micButton}
+              onPress={onStartRecording || startRecording}
+            >
+              <Ionicons name="mic" size={28} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+
+        <Text style={styles.micLabelText}>Tap to answer</Text>
+        <TouchableOpacity
+          style={styles.skipButton}
+          onPress={onSkip || (() => nextQuestion())}
+        >
+          <Text style={styles.skipButtonText}>Skip this question</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 
+  const renderRecording = () => (
+    <View style={styles.fullScreenCenter}>
+      <View style={styles.compactQuestionCard}>
+        <View style={styles.recordingHeader}>
+          <View style={styles.recordingDot} />
+          <Text style={styles.recordingBadge}>REC</Text>
+        </View>
+        <Text style={styles.compactQuestionText}>
+          {resolvedCurrentQuestion}
+        </Text>
+      </View>
+
+      <View style={styles.recordingMicContainer}>
+        <Animated.View
+          style={[
+            styles.recordingMicButton,
+            {
+              transform: [{ scale: pulseAnim }],
+            },
+          ]}
+        >
+          <TouchableOpacity onPress={onStopRecording || stopRecording}>
+            <Ionicons name="stop" size={26} color={colors.textPrimary} />
+          </TouchableOpacity>
+        </Animated.View>
+        <Text style={styles.recordingStatus}>Tap to stop recording</Text>
+      </View>
+
+      <View style={styles.transcriptContainer}>
+        <Text style={styles.transcriptLabel}>Live Transcript</Text>
+        <View style={styles.transcriptBox}>
+          <Text style={styles.transcriptText}>
+            {resolvedLiveTranscript || (
+              <View style={styles.listeningContainer}>
+                {dotsAnim.map((anim, index) => (
+                  <Animated.View
+                    key={index}
+                    style={[
+                      styles.listeningDot,
+                      {
+                        transform: [{ scale: anim }],
+                      },
+                    ]}
+                  />
+                ))}
+                <Text style={styles.listeningText}>Listening...</Text>
+              </View>
+            )}
+          </Text>
+        </View>
+        <Text style={styles.timerText}>{formatTime(recordingDuration)}</Text>
+      </View>
+
+      <WaveformBars />
+    </View>
+  );
+
   const renderProcessing = () => (
-    <View style={styles.contentContainer}>
-      <View style={styles.questionCard}>
-        <Text style={styles.questionText}>{currentQuestion}</Text>
-      </View>
-      <View style={[styles.transcriptCard, styles.transcriptCardPurple]}>
-        <Text style={styles.transcriptText}>{finalTranscript}</Text>
-      </View>
-      <View style={styles.processingContainer}>
+    <View style={styles.fullScreenCenter}>
+      <View style={styles.processingGlow}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.processingText}>
-          AI is evaluating your answer...
+      </View>
+      <Text style={styles.processingTitle}>Evaluating your answer...</Text>
+      <Text style={styles.processingSubtitle}>
+        AI is analyzing your response
+      </Text>
+
+      <View style={styles.answerPreview}>
+        <Text style={styles.answerPreviewLabel}>Your answer:</Text>
+        <Text style={styles.answerPreviewText} numberOfLines={3}>
+          {finalTranscript}
         </Text>
       </View>
     </View>
@@ -435,25 +513,80 @@ export function VoiceInterviewSession({
 
   const renderFeedback = () => (
     <ScrollView
-      style={styles.contentContainer}
+      style={styles.feedbackContainer}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: 40 }}
+      contentContainerStyle={{ paddingBottom: 60 }}
     >
+      {/* Score reveal */}
       <Animated.View
         style={[
-          styles.scoreContainer,
+          styles.scoreRevealContainer,
           {
             transform: [{ scale: scoreAnim }],
           },
         ]}
       >
-        <Text
-          style={[styles.scoreText, { color: getScoreColor(aiScore || 0) }]}
-        >
-          {aiScore}
+        <View style={styles.scoreRing}>
+          <Text
+            style={[styles.scoreNumber, { color: getScoreColor(aiScore || 0) }]}
+          >
+            {aiScore}
+          </Text>
+        </View>
+        <Text style={styles.scoreMessage}>
+          {aiScore && aiScore >= 80
+            ? "Great!"
+            : aiScore && aiScore >= 60
+              ? "Good!"
+              : "Keep practicing"}
         </Text>
       </Animated.View>
 
+      {/* Overall feedback */}
+      <View style={styles.feedbackCard}>
+        <Text style={styles.feedbackCardTitle}>Overall</Text>
+        <Text style={styles.feedbackCardText}>{aiFeedback?.overall}</Text>
+      </View>
+
+      {/* Strengths */}
+      {aiFeedback?.strengths && aiFeedback.strengths.length > 0 && (
+        <View style={styles.feedbackCard}>
+          <Text style={styles.feedbackCardTitle}>Strengths</Text>
+          {aiFeedback.strengths.map((strength, index) => (
+            <View key={index} style={styles.feedbackItem}>
+              <Ionicons
+                name="checkmark-circle"
+                size={16}
+                color={colors.success}
+              />
+              <Text style={styles.feedbackItemText}>{strength}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Improvements */}
+      {aiFeedback?.improvements && aiFeedback.improvements.length > 0 && (
+        <View style={styles.feedbackCard}>
+          <Text style={styles.feedbackCardTitle}>Improvements</Text>
+          {aiFeedback.improvements.map((improvement, index) => (
+            <View key={index} style={styles.feedbackItem}>
+              <Ionicons name="alert-circle" size={16} color={colors.warning} />
+              <Text style={styles.feedbackItemText}>{improvement}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Pro tip */}
+      {aiFeedback?.tip && (
+        <View style={styles.tipCard}>
+          <Text style={styles.feedbackCardTitle}>Pro Tip</Text>
+          <Text style={styles.tipText}>{aiFeedback.tip}</Text>
+        </View>
+      )}
+
+      {/* Collapsible answer */}
       <View style={styles.collapsibleSection}>
         <TouchableOpacity
           style={styles.sectionHeader}
@@ -473,120 +606,91 @@ export function VoiceInterviewSession({
         )}
       </View>
 
-      <View style={styles.feedbackSection}>
-        <Text style={styles.sectionTitle}>Overall</Text>
-        <Text style={styles.sectionText}>{aiFeedback?.overall}</Text>
-      </View>
-
-      {aiFeedback?.strengths && aiFeedback.strengths.length > 0 && (
-        <View style={styles.feedbackSection}>
-          <Text style={styles.sectionTitle}>Strengths</Text>
-          {aiFeedback.strengths.map((strength, index) => (
-            <View key={index} style={styles.feedbackItem}>
-              <Ionicons
-                name="checkmark-circle"
-                size={16}
-                color={colors.success}
-              />
-              <Text style={styles.feedbackItemText}>{strength}</Text>
-            </View>
-          ))}
-        </View>
-      )}
-
-      {aiFeedback?.improvements && aiFeedback.improvements.length > 0 && (
-        <View style={styles.feedbackSection}>
-          <Text style={styles.sectionTitle}>Improvements</Text>
-          {aiFeedback.improvements.map((improvement, index) => (
-            <View key={index} style={styles.feedbackItem}>
-              <Ionicons name="alert-circle" size={16} color={colors.warning} />
-              <Text style={styles.feedbackItemText}>{improvement}</Text>
-            </View>
-          ))}
-        </View>
-      )}
-
-      {aiFeedback?.tip && (
-        <View style={[styles.feedbackSection, styles.tipSection]}>
-          <Text style={styles.sectionTitle}>Pro Tip</Text>
-          <Text style={styles.tipText}>{aiFeedback.tip}</Text>
-        </View>
-      )}
-
+      {/* Next/Finish button */}
       <TouchableOpacity
-        style={styles.primaryButton}
+        style={styles.nextButton}
         onPress={() => nextQuestion()}
       >
-        <Text style={styles.primaryButtonText}>
-          {currentQuestionIndex + 1 >= questions.length
-            ? "Finish Session →"
-            : "Next Question →"}
-        </Text>
+        <LinearGradient
+          colors={[colors.primary, colors.primaryDark]}
+          style={styles.nextButtonGradient}
+        >
+          <Text style={styles.nextButtonText}>
+            {resolvedCurrentQuestionIndex + 1 >= questions.length
+              ? "Finish Session ->"
+              : "Next Question ->"}
+          </Text>
+        </LinearGradient>
       </TouchableOpacity>
     </ScrollView>
   );
 
-  const renderSessionComplete = () => {
-    return (
-      <View style={styles.contentContainer}>
-        <Animated.View
-          style={[
-            styles.checkmarkContainer,
-            {
-              transform: [{ scale: checkmarkAnim }],
-            },
-          ]}
-        >
-          <Ionicons name="checkmark-circle" size={72} color={colors.success} />
-        </Animated.View>
-        <Text style={styles.completionTitle}>Session Complete!</Text>
-        <Text
-          style={[styles.averageScore, { color: getScoreColor(averageScore) }]}
-        >
-          {averageScore}
-        </Text>
+  const renderSessionComplete = () => (
+    <View style={styles.fullScreenCenter}>
+      <Animated.View
+        style={[
+          styles.checkmarkContainer,
+          {
+            transform: [{ scale: checkmarkAnim }],
+          },
+        ]}
+      >
+        <View style={styles.checkmarkGlow}>
+          <Ionicons name="checkmark-circle" size={88} color={colors.success} />
+        </View>
+      </Animated.View>
+      <Text style={styles.completionTitle}>Session Complete!</Text>
+      <Text
+        style={[styles.averageScore, { color: getScoreColor(averageScore) }]}
+      >
+        {averageScore}
+      </Text>
 
-        <ScrollView
-          horizontal
-          style={styles.scorePillsContainer}
-          showsHorizontalScrollIndicator={false}
-        >
-          {answers.map((answer, index) => (
-            <View key={index} style={styles.scorePill}>
-              <Text style={styles.scorePillText}>
-                Q{index + 1}: {answer.score}
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
+      <ScrollView
+        horizontal
+        style={styles.scorePillsContainer}
+        showsHorizontalScrollIndicator={false}
+      >
+        {answers.map((answer, index) => (
+          <View key={index} style={styles.scorePill}>
+            <Text style={styles.scorePillText}>
+              Q{index + 1}: {answer.score}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
 
-        <Text style={styles.motivationalText}>
-          {getSessionMessage(averageScore)}
-        </Text>
+      <Text style={styles.motivationalText}>
+        {getSessionMessage(averageScore)}
+      </Text>
 
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => onSessionComplete(answers)}
+      <TouchableOpacity
+        style={styles.primaryButton}
+        onPress={() => onSessionComplete(answers)}
+      >
+        <LinearGradient
+          colors={[colors.primary, colors.primaryDark]}
+          style={styles.primaryButtonGradient}
         >
           <Text style={styles.primaryButtonText}>View Full Report</Text>
-        </TouchableOpacity>
+        </LinearGradient>
+      </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => {
-            resetSession();
-            onExit();
-          }}
-        >
-          <Text style={styles.secondaryButtonText}>Start New Session</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  };
+      <TouchableOpacity
+        style={styles.secondaryButton}
+        onPress={() => {
+          resetSession();
+          onExit();
+        }}
+      >
+        <Text style={styles.secondaryButtonText}>Start New Session</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   const renderError = () => (
     <View style={styles.centerContainer}>
-      <Ionicons name="warning" size={48} color={colors.error} />
+      <Ionicons name="warning" size={64} color={colors.error} />
       <Text style={styles.errorTitle}>Something went wrong</Text>
       <Text style={styles.errorMessage}>{errorMessage}</Text>
       <TouchableOpacity
@@ -630,82 +734,66 @@ export function VoiceInterviewSession({
   };
 
   return (
-    <SafeAreaView
-      style={styles.container}
-      edges={["top", "bottom", "left", "right"]}
-    >
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {renderHeader()}
       {renderProgressBar()}
-      <KeyboardAvoidingView
-        style={styles.keyboardContainer}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <View style={[styles.content, { paddingBottom: insets.bottom }]}>
-          {renderContent()}
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      {renderContent()}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  // Header and Progress
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   backButton: {
-    padding: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerProgress: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
     color: colors.textPrimary,
-    letterSpacing: 0.5,
   },
   configPill: {
-    backgroundColor: colors.primary + "20",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    backgroundColor: colors.surfaceAlt,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   configPillText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.primary,
-    letterSpacing: 0.3,
+    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: "500",
   },
   progressBarContainer: {
     height: 3,
     backgroundColor: colors.border,
-  },
-  progressBarTrack: {
-    flex: 1,
-    height: "100%",
-    backgroundColor: colors.border,
+    borderRadius: 2,
   },
   progressBarFill: {
-    height: "100%",
+    height: 3,
     backgroundColor: colors.primary,
+    borderRadius: 2,
   },
-  keyboardContainer: {
+
+  // Layout containers
+  fullScreenCenter: {
     flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    flex: 1,
-    padding: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
   },
   centerContainer: {
     flex: 1,
@@ -713,186 +801,387 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
+
+  // Speaking question phase
+  purpleGlow: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(139, 92, 246, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 32,
+  },
+  questionCardLarge: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 24,
+    marginBottom: 24,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  questionTextLarge: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: colors.textPrimary,
+    lineHeight: 26,
+    textAlign: "center",
+  },
+  readingStatus: {
+    color: colors.textMuted,
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  skipAudioButton: {
+    padding: 8,
+  },
+  skipAudioText: {
+    color: colors.textMuted,
+    fontSize: 13,
+  },
+
+  // Ready to record phase
   questionCard: {
     backgroundColor: colors.surface,
     borderRadius: 20,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 10,
     borderWidth: 1,
     borderColor: colors.border,
+    padding: 24,
+    marginBottom: 16,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  questionText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: colors.textPrimary,
-    lineHeight: 28,
-  },
-  questionActions: {
+  questionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginTop: 16,
-    gap: 16,
+    marginBottom: 14,
   },
-  speakerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.surface,
+  questionBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primaryDark,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  questionBadgeText: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  questionLabel: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "500",
+    letterSpacing: 0.5,
+  },
+  questionText: {
+    color: colors.textPrimary,
+    fontSize: 17,
+    fontWeight: "600",
+    lineHeight: 26,
+  },
+  listenButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "center",
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
     borderColor: colors.border,
-    justifyContent: "center",
-    alignItems: "center",
+    gap: 6,
   },
-  speakerButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  speakerLabel: {
-    alignItems: "center",
-  },
-  speakerLabelText: {
-    fontSize: 12,
+  listenButtonText: {
     color: colors.textSecondary,
-    marginTop: 4,
+    fontSize: 13,
+    fontWeight: "500",
   },
-  speakingIndicator: {
+  micContainer: {
+    alignItems: "center",
+    marginTop: 40,
+  },
+  outerRing: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(139, 92, 246, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  middleRing: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: "rgba(139, 92, 246, 0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  micButton: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  micLabelText: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 16,
+  },
+  skipButton: {
+    marginTop: 10,
+    padding: 8,
+  },
+  skipButtonText: {
+    color: colors.textMuted,
+    fontSize: 13,
+  },
+
+  // Recording phase
+  compactQuestionCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 16,
+    marginBottom: 24,
+  },
+  recordingHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  recordingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.danger,
+    marginRight: 8,
+  },
+  recordingBadge: {
+    color: colors.danger,
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  compactQuestionText: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: "600",
+    lineHeight: 22,
+  },
+  recordingMicContainer: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  recordingMicButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.danger,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  recordingStatus: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 16,
+  },
+  transcriptContainer: {
+    alignSelf: "stretch",
+    marginBottom: 24,
+  },
+  transcriptLabel: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 8,
+    textTransform: "uppercase",
+  },
+  transcriptBox: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.danger,
+  },
+  transcriptText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  listeningContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  speakingDot: {
+  listeningDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.textMuted,
   },
-  speakingText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  stopSpeakingText: {
-    fontSize: 14,
-    color: colors.primary,
-    textDecorationLine: "underline",
-  },
-  bottomActions: {
-    alignItems: "center",
-    marginTop: 32,
-  },
-  micButton: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  micLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.textPrimary,
-    marginTop: 12,
-  },
-  skipButton: {
-    marginTop: 16,
-  },
-  skipButtonText: {
-    fontSize: 14,
+  listeningText: {
     color: colors.textMuted,
+    fontSize: 13,
+    fontStyle: "italic",
   },
-  transcriptCard: {
+  timerText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    textAlign: "center",
+    marginTop: 8,
+  },
+  waveformContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    height: 32,
+  },
+  waveformBar: {
+    width: 4,
+    height: 28,
+    borderRadius: 2,
+  },
+
+  // Processing phase
+  processingGlow: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(139, 92, 246, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
+  },
+  processingTitle: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  processingSubtitle: {
+    color: colors.textMuted,
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 32,
+  },
+  answerPreview: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  answerPreviewLabel: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 8,
+  },
+  answerPreviewText: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+
+  // Feedback phase
+  feedbackContainer: {
+    flex: 1,
+  },
+  scoreRevealContainer: {
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  scoreRing: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 4,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  scoreNumber: {
+    fontSize: 72,
+    fontWeight: "800",
+  },
+  scoreMessage: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  feedbackCard: {
     backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
-    minHeight: 80,
-    marginBottom: 20,
+    marginBottom: 16,
     borderLeftWidth: 3,
     borderLeftColor: colors.primary,
   },
-  transcriptCardPurple: {
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
-  },
-  transcriptText: {
-    fontSize: 16,
+  feedbackCardTitle: {
     color: colors.textPrimary,
-    lineHeight: 24,
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
   },
-  listeningText: {
-    fontStyle: "italic",
-    color: colors.textMuted,
+  feedbackCardText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
   },
-  recordingIndicator: {
+  feedbackItem: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "flex-start",
     gap: 8,
-    marginTop: 20,
+    marginBottom: 8,
   },
-  recordingDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.error,
-  },
-  recordingText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.error,
-  },
-  timerText: {
-    fontSize: 14,
+  feedbackItemText: {
+    flex: 1,
     color: colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
   },
-  stopButton: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.error,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: colors.error,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+  tipCard: {
+    backgroundColor: "rgba(139, 92, 246, 0.05)",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
   },
-  stopLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.textPrimary,
-    marginTop: 12,
-  },
-  processingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 40,
-    gap: 16,
-  },
-  processingText: {
-    fontSize: 16,
+  tipText: {
     color: colors.textSecondary,
-  },
-  scoreContainer: {
-    alignSelf: "center",
-    marginBottom: 24,
-  },
-  scoreText: {
-    fontSize: 56,
-    fontWeight: "800",
-    letterSpacing: -2,
+    fontSize: 14,
+    lineHeight: 20,
   },
   collapsibleSection: {
     backgroundColor: colors.surface,
@@ -909,59 +1198,50 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   sectionTitle: {
+    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: "600",
-    color: colors.textPrimary,
-    marginBottom: 12,
   },
   sectionContent: {
     padding: 16,
   },
   sectionText: {
-    fontSize: 14,
     color: colors.textSecondary,
+    fontSize: 14,
     lineHeight: 20,
   },
-  feedbackSection: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+  nextButton: {
+    marginHorizontal: 20,
+    marginBottom: 20,
   },
-  tipSection: {
-    backgroundColor: colors.primary + "10",
-    borderColor: colors.primary + "30",
-    borderWidth: 1,
+  nextButtonGradient: {
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: "center",
   },
-  feedbackItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    marginBottom: 8,
+  nextButtonText: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "600",
   },
-  feedbackItemText: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  tipText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
+
+  // Session complete
   checkmarkContainer: {
+    alignItems: "center",
     marginBottom: 24,
   },
+  checkmarkGlow: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   completionTitle: {
+    color: colors.textPrimary,
     fontSize: 28,
     fontWeight: "700",
-    color: colors.textPrimary,
     textAlign: "center",
     marginBottom: 8,
   },
@@ -984,66 +1264,70 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   scorePillText: {
+    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: "600",
-    color: colors.textSecondary,
   },
   motivationalText: {
-    fontSize: 16,
     color: colors.textSecondary,
+    fontSize: 16,
     textAlign: "center",
     marginBottom: 32,
   },
+
+  // Error and setup states
+  setupTitle: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: 16,
+  },
+  setupSubtitle: {
+    color: colors.textMuted,
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 8,
+  },
   errorTitle: {
+    color: colors.textPrimary,
     fontSize: 20,
     fontWeight: "600",
-    color: colors.textPrimary,
     textAlign: "center",
     marginBottom: 8,
   },
   errorMessage: {
-    fontSize: 14,
     color: colors.textSecondary,
+    fontSize: 14,
     textAlign: "center",
     marginBottom: 24,
     lineHeight: 20,
   },
-  statusText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginTop: 16,
-  },
+
+  // Buttons
   primaryButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 24,
+    marginBottom: 12,
+  },
+  primaryButtonGradient: {
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: "center",
-    marginBottom: 12,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
   },
   primaryButtonText: {
+    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: "600",
-    color: colors.textPrimary,
   },
   secondaryButton: {
-    backgroundColor: "transparent",
     borderColor: colors.border,
     borderWidth: 1,
-    paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: "center",
   },
   secondaryButtonText: {
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: "600",
-    color: colors.textSecondary,
   },
 });

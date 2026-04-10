@@ -1,7 +1,6 @@
 export {
   extractJsonPayload,
   generateGeminiText,
-  generateGeminiTextWithFallback,
   generateGeminiTextWithRetry,
   generateGeminiWithContext,
   getGeminiErrorMessage,

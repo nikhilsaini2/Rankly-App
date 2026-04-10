@@ -419,9 +419,27 @@ export const styles = StyleSheet.create({
   },
   questionText: {
     color: colors.textPrimary,
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "600",
-    lineHeight: 26,
+    lineHeight: 28,
+  },
+  questionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  questionNumberBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  questionNumberText: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "700",
   },
   metaRow: { flexDirection: "row", gap: 8, marginTop: 16 },
   metaChipPrimary: {
@@ -494,6 +512,13 @@ export const styles = StyleSheet.create({
   },
   answerInputFocused: {
     borderColor: colors.primary,
+    borderWidth: 1.5,
+  },
+  characterCounter: {
+    color: colors.textMuted,
+    fontSize: 12,
+    textAlign: "right",
+    marginTop: 8,
   },
 
   // Results styles

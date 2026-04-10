@@ -20,8 +20,8 @@ export class GeminiError extends Error {
 }
 
 // ─── Model config ────────────────────────────────────────────
-// gemini-2.5-flash: higher quality, 500 RPD, 10 RPM free tier
-const PRIMARY_MODEL = "gemini-2.5-flash";
+// gemini-2.5-flash-lite: highest free tier RPD (1000/day), 15 RPM, best availability
+const PRIMARY_MODEL = "gemini-2.5-flash-lite";
 
 let cachedApiKey: string = "";
 
@@ -160,10 +160,10 @@ export async function generateGeminiText(
     const model = genAI.getGenerativeModel({
       model: modelName,
       generationConfig: {
-        temperature: 1, // 2.5-flash default
+        temperature: 1,
         topP: 0.95,
-        topK: 64, // 2.5-flash default (not 40)
-        maxOutputTokens: 1024, // keep lean for evaluation calls
+        topK: 40,
+        maxOutputTokens: 1024,
       },
     });
 
@@ -189,45 +189,7 @@ export async function generateGeminiText(
   return requestPromise;
 }
 
-// ───// With retry on 503 overload only (no fallback model)
-export async function generateGeminiTextWithFallback(
-  prompt: string,
-): Promise<string> {
-  try {
-    return await generateGeminiText(prompt, PRIMARY_MODEL);
-  } catch (error: any) {
-    const msg = error?.message ?? "";
-    const msgLower = msg.toLowerCase();
-
-    // 429 = quota exhausted - NEVER retry, throw immediately
-    const isQuotaError =
-      msgLower.includes("429") ||
-      msgLower.includes("quota") ||
-      msgLower.includes("resource_exhausted") ||
-      msgLower.includes("free_tier");
-
-    if (isQuotaError) {
-      console.error(
-        "[Gemini] Quota exhausted - not retrying:",
-        msg.slice(0, 100),
-      );
-      throw error;
-    }
-
-    // 503 = temporary server overload - wait 8s then retry SAME model
-    if (msgLower.includes("503")) {
-      console.warn(
-        "[Gemini] 503 on gemini-2.5-flash - waiting 8s then retrying...",
-      );
-      await new Promise((res) => setTimeout(res, 8000));
-      return await generateGeminiText(prompt, PRIMARY_MODEL);
-    }
-
-    // All other errors - rethrow
-    throw error;
-  }
-}
-
+// ───
 // ───// Helper to parse retry delay from 429 error message
 function parseRetryDelayMs(errorMessage: string): number | null {
   // Gemini 429 response body contains: "Please retry in 51.62195941s"
@@ -249,24 +211,19 @@ export async function generateGeminiTextWithRetry(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      return await generateGeminiTextWithFallback(prompt);
+      return await generateGeminiText(prompt);
     } catch (error: any) {
       lastError = error;
       const message = error?.message ?? "";
       const msgLower = message.toLowerCase();
 
-      // QUOTA (429) - never retry, throw immediately
       const isQuotaError =
         msgLower.includes("429") ||
         msgLower.includes("quota") ||
-        msgLower.includes("resource_exhausted") ||
-        msgLower.includes("free_tier");
+        msgLower.includes("resource_exhausted");
 
-      if (isQuotaError) {
-        throw error;
-      }
+      if (isQuotaError) throw error; // never retry quota errors
 
-      // RETRYABLE: 503 overload, 500 server error, network issues
       const isRetryable =
         msgLower.includes("503") ||
         msgLower.includes("500") ||
@@ -275,16 +232,9 @@ export async function generateGeminiTextWithRetry(
         msgLower.includes("econnreset") ||
         msgLower.includes("etimedout");
 
-      if (!isRetryable || attempt === maxRetries) {
-        throw error;
-      }
+      if (!isRetryable || attempt === maxRetries) throw error;
 
-      // Use retryDelay from response body if available, else exponential backoff
-      const suggestedDelay = parseRetryDelayMs(message);
-      const delay =
-        suggestedDelay ??
-        baseDelayMs * Math.pow(2, attempt) + Math.random() * 1000;
-
+      const delay = baseDelayMs * Math.pow(2, attempt) + Math.random() * 1000;
       console.warn(
         `[Gemini] attempt ${attempt + 1}/${maxRetries + 1} failed - retrying in ${Math.round(delay / 1000)}s`,
       );
@@ -365,8 +315,32 @@ export async function generateGeminiWithContext(
     },
   });
 
-  const result = await chat.sendMessage(params.userMessage);
-  const response = result.response;
+  let chatResult: Awaited<ReturnType<typeof chat.sendMessage>> | undefined;
+  for (let attempt = 0; attempt <= 2; attempt++) {
+    try {
+      chatResult = await chat.sendMessage(params.userMessage);
+      break;
+    } catch (err: any) {
+      const msg = (err?.message ?? "").toLowerCase();
+      const isQuota =
+        msg.includes("429") ||
+        msg.includes("quota") ||
+        msg.includes("resource_exhausted");
+      const is503 =
+        msg.includes("503") ||
+        msg.includes("high demand") ||
+        msg.includes("overloaded");
+
+      if (isQuota || (!is503 && attempt === 0) || attempt === 2) throw err;
+
+      const delay = attempt === 0 ? 4000 : 8000;
+      console.warn(
+        `[Gemini] chat 503 attempt ${attempt + 1}/3 - retrying in ${delay / 1000}s`,
+      );
+      await new Promise((res) => setTimeout(res, delay));
+    }
+  }
+  const response = chatResult!.response;
   const text = response.text();
 
   if (!text || text.trim().length === 0) {
