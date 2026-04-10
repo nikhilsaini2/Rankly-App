@@ -360,7 +360,7 @@ export const styles = StyleSheet.create({
   pillTextHard: { color: colors.danger, fontWeight: "600" },
 
   // ─── Start button ─────────────────────────────────────────
-  startButtonWrap: { marginTop: 24, width: "100%" },
+  startButtonWrap: { marginTop: 24, width: "100%", alignSelf: "stretch" },
   startBtnRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   startBtn: {
     width: "100%",

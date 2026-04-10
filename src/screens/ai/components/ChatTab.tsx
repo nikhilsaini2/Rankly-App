@@ -325,7 +325,20 @@ export function ChatTab({
   insetsBottom,
 }: ChatTabProps) {
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const prevMessageCountRef = useRef(messages.length);
   const reversed = [...messages].reverse();
+
+  useEffect(() => {
+    const wasNewMessage = messages.length > prevMessageCountRef.current;
+    prevMessageCountRef.current = messages.length;
+
+    if (wasNewMessage) {
+      // Small delay to let layout settle
+      setTimeout(() => {
+        listRef.current?.scrollToOffset({ offset: 0, animated: true });
+      }, 100);
+    }
+  }, [messages.length]);
 
   if (!ready) {
     return (
@@ -379,9 +392,7 @@ export function ChatTab({
             data={reversed}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
-            onContentSizeChange={() =>
-              listRef.current?.scrollToOffset({ offset: 0, animated: true })
-            }
+            // Remove onContentSizeChange entirely
             renderItem={({ item, index }) => {
               const older = reversed[index + 1];
               const showRanklyLabel =

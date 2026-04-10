@@ -335,7 +335,7 @@ function SetupPhase({
       </Animated.View>
 
       <PressableScale
-        style={[styles.startButtonWrap, { marginHorizontal: 20, height: 56 }]}
+        style={[styles.startButtonWrap, { height: 56 }]}
         onPress={() =>
           iv.startSession(setupRole, difficulty, sessionType, numQ)
         }
