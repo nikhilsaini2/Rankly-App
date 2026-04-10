@@ -59,6 +59,8 @@ export function useVoiceInterview() {
     (transcript: string, question: string) => Promise<void>
   >(async () => {});
   const isInitializedRef = useRef<boolean>(false);
+  const phaseRef = useRef<VoiceInterviewPhase>("idle");
+  const liveTranscriptRef = useRef<string>("");
 
   // Helper updaters to keep refs in sync with state
   const updateCurrentQuestion = (q: string | null) => {
@@ -73,6 +75,7 @@ export function useVoiceInterview() {
 
   const initializeVosk = async () => {
     if (!isVoskAvailable()) {
+      phaseRef.current = "error";
       setPhase("error");
       setErrorMessage(
         "Speech recognition module not found. " +
@@ -86,6 +89,7 @@ export function useVoiceInterview() {
     console.log("[Vosk] NativeModule keys:", Object.keys(RNVosk || {}));
 
     try {
+      phaseRef.current = "idle";
       setPhase("idle");
 
       // Try to load model with proper error handling
@@ -100,6 +104,7 @@ export function useVoiceInterview() {
           modelError?.message?.includes("FileNotFoundException") ||
           modelError?.message?.includes("model/uuid")
         ) {
+          phaseRef.current = "error";
           setPhase("error");
           setErrorMessage(
             "Voice recognition model not found. Please ensure the Vosk model files are included in the app assets.",
@@ -108,6 +113,7 @@ export function useVoiceInterview() {
         }
 
         // For other model loading errors
+        phaseRef.current = "error";
         setPhase("error");
         setErrorMessage(
           "Failed to load speech recognition model. Please restart the app.",
@@ -132,6 +138,7 @@ export function useVoiceInterview() {
           "onPartialResult",
           (r: any) => {
             const partial = (r?.partial ?? "").trim();
+            liveTranscriptRef.current = partial;
             setLiveTranscript(partial);
           },
         );
@@ -140,6 +147,7 @@ export function useVoiceInterview() {
           "onError",
           (e: any) => {
             console.error("Vosk error:", e);
+            phaseRef.current = "error";
             setPhase("error");
             setErrorMessage("Speech recognition error. Please try again.");
           },
@@ -161,12 +169,14 @@ export function useVoiceInterview() {
 
         errorSubscriptionRef.current = RNVosk.onError((e: any) => {
           console.error("Vosk error:", e);
+          phaseRef.current = "error";
           setPhase("error");
           setErrorMessage("Speech recognition error. Please try again.");
         });
       }
     } catch (error) {
       console.error("Vosk initialization error:", error);
+      phaseRef.current = "error";
       setPhase("error");
       setErrorMessage(
         "Failed to initialize speech recognition. Please restart the app.",
@@ -175,6 +185,7 @@ export function useVoiceInterview() {
   };
 
   const requestPermissionAndStart = async (questions: string[]) => {
+    phaseRef.current = "requesting_permission";
     setPhase("requesting_permission");
     setTotalQuestions(questions.length);
     questionsRef.current = questions; // Store questions in ref
@@ -195,11 +206,13 @@ export function useVoiceInterview() {
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
           await speakQuestion(questions, 0);
         } else if (granted === PermissionsAndroid.RESULTS.DENIED) {
+          phaseRef.current = "permission_denied";
           setPhase("permission_denied");
           setErrorMessage(
             "Microphone access denied. Voice interviews require microphone permission.",
           );
         } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+          phaseRef.current = "permission_denied";
           setPhase("permission_denied");
           setErrorMessage(
             "Microphone permission permanently denied. Please enable it in Settings.",
@@ -211,6 +224,7 @@ export function useVoiceInterview() {
       }
     } catch (error) {
       console.error("Permission request error:", error);
+      phaseRef.current = "permission_denied";
       setPhase("permission_denied");
       setErrorMessage("Failed to request microphone permission.");
     }
@@ -219,7 +233,9 @@ export function useVoiceInterview() {
   const speakQuestion = async (questions: string[], index: number) => {
     updateCurrentQuestionIndex(index);
     updateCurrentQuestion(questions[index]);
+    phaseRef.current = "speaking_question";
     setPhase("speaking_question");
+    liveTranscriptRef.current = "";
     setLiveTranscript("");
     setFinalTranscript("");
     setAiFeedback(null);
@@ -230,10 +246,12 @@ export function useVoiceInterview() {
       pitch: 1.0,
       rate: 0.9,
       onDone: () => {
+        phaseRef.current = "ready_to_record";
         setPhase("ready_to_record");
       },
       onError: (_error: any) => {
         console.warn("[Speech] TTS error, continuing without audio");
+        phaseRef.current = "ready_to_record";
         setPhase("ready_to_record");
       },
     });
@@ -252,15 +270,18 @@ export function useVoiceInterview() {
 
     if (phase !== "ready_to_record") return;
 
+    liveTranscriptRef.current = "";
     setLiveTranscript("");
     setFinalTranscript("");
+    phaseRef.current = "recording";
     setPhase("recording");
     setRecordingStartTime(Date.now());
 
     try {
-      RNVosk.start({}); // synchronous, no await
+      RNVosk.start(); // synchronous, no await
     } catch (error: any) {
       console.error("Vosk start error:", error);
+      phaseRef.current = "error";
       setPhase("error");
       setErrorMessage("Failed to start recording. Please try again.");
     }
@@ -271,43 +292,26 @@ export function useVoiceInterview() {
       setErrorMessage("Speech recognition not available on this device.");
       return;
     }
-
-    if (phase !== "recording") return;
-
+    if (phaseRef.current !== "recording") return;
     try {
-      RNVosk.stop(); // synchronous, no await
-
-      // Set up a one-time listener for the final result with fallback
-      let resolved = false;
-      let finalListener: any = null;
-
-      finalListener = VoskEmitter?.addListener("onResult", (res: any) => {
-        if (resolved) return;
-        resolved = true;
-        finalListener?.remove();
-        const transcript = (res?.text ?? "").trim();
-        if (transcript) {
-          evaluateAnswer(transcript, currentQuestionRef.current);
-        } else {
-          // Fallback to live transcript if final result is empty
-          evaluateAnswer(liveTranscript, currentQuestionRef.current);
-        }
-      });
-
-      // Fallback timeout if onResult never fires (2 seconds)
-      setTimeout(() => {
-        if (resolved) return;
-        resolved = true;
-        finalListener?.remove();
-        console.warn(
-          "[Vosk] onResult timeout, using live transcript as fallback",
-        );
-        evaluateAnswer(liveTranscript, currentQuestionRef.current);
-      }, 2000);
-
+      RNVosk.stop();
+      phaseRef.current = "processing";
       setPhase("processing");
+      // Fallback: if global onResult never fires within 2s, use liveTranscript
+      setTimeout(() => {
+        if (phaseRef.current === "processing") {
+          console.warn(
+            "[Vosk] onResult timeout - using liveTranscript fallback",
+          );
+          evaluateAnswerRef.current(
+            liveTranscriptRef.current,
+            currentQuestionRef.current,
+          );
+        }
+      }, 2000);
     } catch (error: any) {
       console.error("Vosk stop error:", error);
+      phaseRef.current = "error";
       setPhase("error");
       setErrorMessage("Failed to stop recording. Please try again.");
     }
@@ -326,11 +330,13 @@ export function useVoiceInterview() {
         tip: "Try to speak for at least 3 seconds.",
       });
       setAiScore(0);
+      phaseRef.current = "showing_feedback";
       setPhase("showing_feedback");
       return;
     }
 
     setFinalTranscript(cleanTranscript);
+    phaseRef.current = "processing";
     setPhase("processing");
 
     const prompt = `You are an expert interview coach evaluating a candidate's answer.
@@ -385,6 +391,7 @@ Respond with JSON only. No markdown, no explanation outside of JSON.`;
         improvements: parsed.improvements || [],
         tip: parsed.tip || "Continue practicing to improve.",
       });
+      phaseRef.current = "showing_feedback";
       setPhase("showing_feedback");
 
       // Store answer
@@ -409,6 +416,7 @@ Respond with JSON only. No markdown, no explanation outside of JSON.`;
       setAiScore(0);
     } finally {
       // ALWAYS exit processing state, regardless of success or failure
+      phaseRef.current = "showing_feedback";
       setPhase("showing_feedback");
     }
   };
@@ -418,11 +426,13 @@ Respond with JSON only. No markdown, no explanation outside of JSON.`;
     const nextIndex = currentQuestionIndexRef.current + 1;
 
     if (nextIndex >= questions.length) {
+      phaseRef.current = "session_complete";
       setPhase("session_complete");
       return;
     }
 
     // Reset for next question
+    liveTranscriptRef.current = "";
     setLiveTranscript("");
     setFinalTranscript("");
     setAiFeedback(null);
@@ -441,10 +451,12 @@ Respond with JSON only. No markdown, no explanation outside of JSON.`;
     } catch {} // Speech.stop() returns Promise
 
     // Reset all state
+    phaseRef.current = "idle";
     setPhase("idle");
     updateCurrentQuestion(null);
     updateCurrentQuestionIndex(0);
     setTotalQuestions(0);
+    liveTranscriptRef.current = "";
     setLiveTranscript("");
     setFinalTranscript("");
     setAiFeedback(null);
@@ -452,6 +464,7 @@ Respond with JSON only. No markdown, no explanation outside of JSON.`;
     setErrorMessage(null);
     setRecordingStartTime(0);
     setAnswers([]);
+    questionsRef.current = [];
   };
 
   const getRecordingDuration = () => {

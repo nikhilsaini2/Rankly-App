@@ -306,6 +306,7 @@ export function VoiceInterviewSession({
     <ScrollView
       style={styles.feedbackContainer}
       showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 40 }}
     >
       {renderProgressBar()}
       <View style={styles.feedbackQuestionCard}>
