@@ -251,27 +251,14 @@ function SetupPhase({
             <Text style={styles.voiceModeSubLabel}>
               Questions read aloud, answer by speaking
             </Text>
-            {hasModelError && (
-              <Text
-                style={{ color: colors.warning, fontSize: 11, marginTop: 4 }}
-              >
-                ⚠ Voice mode unavailable — model not found
-              </Text>
-            )}
           </View>
           <Switch
             value={voiceMode}
-            onValueChange={(value) => {
-              // Prevent enabling voice mode if Vosk has issues
-              if (value && hasModelError) {
-                return;
-              }
-              setVoiceMode(value);
-            }}
+            onValueChange={setVoiceMode}
             trackColor={{ false: colors.border, true: colors.primary + "30" }}
             thumbColor={voiceMode ? colors.primary : colors.textSecondary}
             ios_backgroundColor={colors.border}
-            disabled={hasModelError}
+            disabled={false}
           />
         </View>
       </Animated.View>
@@ -570,17 +557,8 @@ export function InterviewTab(props: InterviewTabProps) {
   // Get questions array for voice mode
   const questions = iv.questions.map((q) => q.question);
 
-  // Check if voice mode should be disabled due to Vosk issues
-  const hasModelError = Boolean(
-    voiceInterview.errorMessage?.includes("model not found") ||
-    voiceInterview.errorMessage?.includes("model not"),
-  );
-
-  useEffect(() => {
-    if (hasModelError) {
-      setVoiceMode(false);
-    }
-  }, [hasModelError]);
+  // expo-speech-recognition needs no model - always available
+  const hasModelError = false;
 
   const handleVoiceSessionComplete = (answers: SessionAnswer[]) => {
     // Store voice session results or navigate to summary
