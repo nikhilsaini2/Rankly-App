@@ -29,10 +29,8 @@ import { VoiceInterviewSession } from "../../../components/molecules/VoiceInterv
 import { useInterview } from "../../../hooks/useInterview";
 import { useVoiceInterview } from "../../../hooks/useVoiceInterview";
 import { colors } from "../../../theme/color";
-import type {
-  RootStackParamList,
-  SessionAnswer,
-} from "../../../types/navigation.types";
+import type { SessionAnswer } from "../../../types/common.types";
+import type { RootStackParamList } from "../../../types/navigation.types";
 import {
   getInterviewResultMessage,
   getQuestionScoreColor,
@@ -568,6 +566,8 @@ export function InterviewTab(props: InterviewTabProps) {
   };
 
   const handleVoiceExit = () => {
+    // voiceInterview.resetSession() is called by VoiceInterviewSession internally
+    // Only reset the outer iv session here
     setVoiceMode(false);
     iv.reset();
   };

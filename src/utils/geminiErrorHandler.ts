@@ -14,7 +14,7 @@ const ERROR_TITLES: Record<string, string> = {
 const ERROR_SUBTITLES: Record<string, string> = {
   rate_limit: "The free AI tier has hit its limit. Try again in a minute.",
   unavailable:
-    "Google's AI service is temporarily down. This is not an issue with your resume — please try again shortly.",
+    "Google's AI service is temporarily down - due to high demand. Please wait a moment and try again.",
   server_error: "Google's AI server returned an error. Please try again.",
   invalid_key: "There's a configuration issue on our end. We're on it.",
   invalid_request: "The request couldn't be processed. Please try again.",

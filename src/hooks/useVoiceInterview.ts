@@ -1,9 +1,6 @@
 import * as Speech from "expo-speech";
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from "expo-speech-recognition";
-import { useEffect, useRef, useState } from "react";
+import { ExpoSpeechRecognitionModule } from "expo-speech-recognition";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Linking, Platform } from "react-native";
 import { generateGeminiText } from "../services/gemini/gemini";
 import type { SessionAnswer, VoiceInterviewPhase } from "../types/common.types";
@@ -39,6 +36,7 @@ export function useVoiceInterview() {
     (transcript: string, question: string) => Promise<void>
   >(async () => {});
   const hasEvaluatedRef = useRef<boolean>(false);
+  const accumulatedTranscriptRef = useRef<string>("");
 
   // Sync helpers
   const updatePhase = (p: VoiceInterviewPhase) => {
@@ -61,61 +59,76 @@ export function useVoiceInterview() {
     setCurrentQuestionIndex(i);
   };
 
-  // expo-speech-recognition event listeners
-  useSpeechRecognitionEvent("start", () => {
+  // Event handlers - called by component's useSpeechRecognitionEvent
+  const handleSpeechStart = useCallback(() => {
     updatePhase("recording");
     hasEvaluatedRef.current = false;
-  });
+  }, []);
 
-  useSpeechRecognitionEvent("end", () => {
-    if (phaseRef.current === "recording") {
-      // end fired without a result - use whatever liveTranscript we have
-      if (!hasEvaluatedRef.current) {
+  const handleSpeechEnd = useCallback(() => {
+    // Only trigger evaluation if stopRecording() hasn't already done it
+    // Give a 300ms grace period for stopRecording's async path to win
+    if (phaseRef.current !== "recording") return;
+    setTimeout(() => {
+      if (!hasEvaluatedRef.current && phaseRef.current === "recording") {
         hasEvaluatedRef.current = true;
-        evaluateAnswerRef.current(
-          liveTranscriptRef.current,
-          currentQuestionRef.current,
-        );
+        const transcript =
+          accumulatedTranscriptRef.current || liveTranscriptRef.current;
+        updatePhase("processing");
+        evaluateAnswerRef.current(transcript, currentQuestionRef.current);
       }
-    }
-  });
+    }, 300);
+  }, []);
 
-  useSpeechRecognitionEvent("result", (event) => {
-    const transcript = event.results?.[0]?.transcript?.trim() ?? "";
-    if (event.isFinal) {
-      if (!hasEvaluatedRef.current) {
-        hasEvaluatedRef.current = true;
-        if (transcript) {
-          setFinalTranscript(transcript);
-          evaluateAnswerRef.current(transcript, currentQuestionRef.current);
-        } else {
-          evaluateAnswerRef.current(
-            liveTranscriptRef.current,
-            currentQuestionRef.current,
-          );
-        }
-      }
+  const handleSpeechResult = useCallback((event: any) => {
+    const results = event.results ?? [];
+    if (!results.length) return;
+
+    const lastResult = results[results.length - 1];
+    const transcript = (
+      lastResult?.[0]?.transcript ??
+      lastResult?.transcript ??
+      ""
+    ).trim();
+    if (!transcript) return;
+
+    const isFinal = lastResult?.isFinal ?? event.isFinal ?? false;
+
+    if (isFinal) {
+      const full = accumulatedTranscriptRef.current
+        ? accumulatedTranscriptRef.current + " " + transcript
+        : transcript;
+      accumulatedTranscriptRef.current = full;
+      liveTranscriptRef.current = full;
+      setLiveTranscript(full);
     } else {
-      updateLiveTranscript(transcript);
+      const display = accumulatedTranscriptRef.current
+        ? accumulatedTranscriptRef.current + " " + transcript
+        : transcript;
+      liveTranscriptRef.current = display;
+      setLiveTranscript(display);
     }
-  });
+  }, []);
 
-  useSpeechRecognitionEvent("error", (event) => {
+  const handleSpeechError = useCallback((event: any) => {
     console.error("[SpeechRecognition] error:", event.error, event.message);
-    // "no-speech" is not a fatal error - use whatever was captured
+
     if (event.error === "no-speech") {
       if (!hasEvaluatedRef.current) {
         hasEvaluatedRef.current = true;
-        evaluateAnswerRef.current(
-          liveTranscriptRef.current,
-          currentQuestionRef.current,
-        );
+        const transcript =
+          accumulatedTranscriptRef.current || liveTranscriptRef.current;
+        updatePhase("processing");
+        evaluateAnswerRef.current(transcript, currentQuestionRef.current);
       }
       return;
     }
+
+    if (event.error === "aborted") return;
+
     updatePhase("error");
     setErrorMessage("Speech recognition error. Please try again.");
-  });
+  }, []);
 
   const requestPermissionAndStart = async (questions: string[]) => {
     updatePhase("requesting_permission");
@@ -144,16 +157,27 @@ export function useVoiceInterview() {
     }
   };
 
-  const speakQuestion = (questions: string[], index: number) => {
+  const speakQuestion = useCallback((questions: string[], index: number) => {
     updateCurrentQuestionIndex(index);
     updateCurrentQuestion(questions[index]);
-    updatePhase("ready_to_record");
     updateLiveTranscript("");
     setFinalTranscript("");
     setAiFeedback(null);
     setAiScore(null);
+    setErrorMessage(null);
     hasEvaluatedRef.current = false;
-  };
+    accumulatedTranscriptRef.current = "";
+
+    // Auto-speak the question
+    updatePhase("speaking_question");
+    Speech.speak(questions[index], {
+      language: "en-US",
+      pitch: 1.0,
+      rate: 0.85,
+      onDone: () => updatePhase("ready_to_record"),
+      onError: () => updatePhase("ready_to_record"),
+    });
+  }, []);
 
   const startRecording = async () => {
     if (phaseRef.current !== "ready_to_record") return;
@@ -161,13 +185,19 @@ export function useVoiceInterview() {
     updateLiveTranscript("");
     setFinalTranscript("");
     hasEvaluatedRef.current = false;
+    accumulatedTranscriptRef.current = "";
 
     try {
       await ExpoSpeechRecognitionModule.start({
         lang: "en-US",
         interimResults: true,
-        continuous: false,
+        continuous: true,
         requiresOnDeviceRecognition: false,
+        androidIntentOptions: {
+          EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 15000,
+          EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 10000,
+          EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 10000,
+        },
       });
       // phase set to "recording" by the "start" event listener above
     } catch (error: any) {
@@ -177,19 +207,28 @@ export function useVoiceInterview() {
     }
   };
 
-  const stopRecording = async () => {
+  const stopRecording = useCallback(async () => {
     if (phaseRef.current !== "recording") return;
+
+    // Capture BEFORE stopping - critical
+    const transcriptToEvaluate =
+      accumulatedTranscriptRef.current || liveTranscriptRef.current;
+
+    // Set guard immediately to block handleSpeechEnd race
+    hasEvaluatedRef.current = true;
+    updatePhase("processing");
 
     try {
       await ExpoSpeechRecognitionModule.stop();
-      updatePhase("processing");
-      // Result handled by "result" or "end" event listeners above
-    } catch (error: any) {
-      console.error("[SpeechRecognition] stop error:", error);
-      updatePhase("error");
-      setErrorMessage("Failed to stop recording. Please try again.");
+    } catch (e) {
+      console.warn("[stopRecording] stop error:", e);
     }
-  };
+
+    await evaluateAnswerRef.current(
+      transcriptToEvaluate,
+      currentQuestionRef.current,
+    );
+  }, []);
 
   const evaluateAnswer = async (transcript: string, question: string) => {
     const cleanTranscript = transcript?.trim() ?? "";
@@ -321,6 +360,8 @@ Respond with JSON only. No markdown, no explanation outside of JSON.`;
     setRecordingDuration(0);
     setAnswers([]);
     questionsRef.current = [];
+    accumulatedTranscriptRef.current = "";
+    hasEvaluatedRef.current = false;
   };
 
   const speakCurrentQuestion = () => {
@@ -352,12 +393,10 @@ Respond with JSON only. No markdown, no explanation outside of JSON.`;
     }
   };
 
-  // Keep evaluateAnswerRef always fresh
   useEffect(() => {
     evaluateAnswerRef.current = evaluateAnswer;
   });
 
-  // Recording duration ticker
   useEffect(() => {
     if (phase !== "recording") {
       setRecordingDuration(0);
@@ -383,6 +422,7 @@ Respond with JSON only. No markdown, no explanation outside of JSON.`;
     isVoskReady: true, // always ready - no model loading needed
     recordingDuration,
     answers,
+    // actions
     requestPermissionAndStart,
     startRecording,
     stopRecording,
@@ -391,5 +431,10 @@ Respond with JSON only. No markdown, no explanation outside of JSON.`;
     openSettings,
     speakCurrentQuestion,
     stopSpeaking,
+    // event handlers - to be called by component
+    handleSpeechStart,
+    handleSpeechEnd,
+    handleSpeechResult,
+    handleSpeechError,
   };
 }

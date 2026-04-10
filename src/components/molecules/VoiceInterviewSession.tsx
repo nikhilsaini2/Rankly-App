@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useRef } from "react";
+import { useSpeechRecognitionEvent } from "expo-speech-recognition";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -59,7 +60,25 @@ export function VoiceInterviewSession({
     openSettings,
     speakCurrentQuestion,
     stopSpeaking,
+    handleSpeechStart,
+    handleSpeechEnd,
+    handleSpeechResult,
+    handleSpeechError,
   } = voiceInterview;
+
+  // Component state
+  const [showAnswer, setShowAnswer] = useState(true);
+
+  // Memoized values
+  const averageScore = useMemo(
+    () =>
+      answers.length > 0
+        ? Math.round(
+            answers.reduce((sum, a) => sum + a.score, 0) / answers.length,
+          )
+        : 0,
+    [answers],
+  );
 
   // Animation refs
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -72,6 +91,12 @@ export function VoiceInterviewSession({
   const progressAnim = useRef(new Animated.Value(0)).current;
   const checkmarkAnim = useRef(new Animated.Value(0)).current;
 
+  // Speech recognition event listeners - must be at component level
+  useSpeechRecognitionEvent("start", handleSpeechStart);
+  useSpeechRecognitionEvent("end", handleSpeechEnd);
+  useSpeechRecognitionEvent("result", handleSpeechResult);
+  useSpeechRecognitionEvent("error", handleSpeechError);
+
   // Start session when component mounts
   useEffect(() => {
     if (questions.length > 0 && phase === "idle") {
@@ -82,7 +107,9 @@ export function VoiceInterviewSession({
   // Animate progress bar
   useEffect(() => {
     const progress =
-      totalQuestions > 0 ? currentQuestionIndex / totalQuestions : 0;
+      totalQuestions > 0
+        ? (currentQuestionIndex + 1) / totalQuestions // +1 so Q1 shows some fill
+        : 0;
     Animated.timing(progressAnim, {
       toValue: progress,
       duration: 300,
@@ -141,6 +168,7 @@ export function VoiceInterviewSession({
   // Score reveal animation
   useEffect(() => {
     if (phase === "showing_feedback" && aiScore !== null) {
+      scoreAnim.setValue(0); // reset before animating
       Animated.spring(scoreAnim, {
         toValue: 1,
         tension: 100,
@@ -310,6 +338,58 @@ export function VoiceInterviewSession({
     </View>
   );
 
+  const WaveformBars = () => {
+    const bars = useRef(
+      Array.from({ length: 5 }, () => new Animated.Value(0.3)),
+    ).current;
+
+    useEffect(() => {
+      const animations = bars.map((bar, i) =>
+        Animated.loop(
+          Animated.sequence([
+            Animated.delay(i * 120),
+            Animated.timing(bar, {
+              toValue: 1,
+              duration: 350,
+              useNativeDriver: true,
+            }),
+            Animated.timing(bar, {
+              toValue: 0.3,
+              duration: 350,
+              useNativeDriver: true,
+            }),
+          ]),
+        ),
+      );
+      animations.forEach((a) => a.start());
+      return () => animations.forEach((a) => a.stop());
+    }, []);
+
+    return (
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 4,
+          height: 32,
+        }}
+      >
+        {bars.map((bar, i) => (
+          <Animated.View
+            key={i}
+            style={{
+              width: 4,
+              height: 28,
+              borderRadius: 2,
+              backgroundColor: colors.primary,
+              transform: [{ scaleY: bar }],
+            }}
+          />
+        ))}
+      </View>
+    );
+  };
+
   const renderRecording = () => (
     <View style={styles.contentContainer}>
       <View style={styles.questionCard}>
@@ -323,14 +403,7 @@ export function VoiceInterviewSession({
         </Text>
       </View>
       <View style={styles.recordingIndicator}>
-        <Animated.View
-          style={[
-            styles.recordingDot,
-            {
-              transform: [{ scale: pulseAnim }],
-            },
-          ]}
-        />
+        <WaveformBars />
         <Text style={styles.recordingText}>Recording</Text>
         <Text style={styles.timerText}>{recordingDuration}s</Text>
       </View>
@@ -382,17 +455,22 @@ export function VoiceInterviewSession({
       </Animated.View>
 
       <View style={styles.collapsibleSection}>
-        <TouchableOpacity style={styles.sectionHeader}>
+        <TouchableOpacity
+          style={styles.sectionHeader}
+          onPress={() => setShowAnswer((prev: boolean) => !prev)}
+        >
           <Text style={styles.sectionTitle}>Your Answer</Text>
           <Ionicons
-            name="chevron-down"
+            name={showAnswer ? "chevron-up" : "chevron-down"}
             size={16}
             color={colors.textSecondary}
           />
         </TouchableOpacity>
-        <View style={styles.sectionContent}>
-          <Text style={styles.sectionText}>{finalTranscript}</Text>
-        </View>
+        {showAnswer && (
+          <View style={styles.sectionContent}>
+            <Text style={styles.sectionText}>{finalTranscript}</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.feedbackSection}>
@@ -449,13 +527,6 @@ export function VoiceInterviewSession({
   );
 
   const renderSessionComplete = () => {
-    const averageScore =
-      answers.length > 0
-        ? Math.round(
-            answers.reduce((sum, a) => sum + a.score, 0) / answers.length,
-          )
-        : 0;
-
     return (
       <View style={styles.contentContainer}>
         <Animated.View
@@ -599,6 +670,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: colors.textPrimary,
+    letterSpacing: 0.5,
   },
   configPill: {
     backgroundColor: colors.primary + "20",
@@ -610,6 +682,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: colors.primary,
+    letterSpacing: 0.3,
   },
   progressBarContainer: {
     height: 3,
@@ -645,6 +718,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   questionText: {
     fontSize: 20,
@@ -706,16 +786,16 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   micButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
     elevation: 8,
   },
   micLabel: {
@@ -737,6 +817,8 @@ const styles = StyleSheet.create({
     padding: 16,
     minHeight: 80,
     marginBottom: 20,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
   },
   transcriptCardPurple: {
     borderLeftWidth: 4,
@@ -774,9 +856,9 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   stopButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: colors.error,
     justifyContent: "center",
     alignItems: "center",
@@ -810,6 +892,7 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: 56,
     fontWeight: "800",
+    letterSpacing: -2,
   },
   collapsibleSection: {
     backgroundColor: colors.surface,
@@ -844,6 +927,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   tipSection: {
     backgroundColor: colors.primary + "10",
@@ -871,7 +959,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   completionTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "700",
     color: colors.textPrimary,
     textAlign: "center",
@@ -933,6 +1021,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     marginBottom: 12,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   primaryButtonText: {
     fontSize: 16,
