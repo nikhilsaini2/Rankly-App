@@ -8,12 +8,11 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { InterviewScreen } from "../../feature/interview";
 import { useAIChat } from "../../hooks/useAIChat";
-import { useInterview } from "../../hooks/useInterview";
 import { useProfile } from "../../hooks/useProfile";
 import type { RootTabParamList } from "../../types/navigation.types";
 import { ChatTab } from "./components/ChatTab";
-import { InterviewTab } from "./components/InterviewTab";
 import { PremiumHeader } from "./components/PremiumHeader";
 import { PremiumTabSwitcher } from "./components/PremiumTabSwitcher";
 import { styles } from "./styles";
@@ -26,19 +25,9 @@ export default function AIScreen() {
 
   const { user } = useProfile();
   const chat = useAIChat(user);
-  const iv = useInterview();
 
   const [segment, setSegment] = useState<"chat" | "interview">("chat");
   const [input, setInput] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [setupRole, setSetupRole] = useState(user?.role ?? "");
-  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">(
-    "medium",
-  );
-  const [sessionType, setSessionType] = useState<
-    "behavioral" | "technical" | "mixed"
-  >("behavioral");
-  const [numQ, setNumQ] = useState(5);
 
   const contextSentRef = useRef(false);
   const opacity = useSharedValue(0);
@@ -58,11 +47,9 @@ export default function AIScreen() {
   }, []);
 
   useEffect(() => {
-    setSetupRole(user?.role ?? "");
-  }, [user?.role]);
-  useEffect(() => {
     if (initialSegment) setSegment(initialSegment);
   }, [initialSegment]);
+
   useEffect(() => {
     contextSentRef.current = false;
   }, [atsContext]);
@@ -112,20 +99,10 @@ export default function AIScreen() {
             insetsBottom={insets.bottom}
           />
         ) : (
-          <InterviewTab
-            iv={iv}
-            insetsBottom={3}
-            setupRole={setupRole}
-            setSetupRole={setSetupRole}
-            difficulty={difficulty}
-            setDifficulty={setDifficulty}
-            sessionType={sessionType}
-            setSessionType={setSessionType}
-            numQ={numQ}
-            setNumQ={setNumQ}
-            answer={answer}
-            setAnswer={setAnswer}
+          <InterviewScreen
+            defaultRole={user?.role ?? ""}
             onDiscussCoach={() => setSegment("chat")}
+            insetsBottom={insets.bottom}
           />
         )}
       </Animated.View>

@@ -39,8 +39,6 @@ export default function HomeScreen() {
     refetch: refetchStats,
   } = useHome();
 
-  // On focus: silently re-check both profile and stats.
-  // Neither will trigger a re-render unless data actually changed.
   useFocusEffect(
     useCallback(() => {
       refetchProfile();

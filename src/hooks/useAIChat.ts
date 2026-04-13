@@ -40,26 +40,26 @@ export function useAIChat(profile: User | null) {
 
     (async () => {
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.user || !alive) return;
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || !alive) return;
 
       const { data, error } = await supabase
         .from("ai_chats")
         .select("*")
-        .eq("user_id", session.user.id)
-        .order("created_at", { ascending: true })
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
         .limit(100);
 
       if (!alive) return;
       if (error) console.error("[useAIChat] fetch error:", error.message);
 
       const mapped = (data ?? []).map((r) => ({
-        id: r.id as string,
+        id: String(r.id),
         role: r.role as "user" | "assistant",
         content: r.content as string,
         createdAt: r.created_at as string,
-      }));
+      })).reverse();
 
       const welcomeMessage: ChatMessage = {
         id: "rankly-welcome",
@@ -171,13 +171,13 @@ export function useAIChat(profile: User | null) {
             .filter((m) => m.id !== tempUserMsgId)
             .concat([
               {
-                id: userRow.id,
+                id: String(userRow.id),
                 role: "user",
                 content: userText,
                 createdAt: userRow.created_at,
               },
               {
-                id: asstRow.id,
+                id: String(asstRow.id),
                 role: "assistant",
                 content: reply,
                 createdAt: asstRow.created_at,
