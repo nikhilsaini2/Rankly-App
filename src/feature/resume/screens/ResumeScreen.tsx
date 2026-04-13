@@ -20,25 +20,25 @@ import Reanimated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PressableScale } from "../../components/atoms/PressableScale";
-import { useToast } from "../../components/atoms/Toast";
-import { useAtsScore } from "../../hooks/useAtsScore";
-import { useProfile } from "../../hooks/useProfile";
-import { useResumeUpload } from "../../hooks/useResumeUpload";
-import { fetchResumeScreenData } from "../../services/resume/resumeService";
-import { colors } from "../../theme/color";
-import type { ResumeRow } from "../../types/common.types";
-import { AtsScoreSummary } from "../../types/common.types";
+import { PressableScale } from "../../../components/atoms/PressableScale";
+import { useToast } from "../../../components/atoms/Toast";
+import { useAtsScore } from "../../../hooks/useAtsScore";
+import { useProfile } from "../../../hooks/useProfile";
+import { useResumeUpload } from "../../../hooks/useResumeUpload";
+import { fetchResumeScreenData } from "../../../services/resume/resumeService";
+import { colors } from "../../../theme/color";
+import type { ResumeRow } from "../../../types/common.types";
+import { AtsScoreSummary } from "../../../types/common.types";
 import type {
   RootStackParamList,
   RootTabParamList,
-} from "../../types/navigation.types";
-import { AnalyzeModal } from "./components/AnalyzeModal";
-import { FeatureRow } from "./components/FeatureRow";
-import { ResumeAnalyzingOverlay } from "./components/ResumeAnalyzingOverlay";
-import { ResumeCard } from "./components/ResumeCard";
-import { UploadingOverlay } from "./components/Uploadingoverlay";
-import { styles } from "./styles";
+} from "../../../types/navigation.types";
+import { AnalyzeModal } from "../components/AnalyzeModal";
+import { FeatureRow } from "../components/FeatureRow";
+import { ResumeAnalyzingOverlay } from "../components/ResumeAnalyzingOverlay";
+import { ResumeCard } from "../components/ResumeCard";
+import { UploadingOverlay } from "../components/Uploadingoverlay";
+import { styles } from "../styles";
 
 function getLatestAtsScore(resume: ResumeRow): AtsScoreSummary | null {
   if (!resume.ats_scores?.length) return null;
@@ -49,7 +49,6 @@ function getLatestAtsScore(resume: ResumeRow): AtsScoreSummary | null {
 }
 
 export default function ResumeScreen() {
-  const needsReload = useRef(false);
   const insets = useSafeAreaInsets();
   const toast = useToast();
   const { user } = useProfile();
@@ -86,9 +85,9 @@ export default function ResumeScreen() {
     glowAnim.value = withRepeat(withTiming(0.22, { duration: 2000 }), -1, true);
   }, [screenAnim, glowAnim]);
 
-  const load = useCallback(async () => {
+  const refreshData = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const data = await fetchResumeScreenData();
       setResumes(data.resumes);
     } finally {
@@ -98,14 +97,9 @@ export default function ResumeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!didInitialLoad.current) {
-        didInitialLoad.current = true;
-        void load();
-      } else if (needsReload.current) {
-        needsReload.current = false;
-        void load();
-      }
-    }, [load]),
+      refreshData(didInitialLoad.current);
+      didInitialLoad.current = true;
+    }, [refreshData])
   );
 
   async function onUpload() {
@@ -122,8 +116,7 @@ export default function ResumeScreen() {
       if (!file) return;
       await uploadResume(file);
       toast("Resume uploaded successfully", "success");
-      needsReload.current = true;
-      load();
+      refreshData(true);
     } catch (e) {
       toast(e instanceof Error ? e.message : "Upload failed", "error");
     }
@@ -139,8 +132,7 @@ export default function ResumeScreen() {
         jobDescription.trim() || undefined,
       );
       toast("ATS score ready", "success");
-      needsReload.current = true;
-      await load();
+      await refreshData(true);
       await new Promise((r) => setTimeout(r, 100));
       if (mapped) {
         rootNav?.navigate("AtsScore", {
@@ -168,7 +160,7 @@ export default function ResumeScreen() {
             try {
               await deleteResume(item.id, item.fileUrl);
               toast("Resume removed", "success");
-              load();
+              refreshData(true);
             } catch {
               toast("Delete failed", "error");
             }

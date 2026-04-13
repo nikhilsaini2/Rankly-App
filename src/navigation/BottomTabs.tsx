@@ -3,7 +3,7 @@ import React from "react";
 import AIScreen from "../screens/ai/AIScreen";
 import HomeScreen from "../screens/home/HomeScreen";
 import ProfileScreen from "../screens/profile/ProfileScreen";
-import ResumeScreen from "../screens/resume/ResumeScreen";
+import ResumeScreen from "../feature/resume/screens/ResumeScreen";
 import type { RootTabParamList } from "../types/navigation.types";
 import { TabBar } from "./TabBar";
 

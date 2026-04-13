@@ -82,3 +82,40 @@ export interface ResumeBuilderState {
   historyLoading: boolean
   selectedResume: ResumeHistoryItem | null
 }
+
+export type AsyncStatus = 'idle' | 'loading' | 'success' | 'error'
+
+export interface ResumeEngineState {
+  phase: ResumePhase
+  currentStep: number
+  inputTab: InputTab
+  formData: ResumeFormData
+  generatedResume: GeneratedResume | null
+  pdfUri: string | null
+  selectedResume: ResumeHistoryItem | null
+  resumeHistory: ResumeHistoryItem[]
+  
+  asyncStatus: AsyncStatus
+  loadingMessage: number
+  error: string | null
+}
+
+export type ResumeEngineAction =
+  | { type: 'SET_TAB'; tab: InputTab }
+  | { type: 'SET_STEP'; step: number }
+  | { type: 'UPDATE_FORM'; data: Partial<ResumeFormData> }
+  | { type: 'UPDATE_EXPERIENCE'; index: number; field: keyof WorkExperience; value: string }
+  | { type: 'ADD_EXPERIENCE'; experience: WorkExperience }
+  | { type: 'REMOVE_EXPERIENCE'; index: number }
+  
+  | { type: 'START_ASYNC'; messageIndex?: number }
+  | { type: 'SET_ERROR'; error: string }
+  | { type: 'SET_PHASE'; phase: ResumePhase }
+  | { type: 'GENERATE_SUCCESS'; generatedResume: GeneratedResume }
+  | { type: 'EXPORT_SUCCESS'; pdfUri: string }
+  | { type: 'HISTORY_FETCH_SUCCESS'; history: ResumeHistoryItem[] }
+  | { type: 'HISTORY_DELETE_SUCCESS'; id: string }
+  | { type: 'LOAD_HISTORY_ITEM'; item: ResumeHistoryItem }
+  
+  | { type: 'RESET_BUILDER' }
+  | { type: 'RESET_ALL' }

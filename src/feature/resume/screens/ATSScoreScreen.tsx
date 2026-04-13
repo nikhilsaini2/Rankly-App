@@ -18,17 +18,17 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ScoreBar } from "../../components/atoms/ScoreBar";
-import { ScoreRing } from "../../components/atoms/ScoreRing";
-import { useAtsScore } from "../../hooks/useAtsScore";
-import { colors } from "../../theme/color";
-import type { AtsScoreRow } from "../../types/common.types";
+import { ScoreBar } from "../../../components/atoms/ScoreBar";
+import { ScoreRing } from "../../../components/atoms/ScoreRing";
+import { useAtsScore } from "../../../hooks/useAtsScore";
+import { colors } from "../../../theme/color";
+import type { AtsScoreRow } from "../../../types/common.types";
 import type {
   RootStackParamList,
   RootTabParamList,
-} from "../../types/navigation.types";
-import { scoreTierColor, scoreTierLabel } from "../../utils/score";
-import { styles } from "./styles";
+} from "../../../types/navigation.types";
+import { scoreTierColor, scoreTierLabel } from "../../../utils/score";
+import { styles } from "../styles";
 
 if (
   Platform.OS === "android" &&
