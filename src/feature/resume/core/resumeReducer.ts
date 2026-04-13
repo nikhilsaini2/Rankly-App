@@ -41,6 +41,7 @@ export const INITIAL_RESUME_STATE: ResumeEngineState = {
   asyncStatus: "idle",
   loadingMessage: 0,
   error: null,
+  lastSaved: Date.now(),
 };
 
 const VALID_TRANSITIONS: Record<ResumePhase, ResumePhase[]> = {
@@ -109,6 +110,13 @@ export function resumeEngineReducer(
         loadingMessage: action.messageIndex ?? 0,
       };
 
+    case "ABORT_ASYNC":
+      return {
+        ...state,
+        asyncStatus: "idle",
+        error: { message: "Action cancelled", type: "network" },
+      };
+
     case "SET_ERROR":
       return { ...state, asyncStatus: "error", error: action.error };
 
@@ -166,6 +174,12 @@ export function resumeEngineReducer(
         },
         phase: "preview",
         error: null,
+      };
+
+    case "RESTORE_SESSION":
+      return {
+        ...state,
+        ...action.state,
       };
 
     case "RESET_BUILDER":

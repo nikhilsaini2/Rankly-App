@@ -10,7 +10,6 @@ export const resumeStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 50 : 20,
     paddingBottom: 16,
   },
   headerTitle: {

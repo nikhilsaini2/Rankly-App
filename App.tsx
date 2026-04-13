@@ -22,7 +22,11 @@ const AppProviders = ({ children }: { children: React.ReactNode }) => (
 export default function App() {
   useEffect(() => {
     if (Platform.OS === "android") {
-      NavigationBar.setStyle("dark");
+      try {
+        NavigationBar.setStyle("dark");
+      } catch {
+        // Activity may not be ready during hot reload — safe to ignore
+      }
     }
   }, []);
 

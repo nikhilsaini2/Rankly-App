@@ -2,7 +2,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
+  ScrollView,
   StyleProp,
   StyleSheet,
   Text,
@@ -11,6 +15,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PressableScale } from "../../../components/atoms/PressableScale";
 import { colors } from "../../../theme/color";
 
@@ -31,6 +36,8 @@ export function AnalyzeModal({
   onAnalyze,
   onClose,
 }: Props) {
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal
       visible={visible}
@@ -38,81 +45,105 @@ export function AnalyzeModal({
       transparent
       onRequestClose={onClose}
     >
-      <View style={modalStyles.backdrop}>
-        <TouchableOpacity
-          style={StyleSheet.absoluteFillObject}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-        <View style={modalStyles.sheet}>
-          <View style={modalStyles.handle} />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={80}
+      >
+        <View style={modalStyles.backdrop}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFillObject}
+            activeOpacity={1}
+            onPress={() => {
+              Keyboard.dismiss();
+              onClose();
+            }}
+          />
 
-          <View style={modalStyles.headerRow}>
-            <View style={modalStyles.headerIcon}>
-              <LinearGradient
-                colors={["rgba(108,99,255,0.2)", "rgba(108,99,255,0.08)"]}
-                style={{ borderRadius: 12 } as StyleProp<ViewStyle>}
-              />
-              <Ionicons name="flash" size={18} color={colors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={modalStyles.title}>Analyze resume</Text>
-              <Text style={modalStyles.subtitle}>
-                Add a job description for a tailored score
-              </Text>
-            </View>
-            <TouchableOpacity style={modalStyles.closeBtn} onPress={onClose}>
-              <Ionicons name="close" size={18} color={colors.textMuted} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={modalStyles.inputWrap}>
-            <View style={modalStyles.inputLabelRow}>
-              <Ionicons
-                name="briefcase-outline"
-                size={13}
-                color={colors.textMuted}
-              />
-              <Text style={modalStyles.inputLabel}>
-                Job description{" "}
-                <Text style={modalStyles.inputLabelOpt}>(optional)</Text>
-              </Text>
-            </View>
-            <TextInput
-              style={modalStyles.input}
-              placeholder="Paste the job description here for a more accurate keyword and relevance score…"
-              placeholderTextColor={colors.textMuted}
-              value={jobDescription}
-              onChangeText={onChangeText}
-              multiline
-              numberOfLines={5}
-            />
-          </View>
-
-          <View style={modalStyles.tipRow}>
-            <Ionicons
-              name="information-circle-outline"
-              size={13}
-              color={colors.accent}
-            />
-            <Text style={modalStyles.tipText}>
-              Without a job description, you'll get a general ATS score
-            </Text>
-          </View>
-
-          <PressableScale onPress={onAnalyze} style={modalStyles.cta}>
-            <LinearGradient
-              colors={[colors.primary, colors.primaryDark]}
-              style={modalStyles.ctaInner}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+          <View style={{ flex: 1, justifyContent: "flex-end" }}>
+            <View
+              style={[modalStyles.sheet, { paddingBottom: insets.bottom + 20 }]}
             >
-              <Ionicons name="flash" size={16} color="#fff" />
-              <Text style={modalStyles.ctaText}>Run ATS Analysis</Text>
-            </LinearGradient>
-          </PressableScale>
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                keyboardDismissMode="interactive"
+              >
+                <View style={modalStyles.handle} />
+
+                <View style={modalStyles.headerRow}>
+                  <View style={modalStyles.headerIcon}>
+                    <LinearGradient
+                      colors={["rgba(108,99,255,0.2)", "rgba(108,99,255,0.08)"]}
+                      style={{ borderRadius: 12 } as StyleProp<ViewStyle>}
+                    />
+                    <Ionicons name="flash" size={18} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={modalStyles.title}>Analyze resume</Text>
+                    <Text style={modalStyles.subtitle}>
+                      Add a job description for a tailored score
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={modalStyles.closeBtn}
+                    onPress={onClose}
+                  >
+                    <Ionicons name="close" size={18} color={colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={modalStyles.inputWrap}>
+                  <View style={modalStyles.inputLabelRow}>
+                    <Ionicons
+                      name="briefcase-outline"
+                      size={13}
+                      color={colors.textMuted}
+                    />
+                    <Text style={modalStyles.inputLabel}>
+                      Job description{" "}
+                      <Text style={modalStyles.inputLabelOpt}>(optional)</Text>
+                    </Text>
+                  </View>
+                  <TextInput
+                    style={modalStyles.input}
+                    placeholder="Paste the job description here for a more accurate keyword and relevance score…"
+                    placeholderTextColor={colors.textMuted}
+                    value={jobDescription}
+                    onChangeText={onChangeText}
+                    multiline
+                    numberOfLines={5}
+                    onSubmitEditing={Keyboard.dismiss}
+                  />
+                </View>
+
+                <View style={modalStyles.tipRow}>
+                  <Ionicons
+                    name="information-circle-outline"
+                    size={13}
+                    color={colors.accent}
+                  />
+                  <Text style={modalStyles.tipText}>
+                    Without a job description, you'll get a general ATS score
+                  </Text>
+                </View>
+
+                <PressableScale onPress={onAnalyze} style={modalStyles.cta}>
+                  <LinearGradient
+                    colors={[colors.primary, colors.primaryDark]}
+                    style={modalStyles.ctaInner}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Ionicons name="flash" size={16} color="#fff" />
+                    <Text style={modalStyles.ctaText}>Run ATS Analysis</Text>
+                  </LinearGradient>
+                </PressableScale>
+              </ScrollView>
+            </View>
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -128,7 +159,6 @@ const modalStyles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    paddingBottom: 36,
     borderWidth: 1,
     borderColor: colors.border,
     borderBottomWidth: 0,

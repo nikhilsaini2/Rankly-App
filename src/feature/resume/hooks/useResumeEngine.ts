@@ -2,13 +2,19 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { Alert, AppState, AppStateStatus } from "react-native";
-import { generateGeminiText, parseGeminiJson } from "../../../services/gemini";
+import { generateGeminiTextWithRetry, parseGeminiJson } from "../../../services/gemini";
 import { supabase } from "../../../services/supabase";
 import { handleGeminiError } from "../../../utils/gemini";
 import { INITIAL_RESUME_STATE, resumeEngineReducer } from "../core/resumeReducer";
 import type { GeneratedResume, InputTab, ResumeEngineState, ResumePhase, WorkExperience } from "../types/resume.types";
 import { generateResumeHTML } from "../utils/resumeHTML";
 import { buildResumePrompt } from "../utils/resumePrompt";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo from "@react-native-community/netinfo";
+import { withResilience } from "../../../utils/resilience";
+import { GeminiResumeSchema, validateFullForm, validateStep } from "../utils/validation";
+
+const DRAFT_STORAGE_KEY = "@resume_builder_draft_v1";
 
 export function useResumeEngine() {
   const [state, dispatch] = useReducer(resumeEngineReducer, INITIAL_RESUME_STATE);
@@ -17,10 +23,44 @@ export function useResumeEngine() {
   const stateRef = useRef<ResumeEngineState>(state);
   const isGeneratingRef = useRef(false);
   const isExportingRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  // Handle Debounced Local Persistence
+  useEffect(() => {
+    if (state.inputTab !== "form" || state.phase === "exported") return;
+
+    const timeout = setTimeout(async () => {
+      try {
+        const draft = {
+          formData: state.formData,
+          currentStep: state.currentStep,
+          phase: state.phase === "loading" ? "input" : state.phase,
+          generatedResume: state.generatedResume,
+          pdfUri: state.pdfUri,
+          version: 2, // Version for migrations
+          lastSaved: Date.now(),
+        };
+        await AsyncStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      } catch (err) {
+        console.warn("Failed to persist draft data", err);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [state.formData, state.currentStep, state.phase, state.generatedResume, state.pdfUri, state.inputTab]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Cancel any generation if app backgrounds
   useEffect(() => {
@@ -39,33 +79,34 @@ export function useResumeEngine() {
   }, []);
 
   const getUserId = async (): Promise<string | null> => {
+    // Cache or fetch resiliently
     const { data: userData } = await supabase.auth.getUser();
     return userData?.user?.id || null;
   };
 
+  const restoreDraft = useCallback(async () => {
+    try {
+      const raw = await AsyncStorage.getItem(DRAFT_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        dispatch({ type: "RESTORE_SESSION", state: parsed });
+        return true;
+      }
+    } catch {}
+    return false;
+  }, []);
+
+  const clearDraft = useCallback(async () => {
+    try {
+      await AsyncStorage.removeItem(DRAFT_STORAGE_KEY);
+      dispatch({ type: "RESET_BUILDER" });
+    } catch {}
+  }, []);
+
   const checkCanProceed = useCallback((): boolean => {
     const { currentStep, formData } = stateRef.current;
-    switch (currentStep) {
-      case 1:
-        return !!(formData.fullName.trim() && formData.email.trim());
-      case 2:
-        return !!(
-          formData.targetRole.trim() &&
-          formData.experienceLevel &&
-          formData.industry &&
-          formData.skills.trim()
-        );
-      case 3:
-        return !!(
-          formData.experiences[0]?.jobTitle.trim() || formData.experienceLevel === "Fresher"
-        );
-      case 4:
-        return !!(formData.degree.trim() && formData.institution.trim() && formData.graduationYear.trim());
-      case 5:
-        return !!formData.tone;
-      default:
-        return false;
-    }
+    const errors = validateStep(currentStep, formData);
+    return Object.keys(errors).length === 0;
   }, []);
 
   const handleNext = useCallback(() => {
@@ -89,21 +130,64 @@ export function useResumeEngine() {
   const buildResume = useCallback(async () => {
     if (isGeneratingRef.current) return;
     
+    // Stop any previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    
     isGeneratingRef.current = true;
     dispatch({ type: "START_ASYNC" });
     
     try {
+      const netState = await NetInfo.fetch();
+      if (!netState.isConnected) {
+        dispatch({ 
+          type: "SET_ERROR", 
+          error: { message: "No internet connection. Changes saved locally.", type: 'network', retryAction: 'generate' } 
+        });
+        return;
+      }
+
       const formData = stateRef.current.formData;
+      
+      // Validate all steps before sending to AI
+      const validationErrors = validateFullForm(formData);
+      if (validationErrors.length > 0) {
+        dispatch({ 
+          type: "SET_ERROR", 
+          error: { 
+            message: validationErrors[0], // show the first specific error
+            type: 'validation',
+          } 
+        });
+        return;
+      }
+
       const prompt = buildResumePrompt(formData);
-      const raw = await generateGeminiText(prompt);
+
+      // Step 3 & 4: Network Resilience & Async Cancellation
+      const raw = await withResilience(
+        async (signal) => generateGeminiTextWithRetry(prompt, 1, 10000), // Internal retry is 1 here as we use withResilience wrap
+        { abortSignal: abortControllerRef.current.signal, retries: 2 }
+      );
+
       const parsed = parseGeminiJson<GeneratedResume>(raw);
       
-      if (!parsed) throw new Error("Invalid response");
+      // Step 9: Validate Gemini response structure
+      if (!parsed || !(await GeminiResumeSchema.isValid(parsed))) {
+        throw new Error("Received malformed response from AI.");
+      }
       
-      dispatch({ type: "GENERATE_SUCCESS", generatedResume: parsed });
-    } catch (err) {
+      dispatch({ type: "GENERATE_SUCCESS", generatedResume: parsed as GeneratedResume });
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
+
       handleGeminiError(err, () => buildResume());
-      dispatch({ type: "SET_ERROR", error: "Could not build resume. Please try again." });
+      dispatch({ 
+        type: "SET_ERROR", 
+        error: { message: "Could not build resume. Please try again.", type: 'server', retryAction: 'generate' } 
+      });
       dispatch({ type: "SET_PHASE", phase: "input" });
     } finally {
        isGeneratingRef.current = false;
@@ -126,51 +210,54 @@ export function useResumeEngine() {
         base64: false,
       });
 
-      // Saving to Supabase history
+      // Saving to Supabase history with resilience
       try {
         const userId = await getUserId();
         if (userId) {
-          let resumeId = currentState.selectedResume?.id;
+          await withResilience(async () => {
+            let resumeId = stateRef.current.selectedResume?.id;
 
-          if (!resumeId) {
-            const { data: resumeRow, error: resumeError } = await supabase
-              .from("resume_builds")
-              .insert({
-                user_id: userId,
-                full_name: formData.fullName,
-                target_role: formData.targetRole,
-                experience_level: formData.experienceLevel || null,
-                industry: formData.industry || null,
-                tone: formData.tone || null,
-                skills: formData.skills || null,
-                professional_summary: currentState.generatedResume.professionalSummary || null,
-                core_skills: currentState.generatedResume.coreSkills || [],
-                enhanced_experiences: currentState.generatedResume.enhancedExperiences || null,
-                ats_keywords: currentState.generatedResume.atsKeywords || [],
-                pdf_uri: uri
-              })
-              .select("id")
-              .single();
+            if (!resumeId) {
+              const { data: resumeRow, error: resumeError } = await supabase
+                .from("resume_builds")
+                .insert({
+                  user_id: userId,
+                  full_name: formData.fullName,
+                  target_role: formData.targetRole,
+                  experience_level: formData.experienceLevel || null,
+                  industry: formData.industry || null,
+                  tone: formData.tone || null,
+                  skills: formData.skills || null,
+                  professional_summary: currentState.generatedResume!.professionalSummary || null,
+                  core_skills: currentState.generatedResume!.coreSkills || [],
+                  enhanced_experiences: currentState.generatedResume!.enhancedExperiences || null,
+                  ats_keywords: currentState.generatedResume!.atsKeywords || [],
+                  pdf_uri: uri
+                })
+                .select("id")
+                .single();
 
-            if (!resumeError && resumeRow) {
-              resumeId = resumeRow.id;
+              if (resumeError) throw resumeError;
+            } else {
+              const { error: updateError } = await supabase
+                .from("resume_builds")
+                .update({ pdf_uri: uri })
+                .eq("id", resumeId);
+              
+              if (updateError) throw updateError;
             }
-          } else {
-             await supabase
-              .from("resume_builds")
-              .update({
-                pdf_uri: uri
-              })
-              .eq("id", resumeId);
-          }
+          }, { retries: 2 });
         }
       } catch (err) {
-        console.warn("Failed to natively save to history", err);
+        // We don't block the user if only the history save fails but they have the PDF
       }
 
       dispatch({ type: "EXPORT_SUCCESS", pdfUri: uri });
     } catch {
-      dispatch({ type: "SET_ERROR", error: "Could not export PDF." });
+      dispatch({ 
+        type: "SET_ERROR", 
+        error: { message: "Could not export PDF.", type: 'server', retryAction: 'export' } 
+      });
     } finally {
       isExportingRef.current = false;
     }
@@ -192,18 +279,25 @@ export function useResumeEngine() {
     if (stateRef.current.asyncStatus === "loading") return;
 
     try {
+      const netState = await NetInfo.fetch();
+      if (!netState.isConnected) {
+         dispatch({ type: "HISTORY_FETCH_SUCCESS", history: [] }); // fallback
+         return;
+      }
+
       const userId = await getUserId();
       if (!userId) {
         dispatch({ type: "HISTORY_FETCH_SUCCESS", history: [] });
         return;
       }
 
+      // Initial page load
       const { data, error } = await supabase
-        .from("resume_builds") // Note: The previous logic used resume_builds? 
+        .from("resume_builds") 
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .range(0, 19); // 20 items
 
       if (!error && data) {
         dispatch({ type: "HISTORY_FETCH_SUCCESS", history: data });
@@ -213,6 +307,29 @@ export function useResumeEngine() {
     } catch {
       dispatch({ type: "HISTORY_FETCH_SUCCESS", history: [] });
     }
+  }, []);
+
+  const loadMoreHistory = useCallback(async () => {
+    // Only fetch if available and not currently generating
+    if (stateRef.current.asyncStatus === "loading" || stateRef.current.resumeHistory.length % 20 !== 0) return;
+
+    try {
+      const userId = await getUserId();
+      if (!userId) return;
+
+      const currentCount = stateRef.current.resumeHistory.length;
+      
+      const { data, error } = await supabase
+        .from("resume_builds") 
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .range(currentCount, currentCount + 19);
+
+      if (!error && data && data.length > 0) {
+        dispatch({ type: "HISTORY_FETCH_SUCCESS", history: [...stateRef.current.resumeHistory, ...data] });
+      }
+    } catch {}
   }, []);
 
   const deleteResumeHistory = useCallback(async (id: string) => {
@@ -247,7 +364,10 @@ export function useResumeEngine() {
     exportPDF,
     shareResume,
     fetchResumeHistory,
+    loadMoreHistory,
     deleteResumeHistory,
+    clearDraft,
+    restoreDraft,
     canProceed: checkCanProceed,
   };
 }

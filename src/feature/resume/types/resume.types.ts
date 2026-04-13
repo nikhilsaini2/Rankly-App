@@ -97,7 +97,8 @@ export interface ResumeEngineState {
   
   asyncStatus: AsyncStatus
   loadingMessage: number
-  error: string | null
+  error: { message: string; type?: 'network' | 'validation' | 'server'; retryAction?: string } | null
+  lastSaved?: number
 }
 
 export type ResumeEngineAction =
@@ -109,7 +110,8 @@ export type ResumeEngineAction =
   | { type: 'REMOVE_EXPERIENCE'; index: number }
   
   | { type: 'START_ASYNC'; messageIndex?: number }
-  | { type: 'SET_ERROR'; error: string }
+  | { type: 'ABORT_ASYNC' }
+  | { type: 'SET_ERROR'; error: { message: string; type?: 'network' | 'validation' | 'server'; retryAction?: string } }
   | { type: 'SET_PHASE'; phase: ResumePhase }
   | { type: 'GENERATE_SUCCESS'; generatedResume: GeneratedResume }
   | { type: 'EXPORT_SUCCESS'; pdfUri: string }
@@ -117,5 +119,6 @@ export type ResumeEngineAction =
   | { type: 'HISTORY_DELETE_SUCCESS'; id: string }
   | { type: 'LOAD_HISTORY_ITEM'; item: ResumeHistoryItem }
   
+  | { type: 'RESTORE_SESSION'; state: Partial<ResumeEngineState> }
   | { type: 'RESET_BUILDER' }
   | { type: 'RESET_ALL' }

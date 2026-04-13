@@ -103,10 +103,11 @@ interface ResumeHistoryListProps {
   onSelect: (item: ResumeHistoryItem) => void
   onDelete: (id: string) => void
   onBuildNew: () => void
+  onLoadMore: () => void
 }
 
 export const ResumeHistoryList: React.FC<ResumeHistoryListProps> = ({
-  history, loading, onSelect, onDelete, onBuildNew
+  history, loading, onSelect, onDelete, onBuildNew, onLoadMore
 }) => {
   if (loading) {
     return (
@@ -152,6 +153,8 @@ export const ResumeHistoryList: React.FC<ResumeHistoryListProps> = ({
           onDelete={() => onDelete(item.id)}
         />
       )}
+      onEndReached={onLoadMore}
+      onEndReachedThreshold={0.5}
       contentContainerStyle={{ paddingBottom: 100 }}
     />
   )
