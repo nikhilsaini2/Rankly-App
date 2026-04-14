@@ -14,6 +14,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { withResilience } from "../../../utils/resilience";
 import { GeminiResumeSchema, validateFullForm, validateStep } from "../utils/validation";
 import { sanitizeGeneratedResume } from "../utils/resumeSanitizer";
+import { saveResume } from "../../../services/resume/resumeHistoryStorage";
 
 const DRAFT_STORAGE_KEY = "@resume_builder_draft_v1";
 const DRAFT_VERSION = 2;
@@ -254,6 +255,25 @@ export function useResumeEngine() {
       }
 
       const sanitized = sanitizeGeneratedResume(parsed as GeneratedResume);
+
+      // Save to local history immediately after generation — fail-open
+      try {
+        const formData = stateRef.current.formData;
+        const html = generateResumeHTML(formData, sanitized);
+        await saveResume({
+          html,
+          rawData: sanitized,
+          role: formData.targetRole,
+          fullName: formData.fullName,
+          experienceLevel: formData.experienceLevel,
+          source: "builder",
+          formData,
+        });
+      } catch (err) {
+        console.warn("[ResumeEngine] Failed to save resume to history", err);
+        // Non-fatal — generation still completes normally
+      }
+
       dispatch({ type: "GENERATE_SUCCESS", generatedResume: sanitized });
     } catch (err: any) {
       if (err.name === "AbortError") return;
@@ -268,7 +288,7 @@ export function useResumeEngine() {
     }
   }, []);
 
-  const exportPDF = useCallback(async () => {
+  const exportPDF = useCallback(async (onSuccess?: () => void) => {
     const currentState = stateRef.current;
     if (!currentState.generatedResume || isExportingRef.current) return;
 
@@ -319,6 +339,7 @@ export function useResumeEngine() {
       }
 
       dispatch({ type: "EXPORT_SUCCESS", pdfUri: uri });
+      onSuccess?.();
     } catch {
       dispatch({
         type: "SET_ERROR",
@@ -335,6 +356,87 @@ export function useResumeEngine() {
     try {
       await Sharing.shareAsync(pdfUri, { mimeType: "application/pdf", dialogTitle: "Share Resume" });
     } catch {}
+  }, []);
+
+  // ── Single unified action: export (if needed) then share ─────────────────
+  // Execution lock prevents double-taps. PDF is cached — no re-generation.
+  const exportAndShare = useCallback(async (onSuccess?: () => void) => {
+    if (isExportingRef.current) return;
+
+    const existingUri = stateRef.current.pdfUri;
+
+    // PDF already exists — skip export, go straight to share
+    if (existingUri) {
+      try {
+        await Sharing.shareAsync(existingUri, {
+          mimeType: "application/pdf",
+          dialogTitle: "Share Resume",
+        });
+      } catch {}
+      return;
+    }
+
+    // No PDF yet — export first, then share
+    const currentState = stateRef.current;
+    if (!currentState.generatedResume) return;
+
+    isExportingRef.current = true;
+    dispatch({ type: "START_ASYNC" });
+
+    try {
+      const formData = currentState.formData;
+      const html = generateResumeHTML(formData, currentState.generatedResume);
+      const { uri } = await Print.printToFileAsync({ html, base64: false });
+
+      // Persist to Supabase — fail-open
+      try {
+        const userId = await getUserId();
+        if (userId) {
+          await withResilience(async () => {
+            const resumeId = stateRef.current.selectedResume?.id;
+            if (!resumeId) {
+              await supabase.from("resume_builds").insert({
+                user_id: userId,
+                full_name: formData.fullName,
+                target_role: formData.targetRole,
+                experience_level: formData.experienceLevel || null,
+                industry: formData.industry || null,
+                tone: formData.tone || null,
+                skills: formData.skills || null,
+                professional_summary: currentState.generatedResume!.professionalSummary || null,
+                core_skills: currentState.generatedResume!.coreSkills || [],
+                enhanced_experiences: currentState.generatedResume!.enhancedExperiences || null,
+                ats_keywords: currentState.generatedResume!.atsKeywords || [],
+                pdf_uri: uri,
+              });
+            } else {
+              await supabase
+                .from("resume_builds")
+                .update({ pdf_uri: uri })
+                .eq("id", resumeId);
+            }
+          }, { retries: 2 });
+        }
+      } catch {
+        // Non-fatal
+      }
+
+      dispatch({ type: "EXPORT_SUCCESS", pdfUri: uri });
+      onSuccess?.();
+
+      // Open share sheet after state update
+      await Sharing.shareAsync(uri, {
+        mimeType: "application/pdf",
+        dialogTitle: "Share Resume",
+      });
+    } catch {
+      dispatch({
+        type: "SET_ERROR",
+        error: { message: "Could not export PDF.", type: "server", retryAction: "export" },
+      });
+    } finally {
+      isExportingRef.current = false;
+    }
   }, []);
 
   const fetchResumeHistory = useCallback(async () => {
@@ -410,6 +512,7 @@ export function useResumeEngine() {
     buildResume,
     exportPDF,
     shareResume,
+    exportAndShare,
     fetchResumeHistory,
     loadMoreHistory,
     deleteResumeHistory,

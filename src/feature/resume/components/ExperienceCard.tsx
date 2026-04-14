@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { memo } from "react";
+import { Text, TouchableOpacity, View } from "react-native";
 import { colors } from "../../../theme/color";
 import { resumeStyles } from "../styles/resume.styles";
 import type { WorkExperience } from "../types/resume.types";
+import { FieldInput } from "./FieldInput";
 
 interface ExperienceCardProps {
   experience: WorkExperience;
@@ -13,7 +14,7 @@ interface ExperienceCardProps {
   onDelete: () => void;
 }
 
-export const ExperienceCard: React.FC<ExperienceCardProps> = ({
+export const ExperienceCard: React.FC<ExperienceCardProps> = memo(({
   experience,
   index,
   showDelete,
@@ -21,113 +22,75 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({
   onDelete,
 }) => (
   <View style={resumeStyles.expCard}>
+    {/* Card header */}
     <View style={resumeStyles.expCardHeader}>
       <View style={resumeStyles.expCardNumber}>
         <Text style={resumeStyles.expCardNumberText}>{index + 1}</Text>
       </View>
-      <Text style={resumeStyles.expCardTitle}>
+      <Text style={resumeStyles.expCardTitle} numberOfLines={1}>
         {experience.jobTitle || `Role ${index + 1}`}
       </Text>
       {showDelete && (
-        <TouchableOpacity onPress={onDelete} style={resumeStyles.expDeleteBtn}>
-          <Ionicons name="trash-outline" size={16} color="#FF6B6B" />
+        <TouchableOpacity
+          onPress={onDelete}
+          style={resumeStyles.expDeleteBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Delete this experience"
+        >
+          <Ionicons name="trash-outline" size={16} color={colors.danger} />
         </TouchableOpacity>
       )}
     </View>
 
-    <View style={resumeStyles.fieldGroup}>
-      <Text style={resumeStyles.fieldLabel}>Job Title</Text>
-      <View style={resumeStyles.inputWrapper}>
-        <Ionicons
-          name="briefcase-outline"
-          size={16}
-          color={colors.textMuted}
-          style={resumeStyles.inputIcon}
-        />
-        <TextInput
-          style={resumeStyles.inputWithIcon}
-          value={experience.jobTitle}
-          onChangeText={(text) => onUpdate("jobTitle", text)}
-          placeholder="e.g. Senior Software Engineer"
-          placeholderTextColor={colors.textMuted}
-        />
-      </View>
-    </View>
+    {/* Required fields — jobTitle, company, duration */}
+    <FieldInput
+      label="Job Title"
+      icon="briefcase-outline"
+      required
+      value={experience.jobTitle}
+      onChangeText={(v) => onUpdate("jobTitle", v)}
+      placeholder="e.g. Senior Software Engineer"
+      accessibilityLabel="Job title"
+    />
 
-    <View style={resumeStyles.fieldGroup}>
-      <Text style={resumeStyles.fieldLabel}>Company Name</Text>
-      <View style={resumeStyles.inputWrapper}>
-        <Ionicons
-          name="business-outline"
-          size={16}
-          color={colors.textMuted}
-          style={resumeStyles.inputIcon}
-        />
-        <TextInput
-          style={resumeStyles.inputWithIcon}
-          value={experience.company}
-          onChangeText={(text) => onUpdate("company", text)}
-          placeholder="e.g. Google, Microsoft"
-          placeholderTextColor={colors.textMuted}
-        />
-      </View>
-    </View>
+    <FieldInput
+      label="Company Name"
+      icon="business-outline"
+      required
+      value={experience.company}
+      onChangeText={(v) => onUpdate("company", v)}
+      placeholder="e.g. Google, Microsoft"
+      accessibilityLabel="Company name"
+    />
 
-    <View style={resumeStyles.fieldGroup}>
-      <Text style={resumeStyles.fieldLabel}>Duration</Text>
-      <View style={resumeStyles.inputWrapper}>
-        <Ionicons
-          name="calendar-outline"
-          size={16}
-          color={colors.textMuted}
-          style={resumeStyles.inputIcon}
-        />
-        <TextInput
-          style={resumeStyles.inputWithIcon}
-          value={experience.duration}
-          onChangeText={(text) => onUpdate("duration", text)}
-          placeholder="e.g. Jan 2022 – Mar 2024"
-          placeholderTextColor={colors.textMuted}
-        />
-      </View>
-    </View>
+    <FieldInput
+      label="Duration"
+      icon="calendar-outline"
+      required
+      value={experience.duration}
+      onChangeText={(v) => onUpdate("duration", v)}
+      placeholder="e.g. Jan 2022 – Mar 2024"
+      accessibilityLabel="Employment duration"
+    />
 
-    <View style={resumeStyles.fieldGroup}>
-      <Text style={resumeStyles.fieldLabel}>Key Achievement 1</Text>
-      <View style={resumeStyles.inputWrapper}>
-        <Ionicons
-          name="checkmark-circle-outline"
-          size={16}
-          color={colors.textMuted}
-          style={resumeStyles.inputIcon}
-        />
-        <TextInput
-          style={resumeStyles.inputWithIcon}
-          value={experience.achievement1}
-          onChangeText={(text) => onUpdate("achievement1", text)}
-          placeholder="e.g. Led team of 5 engineers..."
-          placeholderTextColor={colors.textMuted}
-        />
-      </View>
-    </View>
+    {/* Optional achievement fields */}
+    <FieldInput
+      label="Key Achievement 1"
+      icon="checkmark-circle-outline"
+      value={experience.achievement1}
+      onChangeText={(v) => onUpdate("achievement1", v)}
+      placeholder="e.g. Led team of 5 engineers..."
+      accessibilityLabel="Key achievement one"
+    />
 
-    <View style={resumeStyles.fieldGroup}>
-      <Text style={resumeStyles.fieldLabel}>Key Achievement 2</Text>
-      <View style={resumeStyles.inputWrapper}>
-        <Ionicons
-          name="checkmark-circle-outline"
-          size={16}
-          color={colors.textMuted}
-          style={resumeStyles.inputIcon}
-        />
-        <TextInput
-          style={resumeStyles.inputWithIcon}
-          value={experience.achievement2}
-          onChangeText={(text) => onUpdate("achievement2", text)}
-          placeholder="e.g. Increased revenue by 30%..."
-          placeholderTextColor={colors.textMuted}
-        />
-      </View>
-    </View>
+    <FieldInput
+      label="Key Achievement 2"
+      icon="checkmark-circle-outline"
+      value={experience.achievement2}
+      onChangeText={(v) => onUpdate("achievement2", v)}
+      placeholder="e.g. Increased revenue by 30%..."
+      accessibilityLabel="Key achievement two"
+    />
   </View>
-);
+));

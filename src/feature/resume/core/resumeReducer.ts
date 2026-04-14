@@ -138,8 +138,8 @@ export function resumeEngineReducer(
     case "EXPORT_SUCCESS":
       return {
         ...state,
-        asyncStatus: "success",
-        phase: "exported",
+        asyncStatus: "idle",
+        phase: "preview",
         pdfUri: action.pdfUri,
         error: null,
       };

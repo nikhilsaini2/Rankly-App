@@ -1,4 +1,4 @@
-import { Platform, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import { colors } from "../../../theme/color";
 
 export const resumeStyles = StyleSheet.create({
@@ -11,8 +11,8 @@ export const resumeStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 20,
-    paddingBottom: 12,
-    // paddingTop is set dynamically via insets.top in the screen
+    height: 56,
+    // No paddingTop — safe area is handled by the navigator/global provider
   },
   headerTitle: {
     fontSize: 20,
@@ -26,6 +26,7 @@ export const resumeStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 40,
+    marginBottom: 60,
   },
   loadingIconWrapper: {
     width: 120,
@@ -303,8 +304,6 @@ export const resumeStyles = StyleSheet.create({
   navButtons: {
     flexDirection: "row",
     gap: 12,
-    marginTop: 24,
-    paddingBottom: 32,
   },
   backButton: {
     flexDirection: "row",
@@ -485,6 +484,25 @@ export const resumeStyles = StyleSheet.create({
     fontWeight: "500",
     color: colors.textSecondary,
   },
+  // Preview-specific buttons — full width, no flex: 1 (used in vertical stack)
+  previewPrimaryButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 16,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  previewGhostButton: {
+    backgroundColor: "transparent",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
   // Tab styles
   tabBar: {
     flexDirection: "row",
@@ -663,6 +681,14 @@ export const resumeStyles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     fontWeight: "500",
+  },
+  fixedFooter: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.06)",
+    backgroundColor: colors.background,
   },
 });
 

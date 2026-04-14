@@ -27,6 +27,7 @@ import {
   generateImprovedResume,
   type ImprovedResumeResult,
 } from "../../../services/resume/improveResumeService";
+import { saveResume } from "../../../services/resume/resumeHistoryStorage";
 import { supabase } from "../../../services/supabase";
 import { colors } from "../../../theme/color";
 import type { RootStackParamList } from "../../../types/navigation.types";
@@ -62,6 +63,8 @@ export default function ImprovedResumePreviewScreen() {
   const [exporting, setExporting] = useState(false);
   const [pdfUri, setPdfUri] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const hasShownSuccessToast = useRef(false);
+  const isProcessingRef = useRef(false);
 
   const isMounted = useRef(true);
   useEffect(
@@ -177,6 +180,21 @@ export default function ImprovedResumePreviewScreen() {
         setResult(improved);
         setHtml(generatedHtml);
         setPhase("preview");
+
+        // Save to unified history — fail-open, never blocks preview
+        try {
+          await saveResume({
+            html: generatedHtml,
+            rawData: improved.generatedResume,
+            role: improved.contact.targetRole,
+            fullName: improved.contact.fullName,
+            experienceLevel: "",
+            source: "ats-improve",
+            formData: formShape,
+          });
+        } catch (err) {
+          console.warn("[ImprovedResumePreview] Failed to save to history", err);
+        }
       } catch (err: any) {
         if (!alive) return;
         const msg =
@@ -192,39 +210,39 @@ export default function ImprovedResumePreviewScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeId, scoreId]);
 
-  // ── Export PDF ─────────────────────────────────────────────
-  const handleExport = useCallback(async () => {
-    if (!html || exporting) return;
+  // ── Single unified action: export (cached) then share ─────
+  const handleExportAndShare = useCallback(async () => {
+    if (isProcessingRef.current || !html) return;
+    isProcessingRef.current = true;
     setExporting(true);
-    try {
-      const { uri } = await Print.printToFileAsync({ html, base64: false });
-      setPdfUri(uri);
-      toast("PDF saved successfully", "success");
-    } catch {
-      toast("Could not export PDF", "error");
-    } finally {
-      setExporting(false);
-    }
-  }, [html, exporting, toast]);
 
-  // ── Share ──────────────────────────────────────────────────
-  const handleShare = useCallback(async () => {
     try {
       let uri = pdfUri;
+
+      // Use cached PDF — never regenerate
       if (!uri) {
-        // Generate PDF first if not yet done
-        setExporting(true);
-        const result = await Print.printToFileAsync({ html, base64: false });
-        uri = result.uri;
+        const { uri: newUri } = await Print.printToFileAsync({
+          html,
+          base64: false,
+        });
+        uri = newUri;
         setPdfUri(uri);
-        setExporting(false);
+
+        // Toast fires exactly once, on first successful export
+        if (!hasShownSuccessToast.current) {
+          hasShownSuccessToast.current = true;
+          toast("PDF ready to share ✓", "success");
+        }
       }
+
       await Sharing.shareAsync(uri, {
         mimeType: "application/pdf",
         dialogTitle: "Share Optimized Resume",
       });
     } catch {
-      toast("Could not share resume", "error");
+      toast("Could not export PDF", "error");
+    } finally {
+      isProcessingRef.current = false;
       setExporting(false);
     }
   }, [html, pdfUri, toast]);
@@ -239,6 +257,7 @@ export default function ImprovedResumePreviewScreen() {
           alignItems: "center",
           justifyContent: "center",
           paddingHorizontal: 40,
+          marginBottom: bottomInset + 30,
         }}
       >
         <View
@@ -368,52 +387,30 @@ export default function ImprovedResumePreviewScreen() {
         style={{
           flexDirection: "row",
           alignItems: "center",
-          justifyContent: "center",
-          paddingBottom: 12,
           paddingHorizontal: 16,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
         }}
       >
         <TouchableOpacity
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 16,
-            bottom: 12,
-            padding: 4,
-            zIndex: 10000,
-          }}
+          style={{ padding: 4, marginRight: 8 }}
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text
-          style={{ fontSize: 18, fontWeight: "700", color: colors.textPrimary }}
+          style={{
+            fontSize: 18,
+            fontWeight: "700",
+            color: colors.textPrimary,
+            flex: 1,
+            textAlign: "center",
+            marginRight: 36,
+          }}
         >
           Optimized Resume
         </Text>
-        {/* ATS badge */}
-        <View
-          style={{
-            position: "absolute",
-            right: 16,
-            bottom: 10,
-            backgroundColor: colors.primary + "20",
-            borderRadius: 8,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
-            borderWidth: 1,
-            borderColor: colors.primary + "40",
-          }}
-        >
-          <Text
-            style={{ fontSize: 11, fontWeight: "700", color: colors.primary }}
-          >
-            ATS Optimized
-          </Text>
-        </View>
       </View>
 
       <ScrollView
@@ -637,13 +634,12 @@ export default function ImprovedResumePreviewScreen() {
           backgroundColor: colors.background,
           borderTopWidth: 1,
           borderTopColor: colors.border,
-          flexDirection: "row",
-          gap: 12,
+          gap: 10,
         }}
       >
+        {/* Primary: single unified action */}
         <TouchableOpacity
           style={{
-            flex: 1,
             height: 52,
             borderRadius: 14,
             backgroundColor: colors.primary,
@@ -653,47 +649,38 @@ export default function ImprovedResumePreviewScreen() {
             gap: 8,
             opacity: exporting ? 0.6 : 1,
           }}
-          onPress={handleExport}
+          onPress={handleExportAndShare}
           disabled={exporting}
         >
           {exporting ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <Ionicons name="download-outline" size={18} color="#fff" />
+            <Ionicons name="share-outline" size={18} color="#fff" />
           )}
           <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
-            {exporting ? "Exporting..." : "Download PDF"}
+            {exporting ? "Processing..." : "Download & Share PDF"}
           </Text>
         </TouchableOpacity>
 
+        {/* Secondary: navigate away */}
         <TouchableOpacity
           style={{
-            flex: 1,
-            height: 52,
+            height: 44,
             borderRadius: 14,
-            borderWidth: 1,
-            borderColor: colors.border,
-            flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
-            gap: 8,
           }}
-          onPress={handleShare}
+          onPress={() => navigation.goBack()}
           disabled={exporting}
         >
-          <Ionicons
-            name="share-outline"
-            size={18}
-            color={colors.textSecondary}
-          />
           <Text
             style={{
               color: colors.textSecondary,
-              fontWeight: "600",
-              fontSize: 15,
+              fontWeight: "500",
+              fontSize: 14,
             }}
           >
-            Share
+            Go Back
           </Text>
         </TouchableOpacity>
       </View>

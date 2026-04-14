@@ -10,15 +10,29 @@ interface SettingsCardProps {
   notif: boolean;
   onToggleNotif: (value: boolean) => void;
   onInterviewHistoryPress: () => void;
+  onResumeHistoryPress: () => void;
 }
 
 export function SettingsCard({
   notif,
   onToggleNotif,
   onInterviewHistoryPress,
+  onResumeHistoryPress,
 }: SettingsCardProps) {
   return (
     <Animated.View style={[styles.settingsCard]}>
+      <TouchableOpacity activeOpacity={0.9} onPress={onResumeHistoryPress}>
+        <View style={styles.settingsRow}>
+          <View style={[styles.settingsIconBox, { backgroundColor: "rgba(16,185,129,0.12)" }]}>
+            <Ionicons name="document-text-outline" size={16} color={colors.accent} />
+          </View>
+          <Text style={styles.settingsLabel}>Resume History</Text>
+          <Feather name="chevron-right" size={16} color={colors.textSecondary} />
+        </View>
+      </TouchableOpacity>
+
+      <View style={styles.settingsDivider} />
+
       <TouchableOpacity activeOpacity={0.9} onPress={onInterviewHistoryPress}>
         <View style={styles.settingsRow}>
           <View

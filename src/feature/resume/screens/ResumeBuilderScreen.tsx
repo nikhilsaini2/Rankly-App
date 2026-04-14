@@ -8,15 +8,15 @@ import React, {
   useState,
 } from "react";
 import {
+  ActivityIndicator,
   BackHandler,
-  KeyboardAvoidingView,
   Modal,
   Platform,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -26,6 +26,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useToast } from "../../../components/atoms/Toast";
 import { colors } from "../../../theme/color";
 import { ExperienceCard } from "../components/ExperienceCard";
 import { FieldInput } from "../components/FieldInput";
@@ -61,200 +62,349 @@ const FieldError = React.memo(({ message }: { message?: string }) =>
 );
 
 // ─── Step forms ──────────────────────────────────────────────────────────────
-type StepProps = { state: any; dispatch: any; errors: Record<string, string>; markTouched: (f: string) => void };
+type StepProps = {
+  state: any;
+  dispatch: any;
+  errors: Record<string, string>;
+  markTouched: (f: string) => void;
+};
 
-const Step1 = React.memo(({ state, dispatch, errors, markTouched }: StepProps) => (
-  <View style={resumeStyles.formCard}>
-    <FieldInput
-      label="Full Name" icon="person-outline" required={isFieldRequired("fullName")}
-      value={state.fullName}
-      onChangeText={(v) => { dispatch({ type: "UPDATE_FORM", data: { fullName: v } }); markTouched("fullName"); }}
-      onBlur={() => markTouched("fullName")}
-      placeholder="e.g. Nikhil Sharma"
-      accessibilityLabel="Full name" accessibilityHint="Enter your full name"
-      autoComplete="name"
-    />
-    <FieldError message={errors.fullName} />
-    <FieldInput
-      label="Email Address" icon="mail-outline" required={isFieldRequired("email")}
-      value={state.email}
-      onChangeText={(v) => { dispatch({ type: "UPDATE_FORM", data: { email: v } }); markTouched("email"); }}
-      onBlur={() => markTouched("email")}
-      placeholder="e.g. nikhil@example.com"
-      keyboardType="email-address" autoCapitalize="none" autoComplete="email"
-      accessibilityLabel="Email address" accessibilityHint="Enter your email address"
-    />
-    <FieldError message={errors.email} />
-    <FieldInput
-      label="Phone Number" icon="call-outline"
-      value={state.phone}
-      onChangeText={(v) => dispatch({ type: "UPDATE_FORM", data: { phone: v } })}
-      placeholder="e.g. +91 98765 43210"
-      keyboardType="phone-pad" autoComplete="tel"
-      accessibilityLabel="Phone number"
-    />
-    <FieldInput
-      label="LinkedIn URL" icon="logo-linkedin"
-      value={state.linkedin}
-      onChangeText={(v) => { dispatch({ type: "UPDATE_FORM", data: { linkedin: v } }); markTouched("linkedin"); }}
-      onBlur={() => markTouched("linkedin")}
-      placeholder="https://linkedin.com/in/yourname"
-      autoCapitalize="none" autoComplete="url"
-      accessibilityLabel="LinkedIn profile URL"
-    />
-    <FieldError message={errors.linkedin} />
-    <FieldInput
-      label="City / Location" icon="location-outline"
-      value={state.city}
-      onChangeText={(v) => dispatch({ type: "UPDATE_FORM", data: { city: v } })}
-      placeholder="e.g. San Francisco, CA"
-      accessibilityLabel="City or location"
-    />
-  </View>
-));
+const Step1 = React.memo(
+  ({ state, dispatch, errors, markTouched }: StepProps) => (
+    <View style={resumeStyles.formCard}>
+      <FieldInput
+        label="Full Name"
+        icon="person-outline"
+        required={isFieldRequired("fullName")}
+        value={state.fullName}
+        onChangeText={(v) => {
+          dispatch({ type: "UPDATE_FORM", data: { fullName: v } });
+          markTouched("fullName");
+        }}
+        onBlur={() => markTouched("fullName")}
+        placeholder="e.g. Nikhil Sharma"
+        accessibilityLabel="Full name"
+        accessibilityHint="Enter your full name"
+        autoComplete="name"
+      />
+      <FieldError message={errors.fullName} />
+      <FieldInput
+        label="Email Address"
+        icon="mail-outline"
+        required={isFieldRequired("email")}
+        value={state.email}
+        onChangeText={(v) => {
+          dispatch({ type: "UPDATE_FORM", data: { email: v } });
+          markTouched("email");
+        }}
+        onBlur={() => markTouched("email")}
+        placeholder="e.g. nikhil@example.com"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoComplete="email"
+        accessibilityLabel="Email address"
+        accessibilityHint="Enter your email address"
+      />
+      <FieldError message={errors.email} />
+      <FieldInput
+        label="Phone Number"
+        icon="call-outline"
+        value={state.phone}
+        onChangeText={(v) =>
+          dispatch({ type: "UPDATE_FORM", data: { phone: v } })
+        }
+        placeholder="e.g. +91 98765 43210"
+        keyboardType="phone-pad"
+        autoComplete="tel"
+        accessibilityLabel="Phone number"
+      />
+      <FieldInput
+        label="LinkedIn URL"
+        icon="logo-linkedin"
+        value={state.linkedin}
+        onChangeText={(v) => {
+          dispatch({ type: "UPDATE_FORM", data: { linkedin: v } });
+          markTouched("linkedin");
+        }}
+        onBlur={() => markTouched("linkedin")}
+        placeholder="https://linkedin.com/in/yourname"
+        autoCapitalize="none"
+        autoComplete="url"
+        accessibilityLabel="LinkedIn profile URL"
+      />
+      <FieldError message={errors.linkedin} />
+      <FieldInput
+        label="City / Location"
+        icon="location-outline"
+        value={state.city}
+        onChangeText={(v) =>
+          dispatch({ type: "UPDATE_FORM", data: { city: v } })
+        }
+        placeholder="e.g. San Francisco, CA"
+        accessibilityLabel="City or location"
+      />
+    </View>
+  ),
+);
 
-const Step2 = React.memo(({ state, dispatch, errors, markTouched }: StepProps) => (
-  <View style={resumeStyles.formCard}>
-    <FieldInput
-      label="Target Job Title" icon="briefcase-outline" required={isFieldRequired("targetRole")}
-      value={state.targetRole}
-      onChangeText={(v) => { dispatch({ type: "UPDATE_FORM", data: { targetRole: v } }); markTouched("targetRole"); }}
-      onBlur={() => markTouched("targetRole")}
-      placeholder="e.g. Senior Software Engineer"
-      accessibilityLabel="Target job title"
-    />
-    <FieldError message={errors.targetRole} />
-    <PillSelector
-      label="Experience Level" options={EXPERIENCE_LEVELS} selected={state.experienceLevel}
-      required={isFieldRequired("experienceLevel")}
-      onSelect={(v) => { dispatch({ type: "UPDATE_FORM", data: { experienceLevel: v } }); markTouched("experienceLevel"); }}
-    />
-    <FieldError message={errors.experienceLevel} />
-    <PillSelector
-      label="Industry" options={INDUSTRIES} selected={state.industry}
-      required={isFieldRequired("industry")}
-      onSelect={(v) => { dispatch({ type: "UPDATE_FORM", data: { industry: v } }); markTouched("industry"); }}
-    />
-    <FieldError message={errors.industry} />
-    <FieldInput
-      label="Key Skills" icon="code-slash-outline" required={isFieldRequired("skills")} multiline
-      value={state.skills}
-      onChangeText={(v) => { dispatch({ type: "UPDATE_FORM", data: { skills: v } }); markTouched("skills"); }}
-      onBlur={() => markTouched("skills")}
-      placeholder="e.g. React Native, Python, SQL..."
-      accessibilityLabel="Key skills" accessibilityHint="List your main skills separated by commas"
-    />
-    <FieldError message={errors.skills} />
-  </View>
-));
+const Step2 = React.memo(
+  ({ state, dispatch, errors, markTouched }: StepProps) => (
+    <View style={resumeStyles.formCard}>
+      <FieldInput
+        label="Target Job Title"
+        icon="briefcase-outline"
+        required={isFieldRequired("targetRole")}
+        value={state.targetRole}
+        onChangeText={(v) => {
+          dispatch({ type: "UPDATE_FORM", data: { targetRole: v } });
+          markTouched("targetRole");
+        }}
+        onBlur={() => markTouched("targetRole")}
+        placeholder="e.g. Senior Software Engineer"
+        accessibilityLabel="Target job title"
+      />
+      <FieldError message={errors.targetRole} />
+      <PillSelector
+        label="Experience Level"
+        options={EXPERIENCE_LEVELS}
+        selected={state.experienceLevel}
+        required={isFieldRequired("experienceLevel")}
+        onSelect={(v) => {
+          dispatch({ type: "UPDATE_FORM", data: { experienceLevel: v } });
+          markTouched("experienceLevel");
+        }}
+      />
+      <FieldError message={errors.experienceLevel} />
+      <PillSelector
+        label="Industry"
+        options={INDUSTRIES}
+        selected={state.industry}
+        required={isFieldRequired("industry")}
+        onSelect={(v) => {
+          dispatch({ type: "UPDATE_FORM", data: { industry: v } });
+          markTouched("industry");
+        }}
+      />
+      <FieldError message={errors.industry} />
+      <FieldInput
+        label="Key Skills"
+        icon="code-slash-outline"
+        required={isFieldRequired("skills")}
+        multiline
+        value={state.skills}
+        onChangeText={(v) => {
+          dispatch({ type: "UPDATE_FORM", data: { skills: v } });
+          markTouched("skills");
+        }}
+        onBlur={() => markTouched("skills")}
+        placeholder="e.g. React Native, Python, SQL..."
+        accessibilityLabel="Key skills"
+        accessibilityHint="List your main skills separated by commas"
+      />
+      <FieldError message={errors.skills} />
+    </View>
+  ),
+);
 
-const Step3 = React.memo(({ state, dispatch, errors, markTouched }: StepProps) => (
-  <View style={resumeStyles.formCard}>
-    {state.experienceLevel === "Fresher" && (
-      <View style={resumeStyles.infoNote} accessibilityRole="text">
-        <Ionicons name="information-circle-outline" size={16} color={colors.accent} />
-        <Text style={resumeStyles.infoNoteText}>
-          💡 No experience? Add internships, college projects, or part-time work
-        </Text>
-      </View>
-    )}
-    {state.experiences.map((exp: any, index: number) => (
-      <View key={index}>
-        <ExperienceCard
-          experience={exp} index={index}
-          showDelete={state.experiences.length > 1}
-          onUpdate={(field: any, value: any) => {
-            dispatch({ type: "UPDATE_EXPERIENCE", index, field, value });
-            if (index === 0) markTouched(`experiences[0].${field}`);
-          }}
-          onDelete={() => dispatch({ type: "REMOVE_EXPERIENCE", index })}
-        />
-        {index === 0 && (
-          <>
-            <FieldError message={errors["experiences[0].jobTitle"]} />
-            <FieldError message={errors["experiences[0].company"]} />
-            <FieldError message={errors["experiences[0].duration"]} />
-          </>
-        )}
-      </View>
-    ))}
-    {state.experiences.length < 4 && (
-      <TouchableOpacity
-        style={resumeStyles.addRoleBtn}
-        onPress={() => dispatch({ type: "ADD_EXPERIENCE", experience: { jobTitle: "", company: "", duration: "", achievement1: "", achievement2: "" } })}
-        accessibilityRole="button" accessibilityLabel="Add another work experience"
-      >
-        <View style={resumeStyles.addRoleBtnInner}>
-          <Ionicons name="add-circle-outline" size={20} color={colors.accent} />
-          <Text style={resumeStyles.addRoleBtnText}>Add Another Role</Text>
+const Step3 = React.memo(
+  ({ state, dispatch, errors, markTouched }: StepProps) => (
+    <View style={resumeStyles.formCard}>
+      {state.experienceLevel === "Fresher" && (
+        <View style={resumeStyles.infoNote} accessibilityRole="text">
+          <Ionicons
+            name="information-circle-outline"
+            size={16}
+            color={colors.accent}
+          />
+          <Text style={resumeStyles.infoNoteText}>
+            💡 No experience? Add internships, college projects, or part-time
+            work
+          </Text>
         </View>
-      </TouchableOpacity>
-    )}
-  </View>
-));
+      )}
+      {state.experiences.map((exp: any, index: number) => (
+        <View key={index}>
+          <ExperienceCard
+            experience={exp}
+            index={index}
+            showDelete={state.experiences.length > 1}
+            onUpdate={(field: any, value: any) => {
+              dispatch({ type: "UPDATE_EXPERIENCE", index, field, value });
+              if (index === 0) markTouched(`experiences[0].${field}`);
+            }}
+            onDelete={() => dispatch({ type: "REMOVE_EXPERIENCE", index })}
+          />
+          {index === 0 && (
+            <>
+              <FieldError message={errors["experiences[0].jobTitle"]} />
+              <FieldError message={errors["experiences[0].company"]} />
+              <FieldError message={errors["experiences[0].duration"]} />
+            </>
+          )}
+        </View>
+      ))}
+      {state.experiences.length < 4 && (
+        <TouchableOpacity
+          style={resumeStyles.addRoleBtn}
+          onPress={() =>
+            dispatch({
+              type: "ADD_EXPERIENCE",
+              experience: {
+                jobTitle: "",
+                company: "",
+                duration: "",
+                achievement1: "",
+                achievement2: "",
+              },
+            })
+          }
+          accessibilityRole="button"
+          accessibilityLabel="Add another work experience"
+        >
+          <View style={resumeStyles.addRoleBtnInner}>
+            <Ionicons
+              name="add-circle-outline"
+              size={20}
+              color={colors.accent}
+            />
+            <Text style={resumeStyles.addRoleBtnText}>Add Another Role</Text>
+          </View>
+        </TouchableOpacity>
+      )}
+    </View>
+  ),
+);
 
-const Step4 = React.memo(({ state, dispatch, errors, markTouched }: StepProps) => (
-  <View style={resumeStyles.formCard}>
-    <FieldInput
-      label="Degree / Qualification" icon="school-outline" required={isFieldRequired("degree")}
-      value={state.degree}
-      onChangeText={(v) => { dispatch({ type: "UPDATE_FORM", data: { degree: v } }); markTouched("degree"); }}
-      onBlur={() => markTouched("degree")}
-      placeholder="e.g. B.Tech Computer Science"
-      accessibilityLabel="Degree or qualification"
-    />
-    <FieldError message={errors.degree} />
-    <FieldInput
-      label="Institution Name" icon="library-outline" required={isFieldRequired("institution")}
-      value={state.institution}
-      onChangeText={(v) => { dispatch({ type: "UPDATE_FORM", data: { institution: v } }); markTouched("institution"); }}
-      onBlur={() => markTouched("institution")}
-      placeholder="e.g. IIT Delhi, Stanford University"
-      accessibilityLabel="Institution name"
-    />
-    <FieldError message={errors.institution} />
-    <FieldInput
-      label="Year of Completion" icon="calendar-outline" required={isFieldRequired("graduationYear")}
-      value={state.graduationYear}
-      onChangeText={(v) => { dispatch({ type: "UPDATE_FORM", data: { graduationYear: v } }); markTouched("graduationYear"); }}
-      onBlur={() => markTouched("graduationYear")}
-      placeholder="e.g. 2022" keyboardType="numeric"
-      accessibilityLabel="Graduation year"
-    />
-    <FieldError message={errors.graduationYear} />
-    <FieldInput label="Grade / GPA" icon="ribbon-outline" value={state.grade}
-      onChangeText={(v) => dispatch({ type: "UPDATE_FORM", data: { grade: v } })}
-      placeholder="e.g. 8.5 CGPA / 3.8 GPA" accessibilityLabel="Grade or GPA" />
-    <FieldInput label="Certifications" icon="medal-outline" multiline value={state.certifications}
-      onChangeText={(v) => dispatch({ type: "UPDATE_FORM", data: { certifications: v } })}
-      placeholder="e.g. AWS Certified, PMP..." accessibilityLabel="Certifications" />
-    <FieldInput label="Languages" icon="language-outline" value={state.languages}
-      onChangeText={(v) => dispatch({ type: "UPDATE_FORM", data: { languages: v } })}
-      placeholder="e.g. English (Fluent)" accessibilityLabel="Languages spoken" />
-  </View>
-));
+const Step4 = React.memo(
+  ({ state, dispatch, errors, markTouched }: StepProps) => (
+    <View style={resumeStyles.formCard}>
+      <FieldInput
+        label="Degree / Qualification"
+        icon="school-outline"
+        required={isFieldRequired("degree")}
+        value={state.degree}
+        onChangeText={(v) => {
+          dispatch({ type: "UPDATE_FORM", data: { degree: v } });
+          markTouched("degree");
+        }}
+        onBlur={() => markTouched("degree")}
+        placeholder="e.g. B.Tech Computer Science"
+        accessibilityLabel="Degree or qualification"
+      />
+      <FieldError message={errors.degree} />
+      <FieldInput
+        label="Institution Name"
+        icon="library-outline"
+        required={isFieldRequired("institution")}
+        value={state.institution}
+        onChangeText={(v) => {
+          dispatch({ type: "UPDATE_FORM", data: { institution: v } });
+          markTouched("institution");
+        }}
+        onBlur={() => markTouched("institution")}
+        placeholder="e.g. IIT Delhi, Stanford University"
+        accessibilityLabel="Institution name"
+      />
+      <FieldError message={errors.institution} />
+      <FieldInput
+        label="Year of Completion"
+        icon="calendar-outline"
+        required={isFieldRequired("graduationYear")}
+        value={state.graduationYear}
+        onChangeText={(v) => {
+          dispatch({ type: "UPDATE_FORM", data: { graduationYear: v } });
+          markTouched("graduationYear");
+        }}
+        onBlur={() => markTouched("graduationYear")}
+        placeholder="e.g. 2022"
+        keyboardType="numeric"
+        accessibilityLabel="Graduation year"
+      />
+      <FieldError message={errors.graduationYear} />
+      <FieldInput
+        label="Grade / GPA"
+        icon="ribbon-outline"
+        value={state.grade}
+        onChangeText={(v) =>
+          dispatch({ type: "UPDATE_FORM", data: { grade: v } })
+        }
+        placeholder="e.g. 8.5 CGPA / 3.8 GPA"
+        accessibilityLabel="Grade or GPA"
+      />
+      <FieldInput
+        label="Certifications"
+        icon="medal-outline"
+        multiline
+        value={state.certifications}
+        onChangeText={(v) =>
+          dispatch({ type: "UPDATE_FORM", data: { certifications: v } })
+        }
+        placeholder="e.g. AWS Certified, PMP..."
+        accessibilityLabel="Certifications"
+      />
+      <FieldInput
+        label="Languages"
+        icon="language-outline"
+        value={state.languages}
+        onChangeText={(v) =>
+          dispatch({ type: "UPDATE_FORM", data: { languages: v } })
+        }
+        placeholder="e.g. English (Fluent)"
+        accessibilityLabel="Languages spoken"
+      />
+    </View>
+  ),
+);
 
-const Step5 = React.memo(({ state, dispatch, errors, markTouched }: StepProps) => (
-  <View style={resumeStyles.formCard}>
-    <PillSelector
-      label="Resume Tone" options={TONES} selected={state.tone}
-      required={isFieldRequired("tone")}
-      onSelect={(v) => { dispatch({ type: "UPDATE_FORM", data: { tone: v } }); markTouched("tone"); }}
-    />
-    <FieldError message={errors.tone} />
-    <FieldInput label="Your Biggest Career Highlight" icon="sparkles-outline" multiline
-      value={state.topAchievement}
-      onChangeText={(v) => dispatch({ type: "UPDATE_FORM", data: { topAchievement: v } })}
-      placeholder="e.g. Built an app with 10K users..."
-      accessibilityLabel="Top career achievement" />
-    <FieldInput label="Target Companies" icon="rocket-outline" value={state.targetCompanies}
-      onChangeText={(v) => dispatch({ type: "UPDATE_FORM", data: { targetCompanies: v } })}
-      placeholder="e.g. Google, MNCs" accessibilityLabel="Target companies" />
-    <FieldInput label="Special Instructions" icon="settings-outline" multiline value={state.specialInstructions}
-      onChangeText={(v) => dispatch({ type: "UPDATE_FORM", data: { specialInstructions: v } })}
-      placeholder="e.g. Keep it to 1 page..." accessibilityLabel="Special instructions for resume generation" />
-  </View>
-));
+const Step5 = React.memo(
+  ({ state, dispatch, errors, markTouched }: StepProps) => (
+    <View style={resumeStyles.formCard}>
+      <PillSelector
+        label="Resume Tone"
+        options={TONES}
+        selected={state.tone}
+        required={isFieldRequired("tone")}
+        onSelect={(v) => {
+          dispatch({ type: "UPDATE_FORM", data: { tone: v } });
+          markTouched("tone");
+        }}
+      />
+      <FieldError message={errors.tone} />
+      <FieldInput
+        label="Your Biggest Career Highlight"
+        icon="sparkles-outline"
+        multiline
+        value={state.topAchievement}
+        onChangeText={(v) =>
+          dispatch({ type: "UPDATE_FORM", data: { topAchievement: v } })
+        }
+        placeholder="e.g. Built an app with 10K users..."
+        accessibilityLabel="Top career achievement"
+      />
+      <FieldInput
+        label="Target Companies"
+        icon="rocket-outline"
+        value={state.targetCompanies}
+        onChangeText={(v) =>
+          dispatch({ type: "UPDATE_FORM", data: { targetCompanies: v } })
+        }
+        placeholder="e.g. Google, MNCs"
+        accessibilityLabel="Target companies"
+      />
+      <FieldInput
+        label="Special Instructions"
+        icon="settings-outline"
+        multiline
+        value={state.specialInstructions}
+        onChangeText={(v) =>
+          dispatch({ type: "UPDATE_FORM", data: { specialInstructions: v } })
+        }
+        placeholder="e.g. Keep it to 1 page..."
+        accessibilityLabel="Special instructions for resume generation"
+      />
+    </View>
+  ),
+);
 
 // ─── Nav buttons ─────────────────────────────────────────────────────────────
 const NavButtons = React.memo(
@@ -263,11 +413,13 @@ const NavButtons = React.memo(
     onNext,
     canProceed,
     isLastStep,
+    isBuilding,
   }: {
     onBack: () => void;
     onNext: () => void;
     canProceed: boolean;
     isLastStep: boolean;
+    isBuilding: boolean;
   }) => (
     <View style={resumeStyles.navButtons}>
       <TouchableOpacity
@@ -276,6 +428,7 @@ const NavButtons = React.memo(
         accessibilityRole="button"
         accessibilityLabel="Go back to previous step"
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        disabled={isBuilding}
       >
         <Ionicons name="arrow-back" size={18} color={colors.textSecondary} />
         <Text style={resumeStyles.backButtonText}>Back</Text>
@@ -283,18 +436,25 @@ const NavButtons = React.memo(
       <TouchableOpacity
         style={[
           resumeStyles.nextButton,
-          !canProceed && resumeStyles.nextButtonDisabled,
+          (!canProceed || isBuilding) && resumeStyles.nextButtonDisabled,
         ]}
         onPress={onNext}
+        disabled={isBuilding}
         accessibilityRole="button"
         accessibilityLabel={isLastStep ? "Build resume" : "Go to next step"}
-        accessibilityState={{ disabled: !canProceed }}
+        accessibilityState={{ disabled: !canProceed || isBuilding }}
       >
-        <Text style={resumeStyles.nextButtonText}>
-          {isLastStep ? "✨ Build Resume" : "Next"}
-        </Text>
-        {!isLastStep && (
-          <Ionicons name="arrow-forward" size={18} color="#fff" />
+        {isBuilding && isLastStep ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <>
+            <Text style={resumeStyles.nextButtonText}>
+              {isLastStep ? "✨ Build Resume" : "Next"}
+            </Text>
+            {!isLastStep && (
+              <Ionicons name="arrow-forward" size={18} color="#fff" />
+            )}
+          </>
         )}
       </TouchableOpacity>
     </View>
@@ -314,7 +474,10 @@ const RestoreModal = React.memo(
     const opacity = useSharedValue(0);
 
     useEffect(() => {
-      scale.value = withTiming(1, { duration: 220, easing: Easing.out(Easing.back(1.4)) });
+      scale.value = withTiming(1, {
+        duration: 220,
+        easing: Easing.out(Easing.back(1.4)),
+      });
       opacity.value = withTiming(1, { duration: 180 });
     }, []);
 
@@ -343,49 +506,63 @@ const RestoreModal = React.memo(
           accessibilityLabel="Resume draft found"
         >
           <Animated.View
-            style={[{
-              width: "100%",
-              maxWidth: 380,
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              paddingVertical: 28,
-              paddingHorizontal: 24,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.08)",
-            }, cardStyle]}
+            style={[
+              {
+                width: "100%",
+                maxWidth: 380,
+                backgroundColor: colors.surface,
+                borderRadius: 20,
+                paddingVertical: 28,
+                paddingHorizontal: 24,
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.08)",
+              },
+              cardStyle,
+            ]}
           >
             {/* Icon */}
-            <View style={{
-              width: 64, height: 64, borderRadius: 32,
-              backgroundColor: colors.accent + "18",
-              borderWidth: 1, borderColor: colors.accent + "30",
-              alignItems: "center", justifyContent: "center",
-              marginBottom: 16,
-            }}>
+            <View
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                backgroundColor: colors.accent + "18",
+                borderWidth: 1,
+                borderColor: colors.accent + "30",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 16,
+              }}
+            >
               <Ionicons name="time-outline" size={32} color={colors.accent} />
             </View>
 
             {/* Title */}
-            <Text style={{
-              fontSize: 20, fontWeight: "700",
-              color: colors.textPrimary,
-              textAlign: "center",
-              marginBottom: 8,
-              letterSpacing: -0.3,
-            }}>
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: "700",
+                color: colors.textPrimary,
+                textAlign: "center",
+                marginBottom: 8,
+                letterSpacing: -0.3,
+              }}
+            >
               Resume your work?
             </Text>
 
             {/* Description */}
-            <Text style={{
-              fontSize: 14,
-              color: colors.textSecondary,
-              textAlign: "center",
-              lineHeight: 20,
-              marginBottom: 24,
-              paddingHorizontal: 8,
-            }}>
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+                textAlign: "center",
+                lineHeight: 20,
+                marginBottom: 24,
+                paddingHorizontal: 8,
+              }}
+            >
               You have a saved draft from your previous session.
             </Text>
 
@@ -405,10 +582,13 @@ const RestoreModal = React.memo(
               accessibilityRole="button"
               accessibilityLabel="Resume saved draft"
             >
-              <Text style={{
-                fontSize: 16, fontWeight: "700",
-                color: "#FFFFFF",
-              }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "700",
+                  color: "#FFFFFF",
+                }}
+              >
                 Resume Draft
               </Text>
             </TouchableOpacity>
@@ -430,10 +610,13 @@ const RestoreModal = React.memo(
               accessibilityRole="button"
               accessibilityLabel="Start new resume"
             >
-              <Text style={{
-                fontSize: 15, fontWeight: "500",
-                color: colors.textSecondary,
-              }}>
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: "500",
+                  color: colors.textSecondary,
+                }}
+              >
                 Start Fresh
               </Text>
             </TouchableOpacity>
@@ -452,6 +635,7 @@ export default function ResumeBuilderScreen() {
   const navigation = useNavigation();
   const engine = useResumeEngine();
   const { state, dispatch } = engine;
+  const toast = useToast();
 
   // ── Draft restore state ──────────────────────────────────────────
   const [showRestoreModal, setShowRestoreModal] = useState(false);
@@ -488,9 +672,13 @@ export default function ResumeBuilderScreen() {
 
         if (hasMeaningfulDraft && !hasUserInteracted.current) {
           setShowRestoreModal(true);
-          console.log("[ResumeBuilder] Showing restore modal — valid draft found");
+          console.log(
+            "[ResumeBuilder] Showing restore modal — valid draft found",
+          );
         } else {
-          console.log("[ResumeBuilder] No modal — draft empty or user already interacted");
+          console.log(
+            "[ResumeBuilder] No modal — draft empty or user already interacted",
+          );
         }
       } catch (err) {
         console.warn("[ResumeBuilder] Draft check failed", err);
@@ -500,7 +688,7 @@ export default function ResumeBuilderScreen() {
     return () => {
       cancelled = true;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Resume Draft: NOW apply the draft to state, then close modal
@@ -538,7 +726,7 @@ export default function ResumeBuilderScreen() {
 
   // Mark a field as touched when user changes it (enables real-time feedback)
   const markTouched = useCallback((field: string) => {
-    setTouchedFields(prev => {
+    setTouchedFields((prev) => {
       if (prev.has(field)) return prev;
       const next = new Set(prev);
       next.add(field);
@@ -561,7 +749,7 @@ export default function ResumeBuilderScreen() {
   }));
 
   useEffect(() => {
-    if (state.asyncStatus === "loading") {
+    if (state.asyncStatus === "loading" && state.phase === "loading") {
       pulseScale.value = withRepeat(
         withSequence(
           withTiming(1.2, {
@@ -664,7 +852,10 @@ export default function ResumeBuilderScreen() {
               onPress={() => {
                 if (state.error?.retryAction === "generate")
                   engine.buildResume();
-                if (state.error?.retryAction === "export") engine.exportPDF();
+                if (state.error?.retryAction === "export")
+                  engine.exportAndShare(() =>
+                    toast("PDF ready to share ✓", "success"),
+                  );
               }}
             >
               <Text style={resumeStyles.primaryButtonText}>Retry</Text>
@@ -720,9 +911,12 @@ export default function ResumeBuilderScreen() {
         formData={state.formData}
         generatedResume={state.generatedResume}
         isHistoryView={!!state.selectedResume}
-        exporting={state.asyncStatus === "loading"}
-        onExport={engine.exportPDF}
-        onShare={engine.shareResume}
+        processing={
+          state.phase === "preview" && state.asyncStatus === "loading"
+        }
+        onAction={() =>
+          engine.exportAndShare(() => toast("PDF ready to share ✓", "success"))
+        }
         onReset={() => dispatch({ type: "RESET_BUILDER" })}
         onBackToHistory={() => {
           dispatch({ type: "SET_PHASE", phase: "input" });
@@ -732,41 +926,10 @@ export default function ResumeBuilderScreen() {
     );
   }
 
-  // ── Exported phase ───────────────────────────────────────────────
-  if (state.phase === "exported") {
-    return (
-      <View style={resumeStyles.loadingContainer}>
-        <Ionicons name="checkmark-circle" size={80} color={colors.accent} />
-        <Text style={resumeStyles.loadingTitle}>Resume Ready!</Text>
-        <Text style={resumeStyles.loadingSubtitle}>
-          Your PDF has been saved and is ready to share
-        </Text>
-        <View style={resumeStyles.buttonRow}>
-          <TouchableOpacity
-            style={[resumeStyles.primaryButton, { marginRight: 8 }]}
-            onPress={engine.shareResume}
-          >
-            <Text style={resumeStyles.primaryButtonText}>Share Resume</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={resumeStyles.ghostButton}
-            onPress={() => dispatch({ type: "RESET_BUILDER" })}
-          >
-            <Text style={resumeStyles.ghostButtonText}>Build Another</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
   // ── Input phase ──────────────────────────────────────────────────
   return (
-    <KeyboardAvoidingView
-      style={resumeStyles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={0}
-    >
-      {/* Restore modal — uses RN Modal for true full-screen overlay */}
+    <View style={resumeStyles.container}>
+      {/* Restore modal */}
       {showRestoreModal && (
         <RestoreModal
           onResume={handleResumeDraft}
@@ -774,16 +937,10 @@ export default function ResumeBuilderScreen() {
         />
       )}
 
-      {/* Header — uses insets.top directly, no extra padding */}
-      <View style={[resumeStyles.header]}>
+      {/* Header */}
+      <View style={resumeStyles.header}>
         <TouchableOpacity
-          style={{
-            position: "absolute",
-            left: 16,
-            bottom: 12,
-            zIndex: 10,
-            padding: 4,
-          }}
+          style={{ position: "absolute", left: 16, zIndex: 10, padding: 4 }}
           onPress={() => engine.handleBack(() => navigation.goBack())}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
@@ -817,76 +974,92 @@ export default function ResumeBuilderScreen() {
           />
         </View>
       ) : (
-        <ScrollView
-          style={resumeStyles.scrollContent}
-          contentContainerStyle={[
-            resumeStyles.scrollContentContainer,
-            { paddingBottom: bottomInset + 40 },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          keyboardDismissMode="interactive"
-        >
-          <StepIndicator
-            currentStep={state.currentStep}
-            totalSteps={TOTAL_STEPS}
-            stepTitle={STEP_TITLES[state.currentStep - 1]}
-          />
-          <StepTitleCard
-            icon={STEP_ICONS[state.currentStep - 1]}
-            title={STEP_TITLES[state.currentStep - 1]}
-            subtitle={STEP_SUBTITLES[state.currentStep - 1]}
-          />
+        <>
+          <KeyboardAwareScrollView
+            style={resumeStyles.scrollContent}
+            contentContainerStyle={[
+              resumeStyles.scrollContentContainer,
+              { paddingBottom: 20 },
+            ]}
+            enableOnAndroid
+            enableAutomaticScroll
+            extraScrollHeight={24}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <StepIndicator
+              currentStep={state.currentStep}
+              totalSteps={TOTAL_STEPS}
+              stepTitle={STEP_TITLES[state.currentStep - 1]}
+            />
+            <StepTitleCard
+              icon={STEP_ICONS[state.currentStep - 1]}
+              title={STEP_TITLES[state.currentStep - 1]}
+              subtitle={STEP_SUBTITLES[state.currentStep - 1]}
+            />
 
-          {state.currentStep === 1 && (
-            <Step1
-              state={state.formData}
-              dispatch={dispatch}
-              errors={visibleErrors}
-              markTouched={markTouched}
-            />
-          )}
-          {state.currentStep === 2 && (
-            <Step2
-              state={state.formData}
-              dispatch={dispatch}
-              errors={visibleErrors}
-              markTouched={markTouched}
-            />
-          )}
-          {state.currentStep === 3 && (
-            <Step3
-              state={state.formData}
-              dispatch={dispatch}
-              errors={visibleErrors}
-              markTouched={markTouched}
-            />
-          )}
-          {state.currentStep === 4 && (
-            <Step4
-              state={state.formData}
-              dispatch={dispatch}
-              errors={visibleErrors}
-              markTouched={markTouched}
-            />
-          )}
-          {state.currentStep === 5 && (
-            <Step5
-              state={state.formData}
-              dispatch={dispatch}
-              errors={visibleErrors}
-              markTouched={markTouched}
-            />
-          )}
+            {state.currentStep === 1 && (
+              <Step1
+                state={state.formData}
+                dispatch={dispatch}
+                errors={visibleErrors}
+                markTouched={markTouched}
+              />
+            )}
+            {state.currentStep === 2 && (
+              <Step2
+                state={state.formData}
+                dispatch={dispatch}
+                errors={visibleErrors}
+                markTouched={markTouched}
+              />
+            )}
+            {state.currentStep === 3 && (
+              <Step3
+                state={state.formData}
+                dispatch={dispatch}
+                errors={visibleErrors}
+                markTouched={markTouched}
+              />
+            )}
+            {state.currentStep === 4 && (
+              <Step4
+                state={state.formData}
+                dispatch={dispatch}
+                errors={visibleErrors}
+                markTouched={markTouched}
+              />
+            )}
+            {state.currentStep === 5 && (
+              <Step5
+                state={state.formData}
+                dispatch={dispatch}
+                errors={visibleErrors}
+                markTouched={markTouched}
+              />
+            )}
+          </KeyboardAwareScrollView>
 
-          <NavButtons
-            onBack={() => engine.handleBack(() => navigation.goBack())}
-            onNext={handleNext}
-            canProceed={engine.canProceed()}
-            isLastStep={state.currentStep === TOTAL_STEPS}
-          />
-        </ScrollView>
+          {/* Fixed footer — always visible, never scrolls */}
+          <View
+            style={[
+              resumeStyles.fixedFooter,
+              { paddingBottom: bottomInset + 12 },
+            ]}
+          >
+            <NavButtons
+              onBack={() => engine.handleBack(() => navigation.goBack())}
+              onNext={handleNext}
+              canProceed={engine.canProceed()}
+              isLastStep={state.currentStep === TOTAL_STEPS}
+              isBuilding={
+                state.currentStep === TOTAL_STEPS &&
+                state.asyncStatus === "loading"
+              }
+            />
+          </View>
+        </>
       )}
-    </KeyboardAvoidingView>
+    </View>
   );
 }

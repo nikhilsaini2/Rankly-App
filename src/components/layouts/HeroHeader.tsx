@@ -118,6 +118,8 @@ const heroStyles = StyleSheet.create({
     padding: 2,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.06)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarImage: {
     width: 42,

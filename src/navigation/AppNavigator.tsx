@@ -6,6 +6,7 @@ import ATSScoreScreen from "../feature/resume/screens/ATSScoreScreen";
 import ResumeBuilderScreen from "../feature/resume/screens/ResumeBuilderScreen";
 import ImprovedResumePreviewScreen from "../feature/resume/screens/ImprovedResumePreviewScreen";
 import InterviewHistoryScreen from "../feature/interview/screens/InterviewHistoryScreen";
+import ResumeHistoryScreen from "../feature/resume/screens/ResumeHistoryScreen";
 import SalaryNegotiationScreen from "../screens/salary/SalaryNegotiationScreen";
 import type { RootStackParamList } from "../types/navigation.types";
 import { BottomTabs } from "./BottomTabs";
@@ -69,6 +70,14 @@ export const AppNavigator = () => {
       <Stack.Screen
         name="InterviewHistory"
         component={InterviewHistoryScreen}
+        options={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
+      />
+      <Stack.Screen
+        name="ResumeHistory"
+        component={ResumeHistoryScreen}
         options={{
           headerShown: false,
           animation: "slide_from_right",

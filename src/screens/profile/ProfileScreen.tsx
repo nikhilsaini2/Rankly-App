@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { NavigationProp } from "@react-navigation/native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -102,6 +102,23 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<UserProfileUpdate>({});
+  const [initialDraft, setInitialDraft] = useState<UserProfileUpdate>({});
+
+  // Normalize before comparison to avoid false dirty on whitespace
+  const normalizeDraft = (d: UserProfileUpdate): UserProfileUpdate => ({
+    ...d,
+    firstName: d.firstName?.trim() ?? "",
+    lastName: d.lastName?.trim() ?? "",
+    bio: d.bio?.trim() ?? "",
+    role: d.role?.trim() ?? "",
+    industry: d.industry?.trim() ?? "",
+    linkedinUrl: d.linkedinUrl?.trim() ?? "",
+  });
+
+  const isDirty = useMemo(
+    () => JSON.stringify(normalizeDraft(draft)) !== JSON.stringify(normalizeDraft(initialDraft)),
+    [draft, initialDraft],
+  );
   const [notif, setNotif] = useState(false);
   const [statsDisplay, setStatsDisplay] = useState({
     resumes: 0,
@@ -143,7 +160,7 @@ export default function ProfileScreen() {
   }, []);
 
   function openEdit(u: User) {
-    setDraft({
+    const snapshot: UserProfileUpdate = {
       firstName: u.firstName,
       lastName: u.lastName,
       bio: u.bio,
@@ -151,16 +168,19 @@ export default function ProfileScreen() {
       experienceLevel: u.experienceLevel ?? undefined,
       industry: u.industry ?? "",
       linkedinUrl: u.linkedinUrl ?? "",
-    });
+    };
+    setDraft(snapshot);
+    setInitialDraft(snapshot);
     setEditing(true);
   }
 
   async function saveEdit() {
-    if (!user) return;
+    if (!user || !isDirty || saving) return;
     setSaving(true);
     try {
       await updateUserProfile(draft);
       toast("Profile updated!", "success");
+      setInitialDraft(draft); // reset dirty state
       setEditing(false);
       refetchProfile();
     } catch {
@@ -171,17 +191,7 @@ export default function ProfileScreen() {
   }
 
   function cancelEdit() {
-    if (user) {
-      setDraft({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        bio: user.bio,
-        role: user.role,
-        experienceLevel: user.experienceLevel ?? undefined,
-        industry: user.industry ?? "",
-        linkedinUrl: user.linkedinUrl ?? "",
-      });
-    }
+    setDraft(initialDraft);
     setEditing(false);
   }
 
@@ -287,6 +297,10 @@ export default function ProfileScreen() {
     () => navigation.navigate("InterviewHistory"),
     [navigation],
   );
+  const handleResumeHistoryPress = useCallback(
+    () => navigation.navigate("ResumeHistory"),
+    [navigation],
+  );
   const fullName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
   const initials = getInitials(user?.firstName, user?.lastName);
   const planLabel = (user?.plan === "pro" ? "Pro" : "Free").toUpperCase();
@@ -372,6 +386,7 @@ export default function ProfileScreen() {
               notif={notif}
               onToggleNotif={onToggleNotif}
               onInterviewHistoryPress={handleInterviewHistoryPress}
+              onResumeHistoryPress={handleResumeHistoryPress}
             />
             <DangerZone appVersion={appVersion} />
           </>
@@ -394,8 +409,11 @@ export default function ProfileScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={saveEdit}
-            disabled={saving}
-            style={[profileStyles.editSaveBtn, saving && { opacity: 0.6 }]}
+            disabled={!isDirty || saving}
+            style={[
+              profileStyles.editSaveBtn,
+              (!isDirty || saving) && { opacity: 0.45 },
+            ]}
             activeOpacity={0.85}
           >
             {saving ? (

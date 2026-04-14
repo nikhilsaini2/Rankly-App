@@ -23,6 +23,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useProfile } from "../../hooks/index";
 import { generateGeminiText } from "../../services/gemini";
 import { supabase } from "../../services/supabase";
@@ -109,6 +110,7 @@ const loadingMessages = [
 ];
 
 export default function SalaryNegotiationScreen() {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { user } = useProfile();
   const [phase, setPhase] = useState<Phase>("input");
@@ -455,7 +457,10 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{ padding: 4, zIndex: 1000 }}
+          >
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Salary Coach</Text>
@@ -700,24 +705,21 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ padding: 4, zIndex: 1 }}
+        >
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Salary Coach</Text>
-        <TouchableOpacity
-          onPress={() => setInputTab(inputTab === "form" ? "history" : "form")}
-        >
-          <Ionicons
-            name="time-outline"
-            size={24}
-            color={colors.textSecondary}
-          />
-        </TouchableOpacity>
       </View>
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 40 },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -1019,22 +1021,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 8,
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: "700",
     color: colors.textPrimary,
-    flex: 1,
+    position: "absolute",
+    left: 0,
+    right: 0,
     textAlign: "center",
-    marginHorizontal: 16,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
     paddingTop: 8,
   },
   title: {
@@ -1341,8 +1344,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
   },
   tabActive: {
     backgroundColor: colors.primary,

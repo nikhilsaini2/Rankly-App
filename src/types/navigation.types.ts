@@ -24,6 +24,7 @@ export type RootStackParamList = {
     scoreId: string;
   };
   InterviewHistory: undefined;
+  ResumeHistory: undefined;
 };
 
 export type RootTabParamList = {
