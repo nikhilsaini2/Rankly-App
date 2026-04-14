@@ -102,6 +102,22 @@ export default function ResumeScreen() {
     }, [refreshData])
   );
 
+  async function handleAnalyze(resumeId: string, jd?: string) {
+    setAnalyzingInProgress(true);
+    try {
+      const mapped = await scoreResume(resumeId, jd);
+      toast("ATS score ready", "success");
+      await refreshData(true);
+      if (mapped) {
+        rootNav?.navigate("AtsScore", { resumeId, scoreId: mapped.id });
+      }
+    } catch {
+      toast("Could not score resume", "error");
+    } finally {
+      setAnalyzingInProgress(false);
+    }
+  }
+
   async function onUpload() {
     if (user?.plan === "free" && resumes.length >= 3) {
       Alert.alert(
@@ -114,9 +130,22 @@ export default function ResumeScreen() {
     try {
       const file = await pickResume();
       if (!file) return;
-      await uploadResume(file);
+
+      const uploaded = await uploadResume(file);
       toast("Resume uploaded successfully", "success");
-      refreshData(true);
+
+      // Get the resume ID — either from the returned row or by fetching latest
+      let resumeId: string | null = uploaded?.id ?? null;
+      if (!resumeId) {
+        await refreshData(true);
+        resumeId = resumes[0]?.id ?? null;
+      }
+
+      if (resumeId) {
+        await handleAnalyze(resumeId);
+      } else {
+        refreshData(true);
+      }
     } catch (e) {
       toast(e instanceof Error ? e.message : "Upload failed", "error");
     }
@@ -125,26 +154,7 @@ export default function ResumeScreen() {
   async function onAnalyze() {
     if (!analyzeResumeId) return;
     setAnalyzeOpen(false);
-    setAnalyzingInProgress(true);
-    try {
-      const mapped = await scoreResume(
-        analyzeResumeId,
-        jobDescription.trim() || undefined,
-      );
-      toast("ATS score ready", "success");
-      await refreshData(true);
-      await new Promise((r) => setTimeout(r, 100));
-      if (mapped) {
-        rootNav?.navigate("AtsScore", {
-          resumeId: analyzeResumeId,
-          scoreId: mapped.id,
-        });
-      }
-    } catch {
-      toast("Could not score resume", "error");
-    } finally {
-      setAnalyzingInProgress(false);
-    }
+    await handleAnalyze(analyzeResumeId, jobDescription.trim() || undefined);
   }
 
   async function onDelete(item: ResumeRow) {

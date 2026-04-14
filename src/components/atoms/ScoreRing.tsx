@@ -33,8 +33,9 @@ export function ScoreRing({
   );
 
   const animatedProps = useAnimatedProps(() => {
-    const percentage = score > 0 ? (pct.value / score) * 100 : 0;
-    const clamped = Math.max(0, Math.min(100, percentage));
+    // pct animates from 0 → score (0–100 range)
+    // Use pct.value directly as the fill percentage
+    const clamped = Math.max(0, Math.min(100, pct.value));
     const offset = circumference - (circumference * clamped) / 100;
     return {
       strokeDashoffset: offset,

@@ -41,8 +41,16 @@ export interface ResumeFormData {
 export interface GeneratedResume {
   professionalSummary: string
   enhancedExperiences: EnhancedExperience[]
+  projects?: ProjectEntry[]
+  achievements?: string[]
+  inferredCertifications?: string[]
   coreSkills: string[]
   atsKeywords: string[]
+}
+
+export interface ProjectEntry {
+  name: string
+  bulletPoints: string[]
 }
 
 export interface EnhancedExperience {

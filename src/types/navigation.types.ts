@@ -19,6 +19,11 @@ export type RootStackParamList = {
   SalaryNegotiation: undefined;
   ResumeBuilder: undefined;
   PdfViewer: { url: string; fileName: string };
+  ImprovedResumePreview: {
+    resumeId: string;
+    scoreId: string;
+  };
+  InterviewHistory: undefined;
 };
 
 export type RootTabParamList = {

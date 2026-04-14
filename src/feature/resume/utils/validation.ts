@@ -79,6 +79,10 @@ export const GeminiResumeSchema = Yup.object().shape({
       bulletPoints: Yup.array().of(Yup.string()).required(),
     })
   ).required(),
+  // projects, achievements, inferredCertifications are optional
+  projects: Yup.array().optional(),
+  achievements: Yup.array().optional(),
+  inferredCertifications: Yup.array().optional(),
   coreSkills: Yup.array().of(Yup.string()).required(),
   atsKeywords: Yup.array().of(Yup.string()).required(),
 });

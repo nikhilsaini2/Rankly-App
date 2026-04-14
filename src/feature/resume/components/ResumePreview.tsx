@@ -131,7 +131,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
               <Text style={[resumeStyles.resultMeta, { fontStyle: "italic" }]}>
                 {exp.company}
               </Text>
-              {exp.bulletPoints.map((bp, i) => (
+              {exp.bulletPoints.slice(0, 4).map((bp, i) => (
                 <View key={i} style={resumeStyles.bulletRow}>
                   <View style={resumeStyles.bullet} />
                   <Text style={resumeStyles.bulletText}>{bp}</Text>

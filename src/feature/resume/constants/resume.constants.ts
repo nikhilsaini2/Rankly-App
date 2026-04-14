@@ -89,3 +89,31 @@ export const EMPTY_EXPERIENCE: WorkExperience = {
 
 export const MAX_EXPERIENCES = 4;
 export const TOTAL_STEPS = 5;
+
+// ─── Single source of truth for required fields ───────────────────────────────
+// This drives BOTH the * indicator in the UI AND the validation logic.
+// Any field listed here must also be validated in validateStep().
+export const REQUIRED_FIELDS: Record<string, boolean> = {
+  // Step 1
+  fullName: true,
+  email: true,
+  // Step 2
+  targetRole: true,
+  experienceLevel: true,
+  industry: true,
+  skills: true,
+  // Step 3 — experience fields required for first entry (non-Fresher)
+  'exp.jobTitle': true,
+  'exp.company': true,
+  'exp.duration': true,
+  // Step 4
+  degree: true,
+  institution: true,
+  graduationYear: true,
+  // Step 5
+  tone: true,
+};
+
+export function isFieldRequired(field: string): boolean {
+  return !!REQUIRED_FIELDS[field];
+}

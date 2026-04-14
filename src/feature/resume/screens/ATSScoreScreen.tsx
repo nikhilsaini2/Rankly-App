@@ -140,7 +140,7 @@ export default function AtsScoreScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingBottom: bottomInset,
+          paddingBottom: bottomInset + 80, // extra room for sticky CTA
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -248,6 +248,53 @@ export default function AtsScoreScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* ── Sticky "Improve with AI" CTA ── */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          paddingHorizontal: 20,
+          paddingTop: 12,
+          paddingBottom: insets.bottom + 5,
+          backgroundColor: colors.background,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+        }}
+      >
+        <TouchableOpacity
+          style={{
+            height: 56,
+            borderRadius: 16,
+            backgroundColor: colors.primary,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+          }}
+          onPress={() =>
+            navigation.navigate("ImprovedResumePreview", {
+              resumeId,
+              scoreId: scoreId ?? data.id,
+            })
+          }
+          activeOpacity={0.85}
+        >
+          <Ionicons name="sparkles-outline" size={20} color="#fff" />
+          <Text
+            style={{
+              color: "#fff",
+              fontWeight: "800",
+              fontSize: 16,
+              letterSpacing: 0.2,
+            }}
+          >
+            Improve with AI
+          </Text>
+        </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 }

@@ -1,0 +1,738 @@
+import { Ionicons } from "@expo/vector-icons";
+import type { NavigationProp, RouteProp } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useToast } from "../../../components/atoms/Toast";
+import { useAtsScore } from "../../../hooks/useAtsScore";
+import {
+  generateImprovedResume,
+  type ImprovedResumeResult,
+} from "../../../services/resume/improveResumeService";
+import { supabase } from "../../../services/supabase";
+import { colors } from "../../../theme/color";
+import type { RootStackParamList } from "../../../types/navigation.types";
+import type { ResumeFormData } from "../types/resume.types";
+import { generateResumeHTML } from "../utils/resumeHTML";
+
+type RouteProps = RouteProp<RootStackParamList, "ImprovedResumePreview">;
+
+const LOADING_MESSAGES = [
+  "Analyzing ATS gaps...",
+  "Injecting missing keywords...",
+  "Upgrading bullet points...",
+  "Optimizing for recruiters...",
+  "Finalizing your resume...",
+];
+
+export default function ImprovedResumePreviewScreen() {
+  const insets = useSafeAreaInsets();
+  const bottomInset =
+    Platform.OS === "android" ? Math.max(insets.bottom, 48) : insets.bottom;
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProps>();
+  const toast = useToast();
+  const { getScoreById } = useAtsScore();
+
+  const { resumeId, scoreId } = route.params;
+
+  type Phase = "loading" | "preview" | "error";
+  const [phase, setPhase] = useState<Phase>("loading");
+  const [msgIndex, setMsgIndex] = useState(0);
+  const [result, setResult] = useState<ImprovedResumeResult | null>(null);
+  const [html, setHtml] = useState<string>("");
+  const [exporting, setExporting] = useState(false);
+  const [pdfUri, setPdfUri] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const isMounted = useRef(true);
+  useEffect(
+    () => () => {
+      isMounted.current = false;
+    },
+    [],
+  );
+
+  // ── Loading animation ──────────────────────────────────────
+  const pulseScale = useSharedValue(1);
+  const pulseOpacity = useSharedValue(0.3);
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+    opacity: pulseOpacity.value,
+  }));
+
+  useEffect(() => {
+    if (phase !== "loading") return;
+    pulseScale.value = withRepeat(
+      withSequence(
+        withTiming(1.2, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1.0, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+      false,
+    );
+    pulseOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.85, { duration: 900 }),
+        withTiming(0.3, { duration: 900 }),
+      ),
+      -1,
+      false,
+    );
+    const interval = setInterval(() => {
+      setMsgIndex((i) => (i + 1) % LOADING_MESSAGES.length);
+    }, 1400);
+    return () => clearInterval(interval);
+  }, [phase]);
+
+  // ── Main pipeline ──────────────────────────────────────────
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        // 1. Fetch ATS score report
+        const atsReport = await getScoreById(scoreId);
+        if (!atsReport) throw new Error("ATS report not found.");
+
+        // 2. Fetch resume text from Supabase
+        const { data: resumeRow, error: rErr } = await supabase
+          .from("resumes")
+          .select("extracted_text, raw_text, title, file_name")
+          .eq("id", resumeId)
+          .single();
+
+        if (rErr || !resumeRow) throw new Error("Resume not found.");
+
+        const resumeText =
+          (resumeRow.extracted_text as string) ||
+          (resumeRow.raw_text as string) ||
+          "";
+
+        if (!resumeText.trim()) {
+          throw new Error(
+            "Resume text is empty. Please re-upload your resume and analyze it first.",
+          );
+        }
+
+        // 3. Call AI optimization engine
+        const improved = await generateImprovedResume({
+          resumeText,
+          atsReport,
+          meta: {
+            title: resumeRow.title as string,
+            fileName: resumeRow.file_name as string,
+          },
+        });
+
+        if (!alive) return;
+
+        // 4. Build form-compatible shape for HTML generator
+        const formShape: ResumeFormData = {
+          fullName: improved.contact.fullName,
+          email: improved.contact.email,
+          phone: improved.contact.phone,
+          linkedin: improved.contact.linkedin,
+          city: improved.contact.city,
+          targetRole: improved.contact.targetRole,
+          experienceLevel: "",
+          industry: "",
+          skills: improved.generatedResume.coreSkills.join(", "),
+          experiences: [],
+          degree: improved.education.degree,
+          institution: improved.education.institution,
+          graduationYear: improved.education.graduationYear,
+          grade: improved.education.grade,
+          certifications: "",
+          languages: "",
+          tone: "Professional",
+          topAchievement: "",
+          targetCompanies: "",
+          specialInstructions: "",
+        };
+
+        const generatedHtml = generateResumeHTML(
+          formShape,
+          improved.generatedResume,
+        );
+
+        setResult(improved);
+        setHtml(generatedHtml);
+        setPhase("preview");
+      } catch (err: any) {
+        if (!alive) return;
+        const msg =
+          err instanceof Error ? err.message : "Could not improve resume.";
+        setErrorMsg(msg);
+        setPhase("error");
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeId, scoreId]);
+
+  // ── Export PDF ─────────────────────────────────────────────
+  const handleExport = useCallback(async () => {
+    if (!html || exporting) return;
+    setExporting(true);
+    try {
+      const { uri } = await Print.printToFileAsync({ html, base64: false });
+      setPdfUri(uri);
+      toast("PDF saved successfully", "success");
+    } catch {
+      toast("Could not export PDF", "error");
+    } finally {
+      setExporting(false);
+    }
+  }, [html, exporting, toast]);
+
+  // ── Share ──────────────────────────────────────────────────
+  const handleShare = useCallback(async () => {
+    try {
+      let uri = pdfUri;
+      if (!uri) {
+        // Generate PDF first if not yet done
+        setExporting(true);
+        const result = await Print.printToFileAsync({ html, base64: false });
+        uri = result.uri;
+        setPdfUri(uri);
+        setExporting(false);
+      }
+      await Sharing.shareAsync(uri, {
+        mimeType: "application/pdf",
+        dialogTitle: "Share Optimized Resume",
+      });
+    } catch {
+      toast("Could not share resume", "error");
+      setExporting(false);
+    }
+  }, [html, pdfUri, toast]);
+
+  // ── Loading phase ──────────────────────────────────────────
+  if (phase === "loading") {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background,
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: 40,
+        }}
+      >
+        <View
+          style={{
+            width: 120,
+            height: 120,
+            borderRadius: 60,
+            backgroundColor: colors.primary + "15",
+            borderWidth: 1,
+            borderColor: colors.primary + "30",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 32,
+          }}
+        >
+          <Animated.View style={pulseStyle}>
+            <Ionicons
+              name="sparkles-outline"
+              size={56}
+              color={colors.primary}
+            />
+          </Animated.View>
+        </View>
+        <Text
+          style={{
+            fontSize: 22,
+            fontWeight: "700",
+            color: colors.textPrimary,
+            textAlign: "center",
+            marginBottom: 10,
+          }}
+        >
+          Improving your resume...
+        </Text>
+        <Text
+          style={{
+            fontSize: 15,
+            color: colors.textSecondary,
+            textAlign: "center",
+            lineHeight: 22,
+            marginBottom: 32,
+          }}
+        >
+          {LOADING_MESSAGES[msgIndex]}
+        </Text>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {[0, 1, 2].map((i) => (
+            <View
+              key={i}
+              style={{
+                width: msgIndex % 3 === i ? 24 : 8,
+                height: 8,
+                borderRadius: 4,
+                backgroundColor:
+                  msgIndex % 3 === i
+                    ? colors.primary
+                    : "rgba(255,255,255,0.15)",
+              }}
+            />
+          ))}
+        </View>
+      </View>
+    );
+  }
+
+  // ── Error phase ────────────────────────────────────────────
+  if (phase === "error") {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background,
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: 32,
+        }}
+      >
+        <Ionicons name="alert-circle-outline" size={64} color={colors.error} />
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: "700",
+            color: colors.textPrimary,
+            textAlign: "center",
+            marginTop: 16,
+            marginBottom: 8,
+          }}
+        >
+          Optimization failed
+        </Text>
+        <Text
+          style={{
+            fontSize: 14,
+            color: colors.textSecondary,
+            textAlign: "center",
+            lineHeight: 22,
+            marginBottom: 32,
+          }}
+        >
+          {errorMsg}
+        </Text>
+        <TouchableOpacity
+          style={{
+            backgroundColor: colors.primary,
+            borderRadius: 14,
+            paddingVertical: 14,
+            paddingHorizontal: 32,
+          }}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
+            Go Back
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // ── Preview phase ──────────────────────────────────────────
+  const r = result!;
+  const exp = r.generatedResume.enhancedExperiences;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Header */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          paddingBottom: 12,
+          paddingHorizontal: 16,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+        }}
+      >
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 16,
+            bottom: 12,
+            padding: 4,
+            zIndex: 10000,
+          }}
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text
+          style={{ fontSize: 18, fontWeight: "700", color: colors.textPrimary }}
+        >
+          Optimized Resume
+        </Text>
+        {/* ATS badge */}
+        <View
+          style={{
+            position: "absolute",
+            right: 16,
+            bottom: 10,
+            backgroundColor: colors.primary + "20",
+            borderRadius: 8,
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            borderWidth: 1,
+            borderColor: colors.primary + "40",
+          }}
+        >
+          <Text
+            style={{ fontSize: 11, fontWeight: "700", color: colors.primary }}
+          >
+            ATS Optimized
+          </Text>
+        </View>
+      </View>
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 16,
+          paddingBottom: bottomInset + 100,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Contact card */}
+        <View style={cardStyle}>
+          <Text
+            style={{
+              fontSize: 22,
+              fontWeight: "800",
+              color: colors.textPrimary,
+              letterSpacing: -0.3,
+            }}
+          >
+            {r.contact.fullName || "Your Name"}
+          </Text>
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: "600",
+              color: colors.primary,
+              marginTop: 2,
+            }}
+          >
+            {r.contact.targetRole}
+          </Text>
+          <Text
+            style={{
+              fontSize: 12,
+              color: colors.textSecondary,
+              marginTop: 6,
+              lineHeight: 18,
+            }}
+          >
+            {[r.contact.email, r.contact.phone, r.contact.city]
+              .filter(Boolean)
+              .join("  •  ")}
+          </Text>
+          {r.contact.linkedin ? (
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+                marginTop: 2,
+              }}
+            >
+              {r.contact.linkedin}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* Summary */}
+        <SectionCard title="Professional Summary">
+          <Text
+            style={{ fontSize: 14, color: colors.textPrimary, lineHeight: 22 }}
+          >
+            {r.generatedResume.professionalSummary}
+          </Text>
+        </SectionCard>
+
+        {/* Experience */}
+        {exp.length > 0 && (
+          <SectionCard title="Work Experience">
+            {exp.map((e, i) => (
+              <View
+                key={i}
+                style={{ marginBottom: i < exp.length - 1 ? 16 : 0 }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "700",
+                      color: colors.textPrimary,
+                      flex: 1,
+                    }}
+                  >
+                    {e.jobTitle}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      marginLeft: 8,
+                    }}
+                  >
+                    {e.duration}
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: colors.textSecondary,
+                    fontStyle: "italic",
+                    marginBottom: 8,
+                  }}
+                >
+                  {e.company}
+                </Text>
+                {e.bulletPoints.slice(0, 4).map((bp, j) => (
+                  <View
+                    key={j}
+                    style={{ flexDirection: "row", marginBottom: 4 }}
+                  >
+                    <View
+                      style={{
+                        width: 5,
+                        height: 5,
+                        borderRadius: 3,
+                        backgroundColor: colors.primary,
+                        marginRight: 8,
+                        marginTop: 8,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontSize: 13,
+                        color: colors.textPrimary,
+                        lineHeight: 20,
+                      }}
+                    >
+                      {bp}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ))}
+          </SectionCard>
+        )}
+
+        {/* Education */}
+        <SectionCard title="Education">
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: colors.textPrimary,
+                }}
+              >
+                {r.education.degree}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: colors.textSecondary,
+                  fontStyle: "italic",
+                }}
+              >
+                {r.education.institution}
+              </Text>
+              {r.education.grade ? (
+                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                  {r.education.grade}
+                </Text>
+              ) : null}
+            </View>
+            <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+              {r.education.graduationYear}
+            </Text>
+          </View>
+        </SectionCard>
+
+        {/* Skills */}
+        <SectionCard title="Core Skills">
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {r.generatedResume.coreSkills.map((s, i) => (
+              <View
+                key={i}
+                style={{
+                  backgroundColor: colors.primary + "18",
+                  borderRadius: 20,
+                  paddingHorizontal: 12,
+                  paddingVertical: 5,
+                  borderWidth: 1,
+                  borderColor: colors.primary + "35",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "600",
+                    color: colors.primary,
+                  }}
+                >
+                  {s}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </SectionCard>
+      </ScrollView>
+
+      {/* Sticky action bar */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: insets.bottom + 5,
+          backgroundColor: colors.background,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          flexDirection: "row",
+          gap: 12,
+        }}
+      >
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            height: 52,
+            borderRadius: 14,
+            backgroundColor: colors.primary,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            opacity: exporting ? 0.6 : 1,
+          }}
+          onPress={handleExport}
+          disabled={exporting}
+        >
+          {exporting ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Ionicons name="download-outline" size={18} color="#fff" />
+          )}
+          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
+            {exporting ? "Exporting..." : "Download PDF"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            height: 52,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: colors.border,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+          }}
+          onPress={handleShare}
+          disabled={exporting}
+        >
+          <Ionicons
+            name="share-outline"
+            size={18}
+            color={colors.textSecondary}
+          />
+          <Text
+            style={{
+              color: colors.textSecondary,
+              fontWeight: "600",
+              fontSize: 15,
+            }}
+          >
+            Share
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+const cardStyle = {
+  backgroundColor: colors.surface,
+  borderRadius: 16,
+  borderWidth: 1,
+  borderColor: "rgba(255,255,255,0.06)" as const,
+  padding: 16,
+  marginBottom: 12,
+};
+
+function SectionCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={cardStyle}>
+      <Text
+        style={{
+          fontSize: 11,
+          fontWeight: "700",
+          color: colors.textSecondary,
+          letterSpacing: 1.2,
+          textTransform: "uppercase",
+          marginBottom: 10,
+        }}
+      >
+        {title}
+      </Text>
+      {children}
+    </View>
+  );
+}

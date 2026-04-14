@@ -314,11 +314,13 @@ function CompletePhase({
   averageScore,
   onReset,
   onDiscussCoach,
+  onViewHistory,
 }: {
   answers: Answer[];
   averageScore: number;
   onReset: () => void;
   onDiscussCoach: () => void;
+  onViewHistory: () => void;
 }) {
   return (
     <FlatList
@@ -373,6 +375,9 @@ function CompletePhase({
           <PressableScale style={s.ghostButton} onPress={onDiscussCoach}>
             <Text style={s.ghostButtonText}>Discuss with AI Coach</Text>
           </PressableScale>
+          <PressableScale style={s.ghostButton} onPress={onViewHistory}>
+            <Text style={s.ghostButtonText}>View History</Text>
+          </PressableScale>
         </View>
       }
     />
@@ -382,12 +387,14 @@ function CompletePhase({
 interface InterviewScreenProps {
   defaultRole?: string;
   onDiscussCoach?: () => void;
+  onViewHistory?: () => void;
   insetsBottom?: number;
 }
 
 export function InterviewScreen({
   defaultRole = "",
   onDiscussCoach,
+  onViewHistory,
   insetsBottom = 0,
 }: InterviewScreenProps) {
   const engine = useInterviewEngine();
@@ -460,6 +467,10 @@ export function InterviewScreen({
     onDiscussCoach?.();
   }, [sendInterviewContext, onDiscussCoach]);
 
+  const handleViewHistory = useCallback(() => {
+    onViewHistory?.();
+  }, [onViewHistory]);
+
   // Session Restore Modal built seamlessly into view
   if (savedSession && engine.phase === "idle") {
     return (
@@ -517,6 +528,7 @@ export function InterviewScreen({
         averageScore={engine.averageScore}
         onReset={handleReset}
         onDiscussCoach={handleDiscuss}
+        onViewHistory={handleViewHistory}
       />
     );
   }

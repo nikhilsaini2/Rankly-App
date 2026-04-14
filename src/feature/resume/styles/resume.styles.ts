@@ -9,8 +9,10 @@ export const resumeStyles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingBottom: 12,
+    // paddingTop is set dynamically via insets.top in the screen
   },
   headerTitle: {
     fontSize: 20,
@@ -81,7 +83,7 @@ export const resumeStyles = StyleSheet.create({
   stepMeta: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 12,
   },
   stepMetaText: {
     fontSize: 12,
@@ -100,8 +102,8 @@ export const resumeStyles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.06)",
-    padding: 16,
-    marginBottom: 20,
+    padding: 14,
+    marginBottom: 16,
   },
   stepIconCircle: {
     width: 44,
@@ -130,11 +132,11 @@ export const resumeStyles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.06)",
-    padding: 20,
-    marginBottom: 20,
+    padding: 16,
+    marginBottom: 16,
   },
   fieldGroup: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   fieldLabel: {
     fontSize: 12,
@@ -147,6 +149,7 @@ export const resumeStyles = StyleSheet.create({
   required: {
     color: colors.accent,
   },
+  // ─── Input system ────────────────────────────────────────────────
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
@@ -154,13 +157,29 @@ export const resumeStyles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingHorizontal: 14,
-    height: 52,
+    paddingHorizontal: 12,
+    height: 48,
+    overflow: "hidden",
+  },
+  inputIconContainer: {
+    width: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
   inputIcon: {
-    marginRight: 10,
+    // kept for backward compat — use inputIconContainer instead
+  },
+  inputSingleLine: {
+    flex: 1,
+    fontSize: 15,
+    color: colors.textPrimary,
+    height: 48,
+    paddingVertical: 0,
+    paddingHorizontal: 4,
   },
   inputWithIcon: {
+    // alias — kept for backward compat
     flex: 1,
     fontSize: 15,
     color: colors.textPrimary,
@@ -173,15 +192,19 @@ export const resumeStyles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingHorizontal: 14,
-    paddingTop: 14,
-    minHeight: 100,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 12,
+    minHeight: 96,
   },
   inputMultiline: {
     flex: 1,
     fontSize: 15,
     color: colors.textPrimary,
     textAlignVertical: "top",
+    paddingHorizontal: 4,
+    paddingVertical: 0,
+    minHeight: 72,
   },
   fieldHint: {
     fontSize: 12,
@@ -280,7 +303,7 @@ export const resumeStyles = StyleSheet.create({
   navButtons: {
     flexDirection: "row",
     gap: 12,
-    paddingTop: 8,
+    marginTop: 24,
     paddingBottom: 32,
   },
   backButton: {
@@ -322,7 +345,8 @@ export const resumeStyles = StyleSheet.create({
     flex: 1,
   },
   scrollContentContainer: {
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingTop: 12,
     paddingBottom: 0,
   },
   resultsScroll: {

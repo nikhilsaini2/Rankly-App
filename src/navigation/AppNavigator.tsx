@@ -1,33 +1,16 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
-import { Platform, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Platform } from "react-native";
 import PdfViewerScreen from "../screens/PdfViewer";
 import ATSScoreScreen from "../feature/resume/screens/ATSScoreScreen";
 import ResumeBuilderScreen from "../feature/resume/screens/ResumeBuilderScreen";
+import ImprovedResumePreviewScreen from "../feature/resume/screens/ImprovedResumePreviewScreen";
+import InterviewHistoryScreen from "../feature/interview/screens/InterviewHistoryScreen";
 import SalaryNegotiationScreen from "../screens/salary/SalaryNegotiationScreen";
 import type { RootStackParamList } from "../types/navigation.types";
 import { BottomTabs } from "./BottomTabs";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-
-function ScreenWrapper({ children }: { children: React.ReactNode }) {
-  const insets = useSafeAreaInsets();
-  const bottomInset =
-    Platform.OS === "android" ? Math.max(insets.bottom, 48) : insets.bottom;
-
-  return (
-    <View style={{ flex: 1, paddingBottom: bottomInset }}>{children}</View>
-  );
-}
-
-function withScreenWrapper<P extends object>(Screen: React.ComponentType<P>) {
-  return (props: P) => (
-    <ScreenWrapper>
-      <Screen {...props} />
-    </ScreenWrapper>
-  );
-}
 
 export const AppNavigator = () => {
   return (
@@ -40,22 +23,56 @@ export const AppNavigator = () => {
       <Stack.Screen name="Tabs" component={BottomTabs} />
       <Stack.Screen
         name="AtsScore"
-        component={withScreenWrapper(ATSScoreScreen)}
+        component={ATSScoreScreen}
+        options={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
       />
       <Stack.Screen
         name="SalaryNegotiation"
-        component={withScreenWrapper(SalaryNegotiationScreen)}
-        options={{ headerShown: false, presentation: "fullScreenModal" }}
+        component={SalaryNegotiationScreen}
+        options={{
+          headerShown: false,
+          // fullScreenModal on iOS, slide_from_bottom on Android to prevent tab bar flicker
+          presentation: Platform.OS === "ios" ? "fullScreenModal" : "card",
+          animation: "slide_from_bottom",
+        }}
       />
       <Stack.Screen
         name="ResumeBuilder"
-        component={withScreenWrapper(ResumeBuilderScreen)}
-        options={{ headerShown: false, presentation: "fullScreenModal" }}
+        component={ResumeBuilderScreen}
+        options={{
+          headerShown: false,
+          // fullScreenModal on iOS, slide_from_bottom on Android to prevent tab bar flicker
+          presentation: Platform.OS === "ios" ? "fullScreenModal" : "card",
+          animation: "slide_from_bottom",
+        }}
       />
       <Stack.Screen
         name="PdfViewer"
-        component={withScreenWrapper(PdfViewerScreen)}
-        options={{ headerShown: false }}
+        component={PdfViewerScreen}
+        options={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
+      />
+      <Stack.Screen
+        name="ImprovedResumePreview"
+        component={ImprovedResumePreviewScreen}
+        options={{
+          headerShown: false,
+          presentation: Platform.OS === "ios" ? "fullScreenModal" : "card",
+          animation: "slide_from_bottom",
+        }}
+      />
+      <Stack.Screen
+        name="InterviewHistory"
+        component={InterviewHistoryScreen}
+        options={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
       />
     </Stack.Navigator>
   );

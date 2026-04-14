@@ -17,6 +17,7 @@ import type {
 } from "../types/interview.types";
 import NetInfo from "@react-native-community/netinfo";
 import { saveSession, clearSession } from "../services/storage";
+import { saveInterview } from "../services/interviewStorage";
 import type { PersistedSession } from "../services/storage";
 
 const INITIAL_STATE: InterviewEngineState = {
@@ -367,6 +368,14 @@ export function useInterviewEngine(): InterviewEngine {
       }
 
       dispatch({ type: "EVALUATION_COMPLETE_ALL", answers: finalAnswers });
+
+      // Persist completed session to interview history
+      try {
+        await saveInterview(state.sessionConfig, finalAnswers);
+      } catch (err) {
+        console.warn("[InterviewEngine] Failed to save interview history", err);
+        // Non-fatal — session still completes normally
+      }
     } catch {
       dispatch({ type: "SET_ERROR", error: "Evaluation failed. Please try again." });
     } finally {

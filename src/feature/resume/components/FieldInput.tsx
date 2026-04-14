@@ -1,45 +1,51 @@
-import React from 'react'
-import { View, Text, TextInput, TextInputProps } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
-import { colors } from '../../../theme/color'
-import { resumeStyles } from '../styles/resume.styles'
+import { Ionicons } from '@expo/vector-icons';
+import React, { memo } from 'react';
+import { Platform, Text, TextInput, TextInputProps, TextStyle, View } from 'react-native';
+import { colors } from '../../../theme/color';
+import { resumeStyles } from '../styles/resume.styles';
 
 interface FieldInputProps extends TextInputProps {
-  label: string
-  icon: string
-  required?: boolean
-  multiline?: boolean
+  label: string;
+  icon: string;
+  required?: boolean;
+  multiline?: boolean;
 }
 
-export const FieldInput: React.FC<FieldInputProps> = ({
-  label, icon, required, multiline, ...props
+// Android-only style applied conditionally — keeps strict typing intact
+const androidFontStyle: TextStyle =
+  Platform.OS === 'android' ? { includeFontPadding: false } : {};
+
+export const FieldInput: React.FC<FieldInputProps> = memo(({
+  label, icon, required, multiline, style, onBlur, ...props
 }) => (
   <View style={resumeStyles.fieldGroup}>
-    <Text style={resumeStyles.fieldLabel}>
+    <Text
+      style={resumeStyles.fieldLabel}
+      allowFontScaling={false}
+      accessibilityRole="text"
+    >
       {label}
-      {required && (
-        <Text style={resumeStyles.required}> *</Text>
-      )}
+      {required && <Text style={resumeStyles.required}> *</Text>}
     </Text>
-    <View style={[
-      resumeStyles.inputWrapper,
-      multiline && resumeStyles.inputWrapperMultiline,
-    ]}>
-      <Ionicons
-        name={icon as any}
-        size={16}
-        color={colors.textMuted}
-        style={resumeStyles.inputIcon}
-      />
+    <View style={multiline ? resumeStyles.inputWrapperMultiline : resumeStyles.inputWrapper}>
+      <View style={resumeStyles.inputIconContainer}>
+        <Ionicons name={icon as any} size={16} color={colors.textMuted} />
+      </View>
       <TextInput
         style={[
-          resumeStyles.inputWithIcon,
-          multiline && resumeStyles.inputMultiline,
+          multiline ? resumeStyles.inputMultiline : resumeStyles.inputSingleLine,
+          androidFontStyle,
+          style,
         ]}
         placeholderTextColor={colors.textMuted}
         multiline={multiline}
+        scrollEnabled={multiline}
+        textAlignVertical={multiline ? 'top' : 'center'}
+        allowFontScaling={false}
+        numberOfLines={multiline ? undefined : 1}
+        onBlur={onBlur}
         {...props}
       />
     </View>
   </View>
-)
+));

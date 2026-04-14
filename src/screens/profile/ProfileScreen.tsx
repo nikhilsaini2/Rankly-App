@@ -283,6 +283,10 @@ export default function ProfileScreen() {
     [],
   );
 
+  const handleInterviewHistoryPress = useCallback(
+    () => navigation.navigate("InterviewHistory"),
+    [navigation],
+  );
   const fullName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
   const initials = getInitials(user?.firstName, user?.lastName);
   const planLabel = (user?.plan === "pro" ? "Pro" : "Free").toUpperCase();
@@ -364,7 +368,11 @@ export default function ProfileScreen() {
             <StatsStrip statsDisplay={statsDisplay} />
             <BioCard user={user} />
 
-            <SettingsCard notif={notif} onToggleNotif={onToggleNotif} />
+            <SettingsCard
+              notif={notif}
+              onToggleNotif={onToggleNotif}
+              onInterviewHistoryPress={handleInterviewHistoryPress}
+            />
             <DangerZone appVersion={appVersion} />
           </>
         )}
