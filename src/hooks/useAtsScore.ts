@@ -1,5 +1,5 @@
+import * as FileSystem from "expo-file-system/legacy";
 import { useCallback, useState } from "react";
-import * as FileSystem from "expo-file-system";
 import {
   generateGeminiTextWithRetry,
   parseGeminiJson,
@@ -131,7 +131,7 @@ async function extractTextFromStorageFile(
   // Wrap only the Gemini fetch and response parsing — let all other errors propagate naturally
   try {
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -152,7 +152,11 @@ async function extractTextFromStorageFile(
 
     if (!geminiResponse.ok) {
       const errBody = await geminiResponse.text().catch(() => "");
-      console.error("[extractTextFromStorageFile] Gemini HTTP error:", geminiResponse.status, errBody);
+      console.error(
+        "[extractTextFromStorageFile] Gemini HTTP error:",
+        geminiResponse.status,
+        errBody,
+      );
       throw new Error("GEMINI_API_ERROR");
     }
 
@@ -161,7 +165,10 @@ async function extractTextFromStorageFile(
       geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
 
     if (!extractedText || extractedText.trim().length === 0) {
-      console.error("[extractTextFromStorageFile] Gemini returned empty text. Full response:", JSON.stringify(geminiData).slice(0, 500));
+      console.error(
+        "[extractTextFromStorageFile] Gemini returned empty text. Full response:",
+        JSON.stringify(geminiData).slice(0, 500),
+      );
       throw new Error("GEMINI_API_ERROR");
     }
 
