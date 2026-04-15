@@ -188,7 +188,7 @@ export const styles = StyleSheet.create({
   },
 
   ctaContainer: {
-    marginTop: 30,
+    // marginTop: 30,
   },
 
   loadingContainer: {
@@ -199,6 +199,7 @@ export const styles = StyleSheet.create({
 
   ghostBtn: {
     marginTop: 20,
+    marginBottom: 40,
     padding: 18,
     borderRadius: 20,
     alignItems: "center",

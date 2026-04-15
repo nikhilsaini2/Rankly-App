@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import * as FileSystem from "expo-file-system";
 import {
   generateGeminiText,
   parseGeminiJson,
@@ -103,24 +104,21 @@ async function extractTextFromStorageFile(
     throw new Error("Could not get signed URL for file");
   }
 
-  // Download the file
-  const response = await fetch(signedUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to download file: ${response.status}`);
+  // Download the file to a temp path and read as base64
+  // FileReader is not reliable on real Android devices (Hermes engine)
+  const tempPath = `${FileSystem.cacheDirectory}resume_${Date.now()}.pdf`;
+  const downloadResult = await FileSystem.downloadAsync(signedUrl, tempPath);
+
+  if (downloadResult.status !== 200) {
+    throw new Error(`Failed to download file: ${downloadResult.status}`);
   }
 
-  const blob = await response.blob();
-
-  // Convert blob to base64
-  const base64 = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      resolve(result.split(",")[1]); // strip "data:...;base64," prefix
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
+  const base64 = await FileSystem.readAsStringAsync(tempPath, {
+    encoding: FileSystem.EncodingType.Base64,
   });
+
+  // Clean up temp file (non-blocking)
+  FileSystem.deleteAsync(tempPath, { idempotent: true }).catch(() => {});
 
   const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
   if (!apiKey) {

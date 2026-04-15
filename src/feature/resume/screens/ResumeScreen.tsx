@@ -9,6 +9,7 @@ import {
   FlatList,
   ScrollView,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import Reanimated, {
@@ -67,6 +68,8 @@ export default function ResumeScreen() {
   const [analyzeResumeId, setAnalyzeResumeId] = useState<string | null>(null);
   const [jobDescription, setJobDescription] = useState("");
   const [analyzingInProgress, setAnalyzingInProgress] = useState(false);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+  const [pendingAnalyzeId, setPendingAnalyzeId] = useState<string | null>(null);
   const didInitialLoad = useRef(false);
 
   const screenAnim = useSharedValue(0);
@@ -104,6 +107,7 @@ export default function ResumeScreen() {
 
   async function handleAnalyze(resumeId: string, jd?: string) {
     setAnalyzingInProgress(true);
+    setAnalyzeError(null);
     try {
       const mapped = await scoreResume(resumeId, jd);
       toast("ATS score ready", "success");
@@ -112,11 +116,12 @@ export default function ResumeScreen() {
         rootNav?.navigate("AtsScore", { resumeId, scoreId: mapped.id });
       }
     } catch (e) {
-      if (e instanceof Error && e.message === "GEMINI_API_ERROR") {
-        toast("AI processing failed. Try again later", "error");
-      } else {
-        toast("Could not score resume", "error");
-      }
+      const msg = e instanceof Error && e.message === "GEMINI_API_ERROR"
+        ? "AI processing failed. Try again later."
+        : "Could not score resume. Please try again.";
+      setAnalyzeError(msg);
+      setPendingAnalyzeId(resumeId);
+      toast(msg, "error");
     } finally {
       setAnalyzingInProgress(false);
     }
@@ -137,7 +142,7 @@ export default function ResumeScreen() {
 
       const uploaded = await uploadResume(file);
 
-      // Get the resume ID — either from the returned row or by fetching latest
+      // Resolve resume ID
       let resumeId: string | null = uploaded?.id ?? null;
       if (!resumeId) {
         const data = await fetchResumeScreenData();
@@ -145,6 +150,9 @@ export default function ResumeScreen() {
       }
 
       if (resumeId) {
+        // Refresh list BEFORE analyzing so the resume card is visible
+        // even if analysis fails — user won't see empty screen
+        await refreshData(true);
         setAnalyzingInProgress(true);
         await handleAnalyze(resumeId);
       } else {
@@ -188,6 +196,13 @@ export default function ResumeScreen() {
     setAnalyzeResumeId(id);
     setJobDescription("");
     setAnalyzeOpen(true);
+  }
+
+  async function retryAnalyze() {
+    if (!pendingAnalyzeId) return;
+    setAnalyzeError(null);
+    setAnalyzingInProgress(true);
+    await handleAnalyze(pendingAnalyzeId);
   }
 
   if (loading) {
@@ -332,6 +347,42 @@ export default function ResumeScreen() {
         </View>
 
         <ResumeAnalyzingOverlay visible={analyzingInProgress} />
+
+        {analyzeError && !analyzingInProgress && (
+          <View style={{
+            marginHorizontal: 16,
+            marginBottom: 12,
+            backgroundColor: "rgba(239,68,68,0.10)",
+            borderWidth: 1,
+            borderColor: "rgba(239,68,68,0.35)",
+            borderRadius: 14,
+            padding: 14,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+          }}>
+            <Ionicons name="warning-outline" size={18} color={colors.danger} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.danger, fontSize: 13, fontWeight: "600" }}>
+                Analysis failed
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
+                {analyzeError}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={retryAnalyze}
+              style={{
+                backgroundColor: colors.danger,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <FlatList
           data={resumes}
