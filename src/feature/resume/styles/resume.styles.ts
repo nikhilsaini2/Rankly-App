@@ -44,7 +44,7 @@ export const resumeStyles = StyleSheet.create({
     fontWeight: "700",
     color: colors.textPrimary,
     textAlign: "center",
-    marginBottom: 10,
+    marginVertical: 10,
     letterSpacing: -0.3,
   },
   loadingSubtitle: {

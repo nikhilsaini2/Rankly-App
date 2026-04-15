@@ -13,7 +13,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import {
@@ -125,7 +124,10 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 44 : 0}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+        >
           <View style={styles.container}>
             <ScrollView
               contentContainerStyle={{
@@ -343,7 +345,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
               </View>
             </ScrollView>
           </View>
-        </TouchableWithoutFeedback>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

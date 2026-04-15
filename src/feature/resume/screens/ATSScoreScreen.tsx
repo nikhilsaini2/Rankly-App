@@ -137,7 +137,7 @@ export default function AtsScoreScreen() {
   return (
     <Animated.View style={[{ flex: 1 }, screenAnim]}>
       <ScrollView
-        style={{ flex: 1 }}
+        style={{ flex: 1, paddingTop: 10 }}
         contentContainerStyle={{
           paddingHorizontal: 20,
           paddingBottom: bottomInset + 80, // extra room for sticky CTA

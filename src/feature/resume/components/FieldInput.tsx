@@ -11,12 +11,11 @@ interface FieldInputProps extends TextInputProps {
   multiline?: boolean;
 }
 
-// Android-only style applied conditionally — keeps strict typing intact
 const androidFontStyle: TextStyle =
   Platform.OS === 'android' ? { includeFontPadding: false } : {};
 
 export const FieldInput: React.FC<FieldInputProps> = memo(({
-  label, icon, required, multiline, style, onBlur, ...props
+  label, icon, required, multiline, style, onBlur, onFocus, ...props
 }) => (
   <View style={resumeStyles.fieldGroup}>
     <Text
@@ -44,6 +43,7 @@ export const FieldInput: React.FC<FieldInputProps> = memo(({
         allowFontScaling={false}
         numberOfLines={multiline ? undefined : 1}
         onBlur={onBlur}
+        onFocus={onFocus}
         {...props}
       />
     </View>

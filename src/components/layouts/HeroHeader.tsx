@@ -70,7 +70,7 @@ const heroStyles = StyleSheet.create({
     overflow: "hidden",
     position: "relative",
     marginBottom: 20,
-    paddingBottom: 4,
+    paddingVertical: 4,
   },
   heroGlow: {
     position: "absolute",

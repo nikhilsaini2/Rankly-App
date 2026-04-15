@@ -5,7 +5,7 @@ import type {
   ResumePhase,
 } from "../types/resume.types";
 
-const INITIAL_FORM_DATA = {
+export const INITIAL_FORM_DATA = {
   fullName: "",
   email: "",
   phone: "",
@@ -176,11 +176,28 @@ export function resumeEngineReducer(
         error: null,
       };
 
-    case "RESTORE_SESSION":
+    case "RESTORE_SESSION": {
+      const restored = action.state as Partial<ResumeEngineState> & { formData?: any };
+      const restoredFormData = restored.formData ?? {};
       return {
         ...state,
-        ...action.state,
+        phase: "input",
+        currentStep: typeof restored.currentStep === "number" ? restored.currentStep : 1,
+        inputTab: restored.inputTab ?? "form",
+        formData: {
+          ...INITIAL_FORM_DATA,
+          ...restoredFormData,
+          experiences:
+            Array.isArray(restoredFormData.experiences) && restoredFormData.experiences.length > 0
+              ? restoredFormData.experiences
+              : [{ ...EMPTY_EXPERIENCE }],
+        },
+        asyncStatus: "idle",
+        error: null,
+        generatedResume: null,
+        selectedResume: null,
       };
+    }
 
     case "RESET_BUILDER":
       return {

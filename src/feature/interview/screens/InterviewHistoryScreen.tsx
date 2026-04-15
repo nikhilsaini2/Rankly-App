@@ -220,7 +220,9 @@ export default function InterviewHistoryScreen() {
   }, [selectedReport, navigation]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View
+      style={{ flex: 1, backgroundColor: colors.background, paddingTop: 16 }}
+    >
       {/* Single header — owns all navigation for this screen */}
       <View
         style={{

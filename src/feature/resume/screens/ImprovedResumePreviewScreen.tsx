@@ -193,7 +193,10 @@ export default function ImprovedResumePreviewScreen() {
             formData: formShape,
           });
         } catch (err) {
-          console.warn("[ImprovedResumePreview] Failed to save to history", err);
+          console.warn(
+            "[ImprovedResumePreview] Failed to save to history",
+            err,
+          );
         }
       } catch (err: any) {
         if (!alive) return;
@@ -381,7 +384,9 @@ export default function ImprovedResumePreviewScreen() {
   const exp = r.generatedResume.enhancedExperiences;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View
+      style={{ flex: 1, backgroundColor: colors.background, paddingTop: 16 }}
+    >
       {/* Header */}
       <View
         style={{

@@ -22,7 +22,6 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = memo(({
   onDelete,
 }) => (
   <View style={resumeStyles.expCard}>
-    {/* Card header */}
     <View style={resumeStyles.expCardHeader}>
       <View style={resumeStyles.expCardNumber}>
         <Text style={resumeStyles.expCardNumberText}>{index + 1}</Text>
@@ -43,7 +42,6 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = memo(({
       )}
     </View>
 
-    {/* Required fields — jobTitle, company, duration */}
     <FieldInput
       label="Job Title"
       icon="briefcase-outline"
@@ -53,7 +51,6 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = memo(({
       placeholder="e.g. Senior Software Engineer"
       accessibilityLabel="Job title"
     />
-
     <FieldInput
       label="Company Name"
       icon="business-outline"
@@ -63,7 +60,6 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = memo(({
       placeholder="e.g. Google, Microsoft"
       accessibilityLabel="Company name"
     />
-
     <FieldInput
       label="Duration"
       icon="calendar-outline"
@@ -73,8 +69,6 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = memo(({
       placeholder="e.g. Jan 2022 – Mar 2024"
       accessibilityLabel="Employment duration"
     />
-
-    {/* Optional achievement fields */}
     <FieldInput
       label="Key Achievement 1"
       icon="checkmark-circle-outline"
@@ -83,7 +77,6 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = memo(({
       placeholder="e.g. Led team of 5 engineers..."
       accessibilityLabel="Key achievement one"
     />
-
     <FieldInput
       label="Key Achievement 2"
       icon="checkmark-circle-outline"

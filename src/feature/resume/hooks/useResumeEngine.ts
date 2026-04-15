@@ -6,6 +6,7 @@ import { generateGeminiTextWithRetry, parseGeminiJson } from "../../../services/
 import { supabase } from "../../../services/supabase";
 import { handleGeminiError } from "../../../utils/gemini";
 import { INITIAL_RESUME_STATE, resumeEngineReducer } from "../core/resumeReducer";
+import { EMPTY_EXPERIENCE } from "../constants/resume.constants";
 import type { GeneratedResume, ResumeEngineState } from "../types/resume.types";
 import { generateResumeHTML } from "../utils/resumeHTML";
 import { buildResumePrompt } from "../utils/resumePrompt";
@@ -19,34 +20,46 @@ import { saveResume } from "../../../services/resume/resumeHistoryStorage";
 const DRAFT_STORAGE_KEY = "@resume_builder_draft_v1";
 const DRAFT_VERSION = 2;
 
-// ─── Draft shape validation ───────────────────────────────────────────────────
-// Checks structural integrity — version, required fields, correct types.
-function isDraftStructurallyValid(parsed: any): boolean {
-  if (!parsed || typeof parsed !== "object") return false;
-  if (parsed.version !== DRAFT_VERSION) return false;
-  if (typeof parsed.lastSaved !== "number") return false;
-  if (!parsed.formData || typeof parsed.formData !== "object") return false;
-  const fd = parsed.formData;
-  if (typeof fd.fullName !== "string") return false;
-  if (typeof fd.email !== "string") return false;
-  if (!Array.isArray(fd.experiences)) return false;
-  return true;
+// ─── Draft migration ──────────────────────────────────────────────────────────
+// Handles version mismatches gracefully instead of discarding.
+function migrateDraft(raw: any): { formData: any; currentStep: number; inputTab: string } | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  const baseFormData = {
+    fullName: "", email: "", phone: "", linkedin: "", city: "",
+    targetRole: "", experienceLevel: "", industry: "", skills: "",
+    experiences: [{ ...EMPTY_EXPERIENCE }],
+    degree: "", institution: "", graduationYear: "", grade: "",
+    certifications: "", languages: "", tone: "", topAchievement: "",
+    targetCompanies: "", specialInstructions: "",
+  };
+
+  const rawFormData = raw.formData && typeof raw.formData === "object" ? raw.formData : {};
+
+  const experiences =
+    Array.isArray(rawFormData.experiences) && rawFormData.experiences.length > 0
+      ? rawFormData.experiences
+      : Array.isArray(raw.experiences) && raw.experiences.length > 0
+        ? raw.experiences
+        : [{ ...EMPTY_EXPERIENCE }];
+
+  return {
+    formData: { ...baseFormData, ...rawFormData, experiences },
+    currentStep: typeof raw.currentStep === "number" ? raw.currentStep : 1,
+    inputTab: raw.inputTab ?? "form",
+  };
 }
 
 // ─── Draft content validation ─────────────────────────────────────────────────
-// A draft is only worth offering to restore if it has at least ONE meaningful field.
-// Prevents the modal from showing for a blank/empty draft.
-function isDraftMeaningful(parsed: any): boolean {
-  const fd = parsed?.formData;
+function isDraftMeaningful(draft: { formData: any } | null): boolean {
+  const fd = draft?.formData;
   if (!fd) return false;
   return Boolean(
     fd.fullName?.trim() ||
     fd.email?.trim() ||
     fd.targetRole?.trim() ||
     fd.skills?.trim() ||
-    fd.experiences?.some((exp: any) =>
-      exp.jobTitle?.trim() || exp.company?.trim()
-    )
+    fd.experiences?.some((exp: any) => exp.jobTitle?.trim() || exp.company?.trim()),
   );
 }
 
@@ -114,69 +127,40 @@ export function useResumeEngine() {
     return userData?.user?.id || null;
   };
 
-  // ── peekDraft — read + validate without touching reducer state ───────────
-  // Use this to decide whether to show the restore modal.
-  // Does NOT dispatch anything — safe to call before user interaction.
   const peekDraft = useCallback(async (): Promise<boolean> => {
     try {
       const raw = await AsyncStorage.getItem(DRAFT_STORAGE_KEY);
       if (!raw) return false;
-
       let parsed: any;
-      try {
-        parsed = JSON.parse(raw);
-      } catch {
-        await AsyncStorage.removeItem(DRAFT_STORAGE_KEY);
-        console.warn("[ResumeEngine] Discarded corrupted draft (invalid JSON)");
-        return false;
-      }
-
-      if (!isDraftStructurallyValid(parsed)) {
-        await AsyncStorage.removeItem(DRAFT_STORAGE_KEY);
-        console.warn("[ResumeEngine] Discarded invalid draft (failed shape check)");
-        return false;
-      }
-
-      if (!isDraftMeaningful(parsed)) {
-        // Draft exists but is empty — silently discard, no modal needed
-        await AsyncStorage.removeItem(DRAFT_STORAGE_KEY);
-        console.log("[ResumeEngine] Draft discarded — no meaningful content");
-        return false;
-      }
-
-      console.log("[ResumeEngine] Valid meaningful draft found, lastSaved:", new Date(parsed.lastSaved).toISOString());
-      return true;
-    } catch (err) {
-      console.warn("[ResumeEngine] peekDraft failed", err);
+      try { parsed = JSON.parse(raw); } catch { return false; }
+      const draft = migrateDraft(parsed);
+      return isDraftMeaningful(draft);
+    } catch {
       return false;
     }
   }, []);
 
-  // ── applyDraft — load draft into reducer state ────────────────────────────
-  // Only call this AFTER user confirms they want to restore.
   const applyDraft = useCallback(async (): Promise<boolean> => {
     try {
       const raw = await AsyncStorage.getItem(DRAFT_STORAGE_KEY);
       if (!raw) return false;
-
       let parsed: any;
-      try {
-        parsed = JSON.parse(raw);
-      } catch {
-        await AsyncStorage.removeItem(DRAFT_STORAGE_KEY);
-        return false;
-      }
-
-      if (!isDraftStructurallyValid(parsed) || !isDraftMeaningful(parsed)) {
-        await AsyncStorage.removeItem(DRAFT_STORAGE_KEY);
-        return false;
-      }
-
-      dispatch({ type: "RESTORE_SESSION", state: parsed });
-      console.log("[ResumeEngine] Draft applied to state");
+      try { parsed = JSON.parse(raw); } catch { return false; }
+      const draft = migrateDraft(parsed);
+      if (!draft || !isDraftMeaningful(draft)) return false;
+      dispatch({
+        type: "RESTORE_SESSION",
+        state: {
+          formData: draft.formData,
+          currentStep: draft.currentStep,
+          inputTab: draft.inputTab as any,
+          phase: "input",
+          asyncStatus: "idle",
+          error: null,
+        },
+      });
       return true;
-    } catch (err) {
-      console.warn("[ResumeEngine] applyDraft failed", err);
+    } catch {
       return false;
     }
   }, []);

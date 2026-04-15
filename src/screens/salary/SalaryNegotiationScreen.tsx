@@ -862,7 +862,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               <Text style={styles.inputLabel}>Location (optional)</Text>
               <TextInput
                 style={styles.input}
-                placeholder="e.g. San Francisco, Bangalore, Remote"
+                placeholder="e.g. San Francisco, Remote"
                 placeholderTextColor={colors.textMuted}
                 value={location}
                 onChangeText={setLocation}

@@ -16,6 +16,7 @@
     },
     "android": {
       "package": "com.nikhil071.Rankly",
+      "softwareKeyboardLayoutMode": "pan",
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",

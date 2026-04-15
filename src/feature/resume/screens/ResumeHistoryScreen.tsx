@@ -178,7 +178,9 @@ export default function ResumeHistoryScreen() {
     Platform.OS === "android" ? Math.max(insets.bottom, 48) : insets.bottom;
 
   const { history, loading, fetchHistory, removeResume } = useResumeHistory();
-  const [selectedEntry, setSelectedEntry] = useState<ResumeHistoryEntry | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<ResumeHistoryEntry | null>(
+    null,
+  );
   const [processing, setProcessing] = useState(false);
   const [pdfUri, setPdfUri] = useState<string | null>(null);
   const isProcessingRef = useRef(false);
@@ -298,7 +300,9 @@ export default function ResumeHistoryScreen() {
 
   // ── History list ────────────────────────────────────────────────
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View
+      style={{ flex: 1, backgroundColor: colors.background, paddingTop: 16 }}
+    >
       {/* Header */}
       <View
         style={{

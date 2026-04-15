@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: "center", justifyContent: "center" },
 
   // ─── Header ───────────────────────────────────────────────
-  headerWrap: { paddingHorizontal: 20, marginBottom: 10 },
+  headerWrap: { paddingHorizontal: 20, marginBottom: 10, paddingTop: 10 },
   headerTopRow: {
     flexDirection: "row",
     alignItems: "center",

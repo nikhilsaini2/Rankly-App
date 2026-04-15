@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { NavigationProp } from "@react-navigation/native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import React, {
   useCallback,
@@ -10,13 +11,14 @@ import React, {
 import {
   ActivityIndicator,
   BackHandler,
+  KeyboardAvoidingView,
   Modal,
   Platform,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -28,6 +30,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useToast } from "../../../components/atoms/Toast";
 import { colors } from "../../../theme/color";
+import type { RootStackParamList } from "../../../types/navigation.types";
 import { ExperienceCard } from "../components/ExperienceCard";
 import { FieldInput } from "../components/FieldInput";
 import { PillSelector } from "../components/PillSelector";
@@ -632,26 +635,14 @@ export default function ResumeBuilderScreen() {
   const insets = useSafeAreaInsets();
   const bottomInset =
     Platform.OS === "android" ? Math.max(insets.bottom, 48) : insets.bottom;
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const engine = useResumeEngine();
   const { state, dispatch } = engine;
   const toast = useToast();
 
-  // ── Draft restore state ──────────────────────────────────────────
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const hasCheckedDraft = useRef(false);
   const hasUserInteracted = useRef(false);
-
-  // Mark interaction on any meaningful form change — cancels pending modal
-  useEffect(() => {
-    if (
-      state.formData.fullName ||
-      state.formData.email ||
-      state.formData.targetRole
-    ) {
-      hasUserInteracted.current = true;
-    }
-  }, [state.formData]);
 
   // Check draft ONCE on mount using peekDraft (no state mutation).
   // Only show modal if draft has meaningful content AND user hasn't typed anything.
@@ -693,8 +684,8 @@ export default function ResumeBuilderScreen() {
 
   // Resume Draft: NOW apply the draft to state, then close modal
   const handleResumeDraft = useCallback(async () => {
-    setShowRestoreModal(false);
     await engine.applyDraft();
+    setShowRestoreModal(false);
   }, [engine]);
 
   // Start Fresh: clear storage + reset state, close modal
@@ -785,12 +776,47 @@ export default function ResumeBuilderScreen() {
     }
   }, [state.asyncStatus, state.loadingMessage, dispatch]);
 
-  // ── Hardware back ────────────────────────────────────────────────
+  // ── Header + hardware back ───────────────────────────────────────
+  const goHomeAndReset = useCallback(() => {
+    engine.clearDraft();
+    dispatch({ type: "RESET_BUILDER" });
+    navigation.navigate("Tabs");
+  }, [engine, dispatch, navigation]);
+
+  const handleHeaderBack = useCallback(() => {
+    if (state.phase === "preview" || state.phase === "exported") {
+      if (state.selectedResume) {
+        dispatch({ type: "SET_PHASE", phase: "input" });
+        dispatch({ type: "SET_TAB", tab: "history" });
+      } else {
+        goHomeAndReset();
+      }
+      return;
+    }
+    engine.handleBack(() => navigation.goBack());
+  }, [
+    state.phase,
+    state.selectedResume,
+    engine,
+    dispatch,
+    navigation,
+    goHomeAndReset,
+  ]);
+
   useFocusEffect(
     useCallback(() => {
       const onBack = () => {
-        if (state.phase === "preview" || state.phase === "exported") {
-          dispatch({ type: "SET_PHASE", phase: "input" });
+        if (state.phase === "exported") {
+          goHomeAndReset();
+          return true;
+        }
+        if (state.phase === "preview") {
+          if (state.selectedResume) {
+            dispatch({ type: "SET_PHASE", phase: "input" });
+            dispatch({ type: "SET_TAB", tab: "history" });
+          } else {
+            goHomeAndReset();
+          }
           return true;
         }
         if (state.asyncStatus === "error") {
@@ -805,7 +831,15 @@ export default function ResumeBuilderScreen() {
       };
       const sub = BackHandler.addEventListener("hardwareBackPress", onBack);
       return () => sub.remove();
-    }, [state.phase, state.currentStep, state.asyncStatus, engine, dispatch]),
+    }, [
+      state.phase,
+      state.currentStep,
+      state.asyncStatus,
+      state.selectedResume,
+      engine,
+      dispatch,
+      goHomeAndReset,
+    ]),
   );
 
   // ── Next handler ─────────────────────────────────────────────────
@@ -822,7 +856,12 @@ export default function ResumeBuilderScreen() {
   // ── Error state ──────────────────────────────────────────────────
   if (state.asyncStatus === "error" && state.error) {
     return (
-      <View style={resumeStyles.loadingContainer}>
+      <View
+        style={[
+          resumeStyles.loadingContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <Ionicons
           name={
             state.error.type === "network"
@@ -845,10 +884,10 @@ export default function ResumeBuilderScreen() {
         >
           {state.error.message}
         </Text>
-        <View style={[resumeStyles.buttonRow, { marginTop: 24 }]}>
+        <View style={{ gap: 12, width: "100%" }}>
           {state.error.retryAction && (
             <TouchableOpacity
-              style={[resumeStyles.primaryButton, { marginRight: 8 }]}
+              style={resumeStyles.primaryButton}
               onPress={() => {
                 if (state.error?.retryAction === "generate")
                   engine.buildResume();
@@ -917,7 +956,7 @@ export default function ResumeBuilderScreen() {
         onAction={() =>
           engine.exportAndShare(() => toast("PDF ready to share ✓", "success"))
         }
-        onReset={() => dispatch({ type: "RESET_BUILDER" })}
+        onReset={goHomeAndReset}
         onBackToHistory={() => {
           dispatch({ type: "SET_PHASE", phase: "input" });
           dispatch({ type: "SET_TAB", tab: "history" });
@@ -941,7 +980,7 @@ export default function ResumeBuilderScreen() {
       <View style={resumeStyles.header}>
         <TouchableOpacity
           style={{ position: "absolute", left: 16, zIndex: 10, padding: 4 }}
-          onPress={() => engine.handleBack(() => navigation.goBack())}
+          onPress={handleHeaderBack}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
@@ -975,70 +1014,73 @@ export default function ResumeBuilderScreen() {
         </View>
       ) : (
         <>
-          <KeyboardAwareScrollView
-            style={resumeStyles.scrollContent}
-            contentContainerStyle={[
-              resumeStyles.scrollContentContainer,
-              { paddingBottom: 20 },
-            ]}
-            enableOnAndroid
-            enableAutomaticScroll
-            extraScrollHeight={24}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
           >
-            <StepIndicator
-              currentStep={state.currentStep}
-              totalSteps={TOTAL_STEPS}
-              stepTitle={STEP_TITLES[state.currentStep - 1]}
-            />
-            <StepTitleCard
-              icon={STEP_ICONS[state.currentStep - 1]}
-              title={STEP_TITLES[state.currentStep - 1]}
-              subtitle={STEP_SUBTITLES[state.currentStep - 1]}
-            />
+            <ScrollView
+              style={resumeStyles.scrollContent}
+              contentContainerStyle={[
+                resumeStyles.scrollContentContainer,
+                { paddingBottom: bottomInset + 80 },
+              ]}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <StepIndicator
+                currentStep={state.currentStep}
+                totalSteps={TOTAL_STEPS}
+                stepTitle={STEP_TITLES[state.currentStep - 1]}
+              />
+              <StepTitleCard
+                icon={STEP_ICONS[state.currentStep - 1]}
+                title={STEP_TITLES[state.currentStep - 1]}
+                subtitle={STEP_SUBTITLES[state.currentStep - 1]}
+              />
 
-            {state.currentStep === 1 && (
-              <Step1
-                state={state.formData}
-                dispatch={dispatch}
-                errors={visibleErrors}
-                markTouched={markTouched}
-              />
-            )}
-            {state.currentStep === 2 && (
-              <Step2
-                state={state.formData}
-                dispatch={dispatch}
-                errors={visibleErrors}
-                markTouched={markTouched}
-              />
-            )}
-            {state.currentStep === 3 && (
-              <Step3
-                state={state.formData}
-                dispatch={dispatch}
-                errors={visibleErrors}
-                markTouched={markTouched}
-              />
-            )}
-            {state.currentStep === 4 && (
-              <Step4
-                state={state.formData}
-                dispatch={dispatch}
-                errors={visibleErrors}
-                markTouched={markTouched}
-              />
-            )}
-            {state.currentStep === 5 && (
-              <Step5
-                state={state.formData}
-                dispatch={dispatch}
-                errors={visibleErrors}
-                markTouched={markTouched}
-              />
-            )}
-          </KeyboardAwareScrollView>
+              {state.currentStep === 1 && (
+                <Step1
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+              {state.currentStep === 2 && (
+                <Step2
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+              {state.currentStep === 3 && (
+                <Step3
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+              {state.currentStep === 4 && (
+                <Step4
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+              {state.currentStep === 5 && (
+                <Step5
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+            </ScrollView>
+          </KeyboardAvoidingView>
 
           {/* Fixed footer — always visible, never scrolls */}
           <View

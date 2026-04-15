@@ -13,7 +13,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import {
@@ -127,7 +126,10 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 44 : 0}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+        >
           <View style={styles.container}>
             <ScrollView
               contentContainerStyle={{
@@ -516,7 +518,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
               </View>
             </ScrollView>
           </View>
-        </TouchableWithoutFeedback>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
