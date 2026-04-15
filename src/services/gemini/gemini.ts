@@ -60,9 +60,9 @@ export type GeminiChatTurn = {
 };
 
 // ─── Global rate limiter ──────────────────────────────────────
-// Free tier: ~15 RPM = 1 request per 4 seconds safe limit
+// Free tier: 15 RPM — 1 request per 4s is safe
 let lastRequestTime = 0;
-const MIN_REQUEST_GAP_MS = 6500; // 10 RPM free tier + 500ms safety margin
+const MIN_REQUEST_GAP_MS = 1000; // 1s gap — extraction uses direct fetch, scoring uses SDK
 const requestQueue: Array<() => void> = [];
 let isProcessingQueue = false;
 
@@ -74,20 +74,24 @@ async function waitForRateLimit(): Promise<void> {
 }
 
 async function processQueue(): Promise<void> {
+  if (isProcessingQueue) return; // already running — don't double-enter
   isProcessingQueue = true;
-  while (requestQueue.length > 0) {
-    const now = Date.now();
-    const elapsed = now - lastRequestTime;
-    if (elapsed < MIN_REQUEST_GAP_MS) {
-      await new Promise((res) => setTimeout(res, MIN_REQUEST_GAP_MS - elapsed));
+  try {
+    while (requestQueue.length > 0) {
+      const now = Date.now();
+      const elapsed = now - lastRequestTime;
+      if (elapsed < MIN_REQUEST_GAP_MS) {
+        await new Promise((res) => setTimeout(res, MIN_REQUEST_GAP_MS - elapsed));
+      }
+      const next = requestQueue.shift();
+      if (next) {
+        lastRequestTime = Date.now();
+        next();
+      }
     }
-    const next = requestQueue.shift();
-    if (next) {
-      lastRequestTime = Date.now();
-      next();
-    }
+  } finally {
+    isProcessingQueue = false;
   }
-  isProcessingQueue = false;
 }
 
 // ─── Response cache ───────────────────────────────────────────
@@ -160,7 +164,7 @@ export async function generateGeminiText(
     const model = genAI.getGenerativeModel({
       model: modelName,
       generationConfig: {
-        temperature: 1,
+        temperature: 0.4,
         topP: 0.95,
         topK: 40,
         maxOutputTokens: 1024,

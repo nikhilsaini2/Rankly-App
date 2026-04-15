@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import * as FileSystem from "expo-file-system";
 import {
-  generateGeminiText,
+  generateGeminiTextWithRetry,
   parseGeminiJson,
 } from "../services/gemini";
 import { buildAtsScorePrompt } from "../services/gemini/prompts";
@@ -46,19 +46,8 @@ function parseAtsResponse(raw: string): GeminiAts {
 
   try {
     const parsed = parseGeminiJson<GeminiAts>(raw);
-    console.log("[scoreResume] Parsed ATS response:", {
-      overall_score: parsed.overall_score,
-      keyword_score: parsed.keyword_score,
-      format_score: parsed.format_score,
-      content_score: parsed.content_score,
-      readability_score: parsed.readability_score,
-      keywords_found_count: parsed.keywords_found?.length || 0,
-      keywords_missing_count: parsed.keywords_missing?.length || 0,
-      has_ai_summary: !!parsed.ai_summary,
-      has_feedback: !!parsed.feedback,
-    });
 
-    // Validate required fields
+    // Validate the one truly required field
     if (
       typeof parsed.overall_score !== "number" ||
       parsed.overall_score < 0 ||
@@ -69,15 +58,21 @@ function parseAtsResponse(raw: string): GeminiAts {
       );
     }
 
-    if (!parsed.ai_summary || typeof parsed.ai_summary !== "string") {
-      throw new Error("Missing or invalid ai_summary field");
-    }
-
-    if (!parsed.feedback || typeof parsed.feedback !== "object") {
-      throw new Error("Missing or invalid feedback field");
-    }
-
-    return parsed;
+    // Apply safe fallbacks for optional fields Gemini sometimes omits
+    return {
+      overall_score: parsed.overall_score,
+      keyword_score: parsed.keyword_score ?? parsed.overall_score,
+      format_score: parsed.format_score ?? parsed.overall_score,
+      content_score: parsed.content_score ?? parsed.overall_score,
+      readability_score: parsed.readability_score ?? parsed.overall_score,
+      keywords_found: parsed.keywords_found ?? [],
+      keywords_missing: parsed.keywords_missing ?? [],
+      ai_summary: parsed.ai_summary || "Resume analyzed successfully.",
+      feedback: {
+        strengths: parsed.feedback?.strengths ?? [],
+        improvements: parsed.feedback?.improvements ?? [],
+      },
+    };
   } catch (parseError) {
     console.error("[scoreResume] JSON parse failed:", {
       error:
@@ -156,6 +151,8 @@ async function extractTextFromStorageFile(
     );
 
     if (!geminiResponse.ok) {
+      const errBody = await geminiResponse.text().catch(() => "");
+      console.error("[extractTextFromStorageFile] Gemini HTTP error:", geminiResponse.status, errBody);
       throw new Error("GEMINI_API_ERROR");
     }
 
@@ -164,6 +161,7 @@ async function extractTextFromStorageFile(
       geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
 
     if (!extractedText || extractedText.trim().length === 0) {
+      console.error("[extractTextFromStorageFile] Gemini returned empty text. Full response:", JSON.stringify(geminiData).slice(0, 500));
       throw new Error("GEMINI_API_ERROR");
     }
 
@@ -178,6 +176,7 @@ async function extractTextFromStorageFile(
 
     return extractedText;
   } catch (err) {
+    console.error("[extractTextFromStorageFile] Gemini call failed:", err);
     throw new Error("GEMINI_API_ERROR");
   }
 }
@@ -279,13 +278,13 @@ export function useAtsScore() {
         );
         console.log("[scoreResume] Prompt built, sending to Gemini...");
 
-        const raw = await generateGeminiText(prompt);
+        const raw = await generateGeminiTextWithRetry(prompt, 1, 3000);
         console.log(
           "[scoreResume] Gemini API Response preview:",
           raw.slice(0, 500),
         );
         console.log("[scoreResume] Gemini response received, parsing...");
-        const parsed = parseGeminiJson<GeminiAts>(raw);
+        const parsed = parseAtsResponse(raw);
 
         // Validate and cap scores at 100
         const validatedScore = Math.min(100, Math.max(0, parsed.overall_score));

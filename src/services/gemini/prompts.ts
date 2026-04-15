@@ -5,7 +5,6 @@ export function buildAtsScorePrompt(
   fileName: string,
   jobDescription?: string,
 ): string {
-  // Truncate inputs to stay under 800 chars total
   const truncatedResume = resumeText.slice(0, 1000);
   const truncatedJob = jobDescription?.slice(0, 300) || "";
 
