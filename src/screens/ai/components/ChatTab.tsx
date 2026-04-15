@@ -260,7 +260,7 @@ function InputBar({
       <TextInput
         style={[styles.input, focused && styles.inputFocused]}
         placeholder="Ask your career coach..."
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={colors.placeholder}
         value={input}
         onChangeText={setInput}
         onFocus={() => setFocused(true)}

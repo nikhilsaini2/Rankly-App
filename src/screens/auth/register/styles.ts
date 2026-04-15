@@ -67,7 +67,7 @@ export const styles = StyleSheet.create({
   },
 
   label: {
-    color: colors.textMuted,
+    color: colors.inputLabel,
     fontSize: 10,
     marginBottom: 6,
     marginTop: 10,

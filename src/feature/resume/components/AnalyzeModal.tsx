@@ -108,7 +108,7 @@ export function AnalyzeModal({
                   <TextInput
                     style={modalStyles.input}
                     placeholder="Paste the job description here for a more accurate keyword and relevance score…"
-                    placeholderTextColor={colors.textMuted}
+                    placeholderTextColor={colors.placeholder}
                     value={jobDescription}
                     onChangeText={onChangeText}
                     multiline

@@ -11,9 +11,25 @@ import { styles } from "../styles";
 
 interface DangerZoneProps {
   appVersion: string;
+  onError?: (message: string) => void;
+  onSuccess?: (message: string) => void;
 }
 
-export function DangerZone({ appVersion }: DangerZoneProps) {
+export function DangerZone({ appVersion, onError, onSuccess }: DangerZoneProps) {
+  async function handleDeleteAccount() {
+    try {
+      await deleteUserAccountData();
+      onSuccess?.("Account deleted successfully.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Account deletion failed";
+      if (msg.includes("AUTH_SESSION_MISSING")) {
+        onError?.("Session expired. Please login again.");
+      } else {
+        onError?.("Could not delete account. Try again.");
+      }
+    }
+  }
+
   return (
     <Animated.View style={[styles.dangerWrap]}>
       <Pressable
@@ -33,20 +49,14 @@ export function DangerZone({ appVersion }: DangerZoneProps) {
       <Pressable
         onPress={() =>
           Alert.alert(
-            "Delete account",
-            "This removes your Rankly profile data from this device session. You may need to contact support to fully remove your auth account.",
+            "Delete Account",
+            "This will permanently delete your account and all data. You will not be able to log in again.",
             [
               { text: "Cancel", style: "cancel" },
               {
                 text: "Delete",
                 style: "destructive",
-                onPress: async () => {
-                  try {
-                    await deleteUserAccountData();
-                  } catch {
-                    Alert.alert("Could not delete account data");
-                  }
-                },
+                onPress: handleDeleteAccount,
               },
             ],
           )

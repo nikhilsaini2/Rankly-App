@@ -22,6 +22,8 @@ export const colors = {
   textPrimary: "#FAF9FF",
   textSecondary: "#A09ABA",
   textMuted: "#6B6480",
+  inputLabel: "#bbb9c4",
+  placeholder: "#99969c",
 
   border: "#2A2440",
   borderStrong: "rgba(139, 92, 246, 0.5)",

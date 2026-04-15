@@ -93,16 +93,36 @@ export const logout = async () => {
 };
 
 export const deleteUserAccountData = async (): Promise<void> => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
+  // getUser() validates the token server-side and triggers a refresh if needed
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    throw new Error("AUTH_SESSION_MISSING");
+  }
 
-  const { error } = await supabase
-    .from("users")
-    .delete()
-    .eq("auth_id", user.id);
-  if (error) throw error;
+  // getSession() now returns a fresh token after getUser() has validated/refreshed it
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("AUTH_SESSION_MISSING");
+  }
+
+  const response = await fetch(
+    "https://zsamkcmvshjgtzljqvok.supabase.co/functions/v1/delete-user-account",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`,
+        "apikey": process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
+      },
+      body: JSON.stringify({ userId: user.id }),
+    },
+  );
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(err || "DELETE_FAILED");
+  }
+
   await supabase.auth.signOut();
 };
 

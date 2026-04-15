@@ -91,7 +91,7 @@ function InterviewInputComponent({
         multiline
         editable={isReady || isRecording}
         placeholder="Type your answer here or tap the mic to speak…"
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={colors.placeholder}
         value={transcript}
         onChangeText={onTranscriptChange}
         style={[s.answerInput, isRecording && s.answerInputRecording]}

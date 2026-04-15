@@ -1,12 +1,11 @@
 import { useCallback, useState } from "react";
 import {
-  generateGeminiTextWithRetry,
+  generateGeminiText,
   parseGeminiJson,
 } from "../services/gemini";
 import { buildAtsScorePrompt } from "../services/gemini/prompts";
 import { supabase } from "../services/supabase/supabase";
 import type { AtsScoreRow } from "../types/common.types";
-import { handleGeminiError } from "../utils/gemini";
 
 type GeminiAts = {
   overall_score: number;
@@ -92,51 +91,52 @@ async function extractTextFromStorageFile(
   fileUrl: string,
   fileName: string,
 ): Promise<string> {
+  console.log("[extractTextFromStorageFile] Downloading file:", fileName);
+
+  // Get signed URL from Supabase Storage
+  const { data } = await supabase.storage
+    .from("resumes")
+    .createSignedUrl(fileUrl, 60); // 60 seconds expiry
+
+  const signedUrl = data?.signedUrl;
+  if (!signedUrl) {
+    throw new Error("Could not get signed URL for file");
+  }
+
+  // Download the file
+  const response = await fetch(signedUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to download file: ${response.status}`);
+  }
+
+  const blob = await response.blob();
+
+  // Convert blob to base64
+  const base64 = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(",")[1]); // strip "data:...;base64," prefix
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
+  const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_ERROR");
+  }
+
+  const mimeType = fileName?.endsWith(".pdf")
+    ? "application/pdf"
+    : "application/octet-stream";
+
+  console.log(
+    "[extractTextFromStorageFile] Sending to Gemini for extraction...",
+  );
+
+  // Wrap only the Gemini fetch and response parsing — let all other errors propagate naturally
   try {
-    console.log("[extractTextFromStorageFile] Downloading file:", fileName);
-
-    // Get signed URL from Supabase Storage
-    const { data } = await supabase.storage
-      .from("resumes")
-      .createSignedUrl(fileUrl, 60); // 60 seconds expiry
-
-    const signedUrl = data?.signedUrl;
-    if (!signedUrl) {
-      throw new Error("Could not get signed URL for file");
-    }
-
-    // Download the file
-    const response = await fetch(signedUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to download file: ${response.status}`);
-    }
-
-    const blob = await response.blob();
-
-    // Convert blob to base64
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        resolve(result.split(",")[1]); // strip "data:...;base64," prefix
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-
-    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("Gemini API key not available");
-    }
-
-    const mimeType = fileName?.endsWith(".pdf")
-      ? "application/pdf"
-      : "application/octet-stream";
-
-    console.log(
-      "[extractTextFromStorageFile] Sending to Gemini for extraction...",
-    );
-
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
@@ -158,15 +158,16 @@ async function extractTextFromStorageFile(
     );
 
     if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      throw new Error(
-        `Gemini extraction failed: ${geminiResponse.status} - ${errorText.slice(0, 200)}`,
-      );
+      throw new Error("GEMINI_API_ERROR");
     }
 
     const geminiData = await geminiResponse.json();
     const extractedText =
       geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
+
+    if (!extractedText || extractedText.trim().length === 0) {
+      throw new Error("GEMINI_API_ERROR");
+    }
 
     console.log(
       "[extractTextFromStorageFile] Extracted text length:",
@@ -179,8 +180,7 @@ async function extractTextFromStorageFile(
 
     return extractedText;
   } catch (err) {
-    console.error("[extractTextFromStorageFile] failed:", err);
-    return "";
+    throw new Error("GEMINI_API_ERROR");
   }
 }
 
@@ -229,10 +229,6 @@ export function useAtsScore() {
             res.file_url as string,
             (res.file_name as string) || "resume.pdf",
           );
-
-          if (!resumeContent) {
-            throw new Error("EMPTY_RESUME");
-          }
 
           // Save extracted text and update status
           console.log(
@@ -285,7 +281,7 @@ export function useAtsScore() {
         );
         console.log("[scoreResume] Prompt built, sending to Gemini...");
 
-        const raw = await generateGeminiTextWithRetry(prompt, 1);
+        const raw = await generateGeminiText(prompt);
         console.log(
           "[scoreResume] Gemini API Response preview:",
           raw.slice(0, 500),
@@ -383,7 +379,6 @@ export function useAtsScore() {
         setScore(mapped);
         return mapped;
       } catch (e: unknown) {
-        handleGeminiError(e, () => scoreResume(resumeId, jobDescription));
         const message = e instanceof Error ? e.message : String(e);
         console.error("[scoreResume] FULL ERROR:", {
           message,

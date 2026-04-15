@@ -23,7 +23,7 @@ export const Input = ({ label, rightIcon, ...props }: Props) => {
       <View style={[styles.inputContainer, focused && styles.inputFocused]}>
         <TextInput
           {...props}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholder}
           style={styles.input}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}

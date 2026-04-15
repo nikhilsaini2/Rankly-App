@@ -137,7 +137,7 @@ export function EditProfileForm({
       <TextInput
         style={styles.inputArea}
         placeholder="Tell recruiters about you"
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={colors.placeholder}
         value={draft.bio ?? ""}
         onChangeText={(t) => setDraft((d: any) => ({ ...d, bio: t }))}
         multiline
@@ -164,7 +164,7 @@ function Field({
         style={styles.inputBase}
         value={value}
         onChangeText={onChange}
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={colors.placeholder}
         autoCapitalize={autoCapitalize}
       />
     </View>

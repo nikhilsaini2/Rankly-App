@@ -388,7 +388,7 @@ export default function ProfileScreen() {
               onInterviewHistoryPress={handleInterviewHistoryPress}
               onResumeHistoryPress={handleResumeHistoryPress}
             />
-            <DangerZone appVersion={appVersion} />
+            <DangerZone appVersion={appVersion} onError={(msg) => toast(msg, "error")} onSuccess={(msg) => toast(msg, "success")} />
           </>
         )}
       </ScrollView>

@@ -1,12 +1,12 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 import { Platform } from "react-native";
-import PdfViewerScreen from "../screens/PdfViewer";
-import ATSScoreScreen from "../feature/resume/screens/ATSScoreScreen";
-import ResumeBuilderScreen from "../feature/resume/screens/ResumeBuilderScreen";
-import ImprovedResumePreviewScreen from "../feature/resume/screens/ImprovedResumePreviewScreen";
 import InterviewHistoryScreen from "../feature/interview/screens/InterviewHistoryScreen";
+import ATSScoreScreen from "../feature/resume/screens/ATSScoreScreen";
+import ImprovedResumePreviewScreen from "../feature/resume/screens/ImprovedResumePreviewScreen";
+import ResumeBuilderScreen from "../feature/resume/screens/ResumeBuilderScreen";
 import ResumeHistoryScreen from "../feature/resume/screens/ResumeHistoryScreen";
+import PdfViewerScreen from "../screens/PdfViewer";
 import SalaryNegotiationScreen from "../screens/salary/SalaryNegotiationScreen";
 import type { RootStackParamList } from "../types/navigation.types";
 import { BottomTabs } from "./BottomTabs";

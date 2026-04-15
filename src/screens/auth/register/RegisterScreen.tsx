@@ -224,7 +224,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                                 styles.inputError,
                             ]}
                             placeholder="Rahul"
-                            placeholderTextColor={colors.textMuted}
+                            placeholderTextColor={colors.placeholder}
                             value={values.firstName}
                             onChangeText={handleChange("firstName")}
                             onBlur={handleBlur("firstName")}
@@ -251,7 +251,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                                 styles.inputError,
                             ]}
                             placeholder="Singh"
-                            placeholderTextColor={colors.textMuted}
+                            placeholderTextColor={colors.placeholder}
                             value={values.lastName}
                             onChangeText={handleChange("lastName")}
                             onBlur={handleBlur("lastName")}
@@ -276,8 +276,8 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                             styles.input,
                             touched.email && errors.email && styles.inputError,
                           ]}
-                          placeholder="rahul@gmail.com"
-                          placeholderTextColor={colors.textMuted}
+                          placeholder="Enter Email"
+                          placeholderTextColor={colors.placeholder}
                           value={values.email}
                           onChangeText={handleChange("email")}
                           onBlur={handleBlur("email")}
@@ -307,7 +307,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                                 styles.inputError,
                             ]}
                             placeholder="Enter your password"
-                            placeholderTextColor={colors.textMuted}
+                            placeholderTextColor={colors.placeholder}
                             secureTextEntry={!showPassword}
                             value={values.password}
                             onChangeText={handleChange("password")}
@@ -331,7 +331,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                             accessibilityRole="button"
                           >
                             <Ionicons
-                              name={showPassword ? "eye-off" : "eye"}
+                              name={showPassword ? "eye" : "eye-off"}
                               size={20}
                               color={colors.textMuted}
                             />
@@ -355,7 +355,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                                 styles.inputError,
                             ]}
                             placeholder="Confirm your password"
-                            placeholderTextColor={colors.textMuted}
+                            placeholderTextColor={colors.placeholder}
                             secureTextEntry={!showConfirmPassword}
                             value={values.confirmPassword}
                             onChangeText={handleChange("confirmPassword")}
@@ -379,7 +379,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                             accessibilityRole="button"
                           >
                             <Ionicons
-                              name={showConfirmPassword ? "eye-off" : "eye"}
+                              name={showConfirmPassword ? "eye" : "eye-off"}
                               size={20}
                               color={colors.textMuted}
                             />
@@ -434,7 +434,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                         }
                       >
                         <LinearGradient
-                          colors={[colors.secondary, colors.secondaryDark]}
+                          colors={[colors.primary, colors.primaryDark]}
                           style={[
                             styles.cta,
                             { opacity: isValid && dirty ? 1 : 0.5 },
@@ -503,7 +503,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                       >
                         <Text
                           style={{
-                            color: colors.textMuted,
+                            color: colors.inputLabel,
                             textAlign: "center",
                             marginTop: 12,
                           }}

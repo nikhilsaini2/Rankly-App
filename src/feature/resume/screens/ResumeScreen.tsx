@@ -111,8 +111,12 @@ export default function ResumeScreen() {
       if (mapped) {
         rootNav?.navigate("AtsScore", { resumeId, scoreId: mapped.id });
       }
-    } catch {
-      toast("Could not score resume", "error");
+    } catch (e) {
+      if (e instanceof Error && e.message === "GEMINI_API_ERROR") {
+        toast("AI processing failed. Try again later", "error");
+      } else {
+        toast("Could not score resume", "error");
+      }
     } finally {
       setAnalyzingInProgress(false);
     }
@@ -132,16 +136,16 @@ export default function ResumeScreen() {
       if (!file) return;
 
       const uploaded = await uploadResume(file);
-      toast("Resume uploaded successfully", "success");
 
       // Get the resume ID — either from the returned row or by fetching latest
       let resumeId: string | null = uploaded?.id ?? null;
       if (!resumeId) {
-        await refreshData(true);
-        resumeId = resumes[0]?.id ?? null;
+        const data = await fetchResumeScreenData();
+        resumeId = data.resumes[0]?.id ?? null;
       }
 
       if (resumeId) {
+        setAnalyzingInProgress(true);
         await handleAnalyze(resumeId);
       } else {
         refreshData(true);
@@ -199,7 +203,7 @@ export default function ResumeScreen() {
     );
   }
 
-  if (resumes.length === 0) {
+  if (resumes.length === 0 && !uploading && !analyzingInProgress) {
     return (
       <Reanimated.View style={[{ flex: 1 }, screenStyle]}>
         <ScrollView
@@ -292,6 +296,7 @@ export default function ResumeScreen() {
         </ScrollView>
 
         <UploadingOverlay visible={uploading} progress={progress} />
+        <ResumeAnalyzingOverlay visible={analyzingInProgress} />
       </Reanimated.View>
     );
   }

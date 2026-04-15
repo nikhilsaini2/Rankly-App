@@ -777,7 +777,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Senior Product Manager"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.placeholder}
                 value={jobTitle}
                 onChangeText={setJobTitle}
               />
@@ -789,7 +789,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Google, startup, agency..."
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.placeholder}
                 value={company}
                 onChangeText={setCompany}
               />
@@ -801,7 +801,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               <TextInput
                 style={styles.input}
                 placeholder="e.g. 80000"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.placeholder}
                 value={offeredSalary}
                 onChangeText={setOfferedSalary}
                 keyboardType="numeric"
@@ -863,7 +863,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               <TextInput
                 style={styles.input}
                 placeholder="e.g. San Francisco, Remote"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.placeholder}
                 value={location}
                 onChangeText={setLocation}
               />

@@ -220,7 +220,7 @@ function SetupPhase({
           value={role}
           onChangeText={setRole}
           placeholder="e.g. Software Engineer, Product Manager"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholder}
           onFocus={() => setRoleFocused(true)}
           onBlur={() => setRoleFocused(false)}
         />

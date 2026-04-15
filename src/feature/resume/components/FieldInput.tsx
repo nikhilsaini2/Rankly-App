@@ -36,7 +36,7 @@ export const FieldInput: React.FC<FieldInputProps> = memo(({
           androidFontStyle,
           style,
         ]}
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={colors.placeholder}
         multiline={multiline}
         scrollEnabled={multiline}
         textAlignVertical={multiline ? 'top' : 'center'}

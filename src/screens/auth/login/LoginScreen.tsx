@@ -180,8 +180,8 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                             styles.input,
                             touched.email && errors.email && styles.inputError,
                           ]}
-                          placeholder="rahul@gmail.com"
-                          placeholderTextColor={colors.textMuted}
+                          placeholder="Enter Email"
+                          placeholderTextColor={colors.placeholder}
                           value={values.email}
                           onChangeText={handleChange("email")}
                           onBlur={handleBlur("email")}
@@ -212,7 +212,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                                 styles.inputError,
                             ]}
                             placeholder="Enter your password"
-                            placeholderTextColor={colors.textMuted}
+                            placeholderTextColor={colors.placeholder}
                             secureTextEntry={!showPassword}
                             value={values.password}
                             onChangeText={handleChange("password")}
@@ -235,7 +235,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                             accessibilityRole="button"
                           >
                             <Ionicons
-                              name={showPassword ? "eye-off" : "eye"}
+                              name={showPassword ? "eye" : "eye-off"}
                               size={20}
                               color={colors.textMuted}
                             />
@@ -259,7 +259,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                         }
                       >
                         <LinearGradient
-                          colors={[colors.secondary, colors.secondaryDark]}
+                          colors={[colors.primary, colors.primaryDark]}
                           style={[
                             styles.cta,
                             { opacity: isValid && dirty ? 1 : 0.5 },
@@ -334,7 +334,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                           }}
                         >
                           Don't have an account?{" "}
-                          <Text style={{ color: colors.secondary }}>
+                          <Text style={{ color: colors.inputLabel }}>
                             Register
                           </Text>
                         </Text>
