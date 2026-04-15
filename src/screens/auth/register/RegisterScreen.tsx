@@ -44,6 +44,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const [customRole, setCustomRole] = useState("");
 
   useEffect(() => {
     getAuthSessionUser()
@@ -163,12 +164,22 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                     try {
                       setLoading(true);
                       setGlobalError(null);
+                      // Derive final role — never store "Other" as the value
+                      const finalRole = values.role === "Other" || values.role.trim() === ""
+                        ? customRole.trim()
+                        : values.role;
+                      if (!finalRole || finalRole.length < 2) {
+                        setGlobalError("Please enter a valid target role.");
+                        setLoading(false);
+                        setSubmitting(false);
+                        return;
+                      }
                       await registerUser({
                         email: values.email.trim(),
                         password: values.password,
                         firstName: values.firstName.trim(),
                         lastName: values.lastName.trim(),
-                        role: values.role,
+                        role: finalRole,
                       });
                     } catch (err) {
                       setLoading(false);
@@ -395,11 +406,23 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                       <Text style={styles.label}>TARGET ROLE</Text>
                       <View style={styles.roles}>
                         {roles.map((role) => {
-                          const active = role === values.role;
+                          const isOtherChip = role === "Other";
+                          const predefined = roles.slice(0, -1); // all except "Other"
+                          const active = isOtherChip
+                            ? !predefined.includes(values.role)
+                            : role === values.role;
                           return (
                             <TouchableOpacity
                               key={role}
-                              onPress={() => setFieldValue("role", role)}
+                              onPress={() => {
+                                if (isOtherChip) {
+                                  // Switch to Other — set role to customRole if already typed, else empty
+                                  setFieldValue("role", customRole.trim() || "Other");
+                                } else {
+                                  setCustomRole("");
+                                  setFieldValue("role", role);
+                                }
+                              }}
                               style={[
                                 styles.roleChip,
                                 active && styles.roleChipActive,
@@ -420,6 +443,22 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                           );
                         })}
                       </View>
+                      {/* Custom role input — shown when Other is selected */}
+                      {!roles.slice(0, -1).includes(values.role) && (
+                        <TextInput
+                          style={[styles.input, { marginTop: 8 }]}
+                          placeholder="Enter your target role"
+                          placeholderTextColor={colors.placeholder}
+                          value={customRole}
+                          onChangeText={(text) => {
+                            setCustomRole(text);
+                            setFieldValue("role", text.trim() || "Other");
+                          }}
+                          autoCapitalize="words"
+                          returnKeyType="done"
+                          accessibilityLabel="Custom role input"
+                        />
+                      )}
 
                       <TouchableOpacity
                         onPress={() => handleSubmit()}

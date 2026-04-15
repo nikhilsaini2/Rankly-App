@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useState } from "react";
 import {
   FlatList,
   Modal,
@@ -9,10 +9,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { experienceLevels, TARGET_ROLES } from "../../../constants/all";
+import { experienceLevels, roles } from "../../../constants/all";
 import { colors } from "../../../theme/color";
 import type { ExperienceLevel } from "../../../types/common.types";
 import { styles } from "../styles";
+
+const PREDEFINED_ROLES = roles.filter((r) => r !== "Other");
 
 interface EditProfileFormProps {
   draft: any;
@@ -27,6 +29,9 @@ export function EditProfileForm({
   setRoleModal,
   setDraft,
 }: EditProfileFormProps) {
+  const isCustomRole = draft.role && !PREDEFINED_ROLES.includes(draft.role);
+  const [showCustomInput, setShowCustomInput] = useState(isCustomRole);
+
   return (
     <View style={{ marginBottom: 24, gap: 14 }}>
       <Field
@@ -47,9 +52,21 @@ export function EditProfileForm({
         accessibilityRole="button"
       >
         <Text style={{ color: colors.textPrimary, fontSize: 16 }}>
-          {draft.role ?? "Select role"}
+          {showCustomInput ? "Other" : (draft.role ?? "Select role")}
         </Text>
       </TouchableOpacity>
+      {showCustomInput && (
+        <TextInput
+          style={styles.inputBase}
+          placeholder="Enter your target role"
+          placeholderTextColor={colors.placeholder}
+          value={isCustomRole ? draft.role : ""}
+          onChangeText={(t) => setDraft((d: any) => ({ ...d, role: t }))}
+          autoCapitalize="words"
+          returnKeyType="done"
+          accessibilityLabel="Custom role input"
+        />
+      )}
       <Modal
         visible={roleModal}
         animationType="slide"
@@ -64,16 +81,25 @@ export function EditProfileForm({
           <View style={styles.modalSheetWrap}>
             <Text style={styles.modalTitle}>Target role</Text>
             <FlatList
-              data={TARGET_ROLES}
+              data={[...PREDEFINED_ROLES, "Other"]}
               keyExtractor={(item) => item}
               style={{ maxHeight: 400 }}
               renderItem={({ item }) => {
-                const selected = draft.role === item;
+                const isOther = item === "Other";
+                const selected = isOther
+                  ? showCustomInput
+                  : draft.role === item && !showCustomInput;
                 return (
                   <TouchableOpacity
                     style={[styles.modalRow, selected && styles.modalRowActive]}
                     onPress={() => {
-                      setDraft((d: any) => ({ ...d, role: item }));
+                      if (isOther) {
+                        setShowCustomInput(true);
+                        setDraft((d: any) => ({ ...d, role: "" }));
+                      } else {
+                        setShowCustomInput(false);
+                        setDraft((d: any) => ({ ...d, role: item }));
+                      }
                       setRoleModal(false);
                     }}
                   >

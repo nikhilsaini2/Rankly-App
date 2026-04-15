@@ -6,6 +6,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -24,6 +26,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useToast } from "../../components/atoms/Toast";
 import { NOTIF_STORAGE_KEY } from "../../constants/content";
+import type { ResumeHistoryItem } from "../../feature/resume/types/resume.types";
 import { useProfile } from "../../hooks";
 import { useProfileStats } from "../../hooks/useProfileStats";
 import {
@@ -35,7 +38,6 @@ import { supabase } from "../../services/supabase/supabase";
 import { colors } from "../../theme/color";
 import type { User } from "../../types/common.types";
 import type { RootStackParamList } from "../../types/navigation.types";
-import type { ResumeHistoryItem } from "../../feature/resume/types/resume.types";
 import { BioCard } from "./components/BioCard";
 import { DangerZone } from "./components/DangerZone";
 import { EditProfileForm } from "./components/EditProfileForm";
@@ -116,7 +118,9 @@ export default function ProfileScreen() {
   });
 
   const isDirty = useMemo(
-    () => JSON.stringify(normalizeDraft(draft)) !== JSON.stringify(normalizeDraft(initialDraft)),
+    () =>
+      JSON.stringify(normalizeDraft(draft)) !==
+      JSON.stringify(normalizeDraft(initialDraft)),
     [draft, initialDraft],
   );
   const [notif, setNotif] = useState(false);
@@ -347,84 +351,94 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={[profileStyles.root]}>
-      <ScrollView
-        bounces={false}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          profileStyles.scrollContent,
-          { paddingBottom: insets.bottom + 120 },
-        ]}
-      >
-        <ProfileHero
-          user={user}
-          fullName={fullName}
-          initials={initials}
-          planLabel={planLabel}
-          creditsLabel={creditsLabel}
-          badgeStyle={badgeStyle}
-          avatarRingStyle={avatarRingStyle}
-          pickAvatar={pickAvatar}
-          savingAvatar={savingAvatar}
-          editing={editing}
-          onEditPress={() => openEdit(user)}
-        />
-
-        {editing ? (
-          <EditProfileForm
-            draft={draft}
-            roleModal={roleModal}
-            setRoleModal={setRoleModal}
-            setDraft={setDraft}
-          />
-        ) : (
-          <>
-            <StatsStrip statsDisplay={statsDisplay} />
-            <BioCard user={user} />
-
-            <SettingsCard
-              notif={notif}
-              onToggleNotif={onToggleNotif}
-              onInterviewHistoryPress={handleInterviewHistoryPress}
-              onResumeHistoryPress={handleResumeHistoryPress}
-            />
-            <DangerZone appVersion={appVersion} onError={(msg) => toast(msg, "error")} onSuccess={(msg) => toast(msg, "success")} />
-          </>
-        )}
-      </ScrollView>
-
-      {editing && (
-        <View
-          style={[
-            profileStyles.editActionBar,
-            { paddingBottom: insets.bottom + 12 },
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "android" ? 80 : 0}
+    >
+      <View style={[profileStyles.root]}>
+        <ScrollView
+          bounces={false}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            profileStyles.scrollContent,
+            { paddingBottom: insets.bottom + 150 },
           ]}
         >
-          <TouchableOpacity
-            onPress={cancelEdit}
-            style={profileStyles.editCancelBtn}
-            activeOpacity={0.8}
-          >
-            <Text style={profileStyles.editCancelText}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={saveEdit}
-            disabled={!isDirty || saving}
+          <ProfileHero
+            user={user}
+            fullName={fullName}
+            initials={initials}
+            planLabel={planLabel}
+            creditsLabel={creditsLabel}
+            badgeStyle={badgeStyle}
+            avatarRingStyle={avatarRingStyle}
+            pickAvatar={pickAvatar}
+            savingAvatar={savingAvatar}
+            editing={editing}
+            onEditPress={() => openEdit(user)}
+          />
+
+          {editing ? (
+            <EditProfileForm
+              draft={draft}
+              roleModal={roleModal}
+              setRoleModal={setRoleModal}
+              setDraft={setDraft}
+            />
+          ) : (
+            <>
+              <StatsStrip statsDisplay={statsDisplay} />
+              <BioCard user={user} />
+
+              <SettingsCard
+                notif={notif}
+                onToggleNotif={onToggleNotif}
+                onInterviewHistoryPress={handleInterviewHistoryPress}
+                onResumeHistoryPress={handleResumeHistoryPress}
+              />
+              <DangerZone
+                appVersion={appVersion}
+                onError={(msg) => toast(msg, "error")}
+                onSuccess={(msg) => toast(msg, "success")}
+              />
+            </>
+          )}
+        </ScrollView>
+
+        {editing && (
+          <View
             style={[
-              profileStyles.editSaveBtn,
-              (!isDirty || saving) && { opacity: 0.45 },
+              profileStyles.editActionBar,
+              { paddingBottom: insets.bottom + 12 },
             ]}
-            activeOpacity={0.85}
           >
-            {saving ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={profileStyles.editSaveText}>Save Changes</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
+            <TouchableOpacity
+              onPress={cancelEdit}
+              style={profileStyles.editCancelBtn}
+              activeOpacity={0.8}
+            >
+              <Text style={profileStyles.editCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={saveEdit}
+              disabled={!isDirty || saving}
+              style={[
+                profileStyles.editSaveBtn,
+                (!isDirty || saving) && { opacity: 0.45 },
+              ]}
+              activeOpacity={0.85}
+            >
+              {saving ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={profileStyles.editSaveText}>Save Changes</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 

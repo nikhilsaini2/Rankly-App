@@ -24,10 +24,10 @@ export function HeroHeader(props: {
         pointerEvents="none"
       />
       <View style={heroStyles.heroRow}>
-        <View>
+        <View style={heroStyles.heroLeft}>
           <Text style={heroStyles.heroEyebrow}>{greet.toUpperCase()}</Text>
-          <Text style={heroStyles.heroTitle}>
-            Hey, <Text style={heroStyles.heroNameAccent}>{firstName}</Text> 👋
+          <Text style={heroStyles.heroTitle} numberOfLines={1} ellipsizeMode="tail">
+            Hey, <Text style={heroStyles.heroNameAccent}>{firstName?.trim() || "there"}</Text> 👋
           </Text>
           <Text style={heroStyles.heroSub}>Ready to land your dream job?</Text>
         </View>
@@ -85,7 +85,10 @@ const heroStyles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
   },
-  heroLeft: {},
+  heroLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
   heroEyebrow: {
     fontSize: 10,
     fontWeight: "600",
@@ -109,7 +112,7 @@ const heroStyles = StyleSheet.create({
     opacity: 0.8,
     lineHeight: 18,
   },
-  heroRight: { alignItems: "flex-end", gap: 6 },
+  heroRight: { alignItems: "flex-end", gap: 6, flexShrink: 0 },
   avatarRing: {
     width: 46,
     height: 46,
