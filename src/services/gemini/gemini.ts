@@ -22,6 +22,8 @@ export class GeminiError extends Error {
 // ─── Model config ────────────────────────────────────────────
 // gemini-2.5-flash-lite: highest free tier RPD (1000/day), 15 RPM, best availability
 const PRIMARY_MODEL = "gemini-2.5-flash-lite";
+// Use v1 endpoint (not v1beta) — higher quota limits, same model availability
+const API_VERSION = "v1";
 
 let cachedApiKey: string = "";
 
@@ -161,15 +163,18 @@ export async function generateGeminiText(
     const apiKey = await getApiKey();
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      generationConfig: {
-        temperature: 0.4,
-        topP: 0.95,
-        topK: 40,
-        maxOutputTokens: 1024,
+    const model = genAI.getGenerativeModel(
+      {
+        model: modelName,
+        generationConfig: {
+          temperature: 0.4,
+          topP: 0.95,
+          topK: 40,
+          maxOutputTokens: 1024,
+        },
       },
-    });
+      { apiVersion: API_VERSION },
+    );
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
@@ -255,15 +260,18 @@ export async function generateGeminiWithContext(
   const apiKey = await getApiKey();
   const genAI = new GoogleGenerativeAI(apiKey);
 
-  const model = genAI.getGenerativeModel({
-    model: PRIMARY_MODEL,
-    generationConfig: {
-      temperature: 0.7,
-      topP: 0.95,
-      topK: 40,
-      maxOutputTokens: 1024,
+  const model = genAI.getGenerativeModel(
+    {
+      model: PRIMARY_MODEL,
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.95,
+        topK: 40,
+        maxOutputTokens: 1024,
+      },
     },
-  });
+    { apiVersion: API_VERSION },
+  );
 
   // CRITICAL: Sanitize history before passing to Gemini SDK
   // Rules:

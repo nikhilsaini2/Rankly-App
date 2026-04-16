@@ -344,7 +344,20 @@ export function useInterviewEngine(): InterviewEngine {
               ans.transcript,
               state.sessionConfig.role,
               state.sessionConfig.difficulty,
-            )
+            ).catch((err) => {
+              // Quota/rate-limit errors are handled inside evaluateAnswer,
+              // but catch here as a safety net to prevent Promise.all rejection
+              console.warn("[InterviewEngine] evaluateAnswer error (handled):", err?.message);
+              return {
+                question: ans.question,
+                transcript: ans.transcript,
+                score: 0,
+                overall: "AI was temporarily busy — answer recorded, score unavailable.",
+                strengths: [],
+                improvements: [],
+                tip: "Try again later for AI feedback.",
+              };
+            })
           )
         );
       }
@@ -388,8 +401,15 @@ export function useInterviewEngine(): InterviewEngine {
         console.warn("[InterviewEngine] Failed to save interview history", err);
         // Non-fatal — session still completes normally
       }
-    } catch {
-      dispatch({ type: "SET_ERROR", error: "Evaluation failed. Please try again." });
+    } catch (err: any) {
+      const msg = (err?.message ?? "").toLowerCase();
+      const isQuota = msg.includes("429") || msg.includes("quota") || msg.includes("resource_exhausted");
+      dispatch({
+        type: "SET_ERROR",
+        error: isQuota
+          ? "AI quota reached. Your answers were recorded but couldn't be evaluated. Please try again tomorrow or upgrade your API plan."
+          : "Evaluation failed. Please try again.",
+      });
     } finally {
       isEvaluatingRef.current = false;
     }

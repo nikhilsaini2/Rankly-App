@@ -514,24 +514,122 @@ export function InterviewScreen({
     }
   }, [onRegisterHistoryHandler, handleHistoryNavigation]);
 
-  // Session Restore Modal built seamlessly into view
+  // Session Restore Modal — premium centered card
   if (savedSession && engine.phase === "idle") {
     return (
-      <View
-        style={[
-          s.flex,
-          { alignItems: "center", justifyContent: "center", padding: 20 },
-        ]}
-      >
-        <View style={s.card}>
-          <Text style={s.setupTitle}>Resume Interview?</Text>
-          <Text style={[s.setupSubtitle, { marginTop: 8, marginBottom: 20 }]}>
-            We found a saved interview session for{" "}
-            {savedSession.sessionConfig.role}.
-          </Text>
-          <View style={{ gap: 10 }}>
+      <View style={{
+        flex: 1,
+        backgroundColor: colors.background,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 24,
+      }}>
+        <View style={{
+          width: "100%",
+          maxWidth: 360,
+          borderRadius: 24,
+          overflow: "hidden",
+          backgroundColor: colors.surface,
+          borderWidth: 1,
+          borderColor: colors.border,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: 0.4,
+          shadowRadius: 32,
+          elevation: 12,
+        }}>
+
+          {/* Top accent strip */}
+          <View style={{
+            height: 3,
+            backgroundColor: colors.primary,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+          }} />
+
+          <View style={{ padding: 28 }}>
+            {/* Icon + header */}
+            <View style={{ alignItems: "center", marginBottom: 20 }}>
+              <View style={{
+                width: 52,
+                height: 52,
+                borderRadius: 14,
+                backgroundColor: "rgba(139,92,246,0.1)",
+                borderWidth: 1,
+                borderColor: "rgba(139,92,246,0.2)",
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: 16,
+              }}>
+                <Ionicons name="play-circle-outline" size={26} color={colors.primary} />
+              </View>
+
+              <Text style={{
+                fontSize: 21,
+                fontWeight: "700",
+                color: colors.textPrimary,
+                letterSpacing: -0.4,
+                textAlign: "center",
+              }}>
+                Resume Interview
+              </Text>
+
+              <Text style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+                marginTop: 6,
+                textAlign: "center",
+                lineHeight: 20,
+              }}>
+                Continue your{" "}
+                <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>
+                  {savedSession.sessionConfig.role}
+                </Text>
+                {" "}session where you left off.
+              </Text>
+            </View>
+
+            {/* Session meta chips */}
+            <View style={{
+              flexDirection: "row",
+              gap: 8,
+              marginBottom: 24,
+              justifyContent: "center",
+            }}>
+              {[
+                savedSession.sessionConfig.difficulty,
+                savedSession.sessionConfig.sessionType,
+                `Q${savedSession.currentIndex + 1} of ${savedSession.questions.length}`,
+              ].map((tag) => (
+                <View key={tag} style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: 8,
+                  backgroundColor: colors.surfaceAlt,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}>
+                  <Text style={{
+                    fontSize: 12,
+                    fontWeight: "500",
+                    color: colors.textSecondary,
+                    textTransform: "capitalize",
+                  }}>
+                    {tag}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Primary button */}
             <PressableScale
-              style={s.primaryButton}
+              style={{
+                height: 52,
+                borderRadius: 14,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: colors.primary,
+              }}
               onPress={() => {
                 // Force-reset transcript and recording state before restoring
                 engineRef.current.setTranscript("");
@@ -541,16 +639,28 @@ export function InterviewScreen({
                 setSavedSession(null);
               }}
             >
-              <Text style={s.primaryButtonText}>Resume Session</Text>
+              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16, letterSpacing: -0.2 }}>
+                Resume Session
+              </Text>
             </PressableScale>
+
+            {/* Secondary button */}
             <PressableScale
-              style={s.ghostButton}
+              style={{
+                height: 48,
+                borderRadius: 14,
+                justifyContent: "center",
+                alignItems: "center",
+                marginTop: 10,
+              }}
               onPress={async () => {
                 await clearSession();
                 setSavedSession(null);
               }}
             >
-              <Text style={s.ghostButtonText}>Start New</Text>
+              <Text style={{ color: colors.textMuted, fontWeight: "500", fontSize: 14 }}>
+                Start New Session
+              </Text>
             </PressableScale>
           </View>
         </View>
