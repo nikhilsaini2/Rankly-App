@@ -40,11 +40,13 @@ export function EditProfileForm({
         label="First name"
         value={draft.firstName ?? ""}
         onChange={(t) => setDraft((d: any) => ({ ...d, firstName: t }))}
+        maxLength={30}
       />
       <Field
         label="Last name"
         value={draft.lastName ?? ""}
         onChange={(t) => setDraft((d: any) => ({ ...d, lastName: t }))}
+        maxLength={30}
       />
       {email ? (
         <View>
@@ -189,11 +191,13 @@ function Field({
   value,
   onChange,
   autoCapitalize = "sentences",
+  maxLength,
 }: {
   label: string;
   value: string;
   onChange: (t: string) => void;
   autoCapitalize?: "none" | "sentences";
+  maxLength?: number;
 }) {
   return (
     <View>
@@ -204,6 +208,7 @@ function Field({
         onChangeText={onChange}
         placeholderTextColor={colors.placeholder}
         autoCapitalize={autoCapitalize}
+        maxLength={maxLength}
       />
     </View>
   );

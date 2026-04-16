@@ -85,7 +85,9 @@ export function ProfileHero({
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.heroName}>{fullName || "—"}</Text>
+        <View style={styles.heroNameContainer}>
+          <Text style={styles.heroName} numberOfLines={1} ellipsizeMode="tail">{fullName || "—"}</Text>
+        </View>
         <Text style={styles.heroRole}>{user.role || "—"}</Text>
 
         <Animated.View style={[styles.badgeRow, badgeStyle]}>

@@ -63,13 +63,19 @@ export const styles = StyleSheet.create({
     borderColor: colors.background,
   },
 
-  heroName: {
+  heroNameContainer: {
+    width: "100%",
+    alignItems: "center",
     marginTop: 12,
+  },
+  heroName: {
     fontSize: 24,
     fontWeight: "700",
     color: colors.textPrimary,
     letterSpacing: -0.5,
     textAlign: "center",
+    width: "100%",
+    flexShrink: 1,
   },
   heroRole: {
     marginTop: 4,
