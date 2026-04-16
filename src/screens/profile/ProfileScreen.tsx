@@ -61,6 +61,10 @@ export default function ProfileScreen() {
     useCallback(() => {
       refetchProfile();
       refetchStats();
+      return () => {
+        // Reset edit state when leaving the tab so Profile always opens clean
+        setEditing(false);
+      };
     }, [refetchProfile, refetchStats]),
   );
 
