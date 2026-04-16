@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScoreRing } from "../../../components/atoms/ScoreRing";
 import { colors } from "../../../theme/color";
 import type { RootStackParamList } from "../../../types/navigation.types";
+import { scoreTierColor } from "../../../utils/score";
 import { InterviewHistoryCard } from "../components/InterviewHistoryCard";
 import { useInterviewHistory } from "../hooks/useInterviewHistory";
 import type { InterviewReport } from "../services/interviewStorage";
@@ -27,12 +28,6 @@ function ReportDetail({
   report: InterviewReport;
   bottomInset: number;
 }) {
-  function scoreColor(score: number): string {
-    if (score >= 75) return colors.accent;
-    if (score >= 50) return colors.warning;
-    return colors.danger;
-  }
-
   return (
     <FlatList
       data={report.answers}
@@ -68,19 +63,19 @@ function ReportDetail({
             </Text>
             <View
               style={{
-                backgroundColor: scoreColor(report.averageScore) + "20",
+                backgroundColor: scoreTierColor(report.averageScore) + "20",
                 borderRadius: 8,
                 paddingHorizontal: 10,
                 paddingVertical: 4,
                 borderWidth: 1,
-                borderColor: scoreColor(report.averageScore) + "40",
+                borderColor: scoreTierColor(report.averageScore) + "40",
               }}
             >
               <Text
                 style={{
                   fontSize: 13,
                   fontWeight: "800",
-                  color: scoreColor(report.averageScore),
+                  color: scoreTierColor(report.averageScore),
                 }}
               >
                 {report.averageScore}/100
@@ -95,7 +90,7 @@ function ReportDetail({
               size={100}
               strokeWidth={8}
               subtitle="Score"
-              strokeColor={scoreColor(report.averageScore)}
+              strokeColor={scoreTierColor(report.averageScore)}
             />
           </View>
         </View>
@@ -130,7 +125,7 @@ function ReportDetail({
             </Text>
             <View
               style={{
-                backgroundColor: scoreColor(item.score),
+                backgroundColor: scoreTierColor(item.score),
                 borderRadius: 8,
                 paddingHorizontal: 8,
                 paddingVertical: 3,

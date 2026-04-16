@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { memo } from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import { colors } from '../../../theme/color';
+import { scoreTierColor } from '../../../utils/score';
 import type { InterviewReport } from '../services/interviewStorage';
 
 function relativeTime(ts: number): string {
@@ -15,12 +16,6 @@ function relativeTime(ts: number): string {
   if (days === 1) return 'Yesterday';
   if (days < 7) return `${days} days ago`;
   return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-function scoreColor(score: number): string {
-  if (score >= 75) return colors.accent;
-  if (score >= 50) return colors.warning;
-  return colors.danger;
 }
 
 function difficultyColor(d: string): string {
@@ -72,9 +67,9 @@ export const InterviewHistoryCard = memo(({ report, onPress, onDelete }: Props) 
         width: 52,
         height: 52,
         borderRadius: 26,
-        backgroundColor: scoreColor(report.averageScore) + '18',
+        backgroundColor: scoreTierColor(report.averageScore) + '18',
         borderWidth: 2,
-        borderColor: scoreColor(report.averageScore) + '50',
+        borderColor: scoreTierColor(report.averageScore) + '50',
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
@@ -82,7 +77,7 @@ export const InterviewHistoryCard = memo(({ report, onPress, onDelete }: Props) 
         <Text style={{
           fontSize: 16,
           fontWeight: '800',
-          color: scoreColor(report.averageScore),
+          color: scoreTierColor(report.averageScore),
         }}>
           {report.averageScore}
         </Text>

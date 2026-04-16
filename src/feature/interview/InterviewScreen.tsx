@@ -26,7 +26,7 @@ import { PressableScale } from "../../components/atoms/PressableScale";
 import { ScoreRing } from "../../components/atoms/ScoreRing";
 import { useAIChatIntegration } from "../../hooks/useAIChatIntegration";
 import { colors } from "../../theme/color";
-import { getInterviewResultMessage } from "../../utils/score";
+import { getInterviewResultMessage, scoreTierColor } from "../../utils/score";
 import { interviewStyles as s } from "./Interview.styles";
 import { InterviewInput } from "./components/InterviewInput";
 import { QuestionHeader } from "./components/QuestionHeader";
@@ -303,11 +303,7 @@ function SetupPhase({
   );
 }
 
-function getResultScoreColor(score: number): string {
-  if (score >= 80) return colors.accent;
-  if (score >= 50) return colors.warning;
-  return colors.danger;
-}
+// Score color uses scoreTierColor from utils/score (centralized)
 
 function CompletePhase({
   answers,
@@ -351,7 +347,7 @@ function CompletePhase({
             <View
               style={[
                 s.scoreBadge,
-                { backgroundColor: getResultScoreColor(item.score) },
+                { backgroundColor: scoreTierColor(item.score) },
               ]}
             >
               <Text style={s.scoreBadgeText}>{item.score}/100</Text>

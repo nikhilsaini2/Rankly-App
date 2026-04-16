@@ -85,11 +85,7 @@ export default function AtsScoreScreen() {
     };
   }, [resumeId, scoreId, getLatestScore, getScoreById]);
 
-  function barColor(v: number) {
-    if (v >= 75) return colors.accent;
-    if (v >= 50) return colors.warning;
-    return colors.danger;
-  }
+  // barColor is provided by scoreTierColor from utils/score (already imported)
 
   function toggleSection(
     setter: React.Dispatch<React.SetStateAction<boolean>>,
@@ -197,25 +193,25 @@ export default function AtsScoreScreen() {
         <ScoreBar
           label="Keyword match"
           value={data.keywordScore ?? overall}
-          fillColor={barColor(data.keywordScore ?? overall)}
+          fillColor={scoreTierColor(data.keywordScore ?? overall)}
           delayMs={0}
         />
         <ScoreBar
           label="Format"
           value={data.formatScore ?? overall}
-          fillColor={barColor(data.formatScore ?? overall)}
+          fillColor={scoreTierColor(data.formatScore ?? overall)}
           delayMs={100}
         />
         <ScoreBar
           label="Content"
           value={data.contentScore ?? overall}
-          fillColor={barColor(data.contentScore ?? overall)}
+          fillColor={scoreTierColor(data.contentScore ?? overall)}
           delayMs={200}
         />
         <ScoreBar
           label="Readability"
           value={data.readabilityScore ?? overall}
-          fillColor={barColor(data.readabilityScore ?? overall)}
+          fillColor={scoreTierColor(data.readabilityScore ?? overall)}
           delayMs={300}
         />
 

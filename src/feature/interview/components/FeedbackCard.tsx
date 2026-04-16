@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { memo, useMemo } from "react";
 import { Text, View } from "react-native";
 import { colors } from "../../../theme/color";
+import { scoreTierColor } from "../../../utils/score";
 import { interviewStyles as s } from "../Interview.styles";
 import type { Answer } from "../types/interview.types";
 
@@ -9,14 +10,8 @@ interface FeedbackCardProps {
   answer: Answer;
 }
 
-function getScoreColor(score: number): string {
-  if (score >= 80) return colors.accent;
-  if (score >= 50) return colors.warning;
-  return colors.danger;
-}
-
 function FeedbackCardComponent({ answer }: FeedbackCardProps) {
-  const scoreColor = useMemo(() => getScoreColor(answer.score), [answer.score]);
+  const scoreColor = useMemo(() => scoreTierColor(answer.score), [answer.score]);
 
   return (
     <View style={s.feedbackContainer}>

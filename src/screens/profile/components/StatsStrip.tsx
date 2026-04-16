@@ -2,6 +2,7 @@ import React from "react";
 import { Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { colors } from "../../../theme/color";
+import { scoreTierColor } from "../../../utils/score";
 import { styles } from "../styles";
 
 interface StatsStripProps {
@@ -13,6 +14,10 @@ interface StatsStripProps {
 }
 
 export function StatsStrip({ statsDisplay }: StatsStripProps) {
+  const atsColor = statsDisplay.bestAts > 0
+    ? scoreTierColor(statsDisplay.bestAts)
+    : colors.textSecondary;
+
   return (
     <Animated.View style={[styles.statsStrip]}>
       <View style={styles.statCell}>
@@ -32,7 +37,7 @@ export function StatsStrip({ statsDisplay }: StatsStripProps) {
           style={[
             styles.statValue,
             statsDisplay.bestAts === 0 && styles.statValueMuted,
-            statsDisplay.bestAts > 0 && styles.statBest,
+            statsDisplay.bestAts > 0 && { color: atsColor },
           ]}
         >
           {statsDisplay.bestAts === 0 ? "—" : String(statsDisplay.bestAts)}
