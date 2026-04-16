@@ -123,6 +123,11 @@ export const deleteUserAccountData = async (): Promise<void> => {
     throw new Error(err || "DELETE_FAILED");
   }
 
+  // Clear all local AsyncStorage data for this user so it never bleeds
+  // into a new account created with the same credentials on this device.
+  const { clearUserLocalData } = await import("../local/localStorageService");
+  await clearUserLocalData(user.id);
+
   await supabase.auth.signOut();
 };
 

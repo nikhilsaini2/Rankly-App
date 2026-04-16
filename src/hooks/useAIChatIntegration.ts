@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import type { Answer } from "../feature/interview";
 
 interface AIChatIntegrationReturn {
@@ -6,9 +6,12 @@ interface AIChatIntegrationReturn {
 }
 
 export function useAIChatIntegration(answers: Answer[]): AIChatIntegrationReturn {
-  const sendInterviewContext = useCallback(() => {
-    if (answers.length === 0) return;
-  }, [answers]);
+  // Memoize the callback to prevent unnecessary re-renders
+  const sendInterviewContext = useMemo(() => {
+    return () => {
+      if (answers.length === 0) return;
+    };
+  }, [answers.length]); // Only depend on length, not the entire array
 
   return {
     sendInterviewContext,

@@ -16,12 +16,18 @@ export function useResumeUpload() {
   const [error, setError] = useState<string | null>(null);
 
   async function pickResume() {
-    const res = await DocumentPicker.getDocumentAsync({
-      type: "application/pdf",
-      copyToCacheDirectory: true,
-    });
-    if (res.canceled || !res.assets?.[0]) return null;
-    return res.assets[0];
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: "application/pdf",
+        copyToCacheDirectory: true,
+      });
+      if (res.canceled === true) return null;
+      if (!res.assets?.[0]) return null;
+      return res.assets[0];
+    } catch (error) {
+      // Silent return on cancellation - no error toast
+      return null;
+    }
   }
 
   async function extractTextFromPdf(fileUri: string): Promise<string> {

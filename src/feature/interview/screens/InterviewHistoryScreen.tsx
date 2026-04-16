@@ -275,6 +275,7 @@ export default function InterviewHistoryScreen() {
             alignItems: "center",
             justifyContent: "center",
             paddingHorizontal: 32,
+            paddingBottom: bottomInset + 20,
           }}
         >
           <View

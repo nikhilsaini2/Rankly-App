@@ -36,12 +36,29 @@ serve(async (req) => {
       return new Response("Invalid token", { status: 401, headers: corsHeaders });
     }
 
-    // 3. Delete the verified user using the service role key
+    // 3. Delete all user data using the service role key
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // Delete all data associated with this user before removing the auth record.
+    // Order matters: delete dependent tables before the users row.
+    const tablesToDelete = [
+      "resume_builds",
+      "ats_scores",
+      "interview_sessions",
+      "resumes",
+    ];
+
+    for (const table of tablesToDelete) {
+      await supabaseAdmin.from(table).delete().eq("user_id", user.id);
+    }
+
+    // Delete the users profile row (uses auth_id as FK)
+    await supabaseAdmin.from("users").delete().eq("auth_id", user.id);
+
+    // Finally delete the auth user
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
 
     if (deleteError) {

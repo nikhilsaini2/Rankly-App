@@ -79,4 +79,8 @@ export interface InterviewEngine {
   nextQuestion: () => void;
   resetSession: () => void;
   restoreSession: (session: any) => void;
+  handleSpeechStart: (event: any) => void;
+  handleSpeechEnd: (event?: any) => void;
+  handleSpeechResult: (event: { results: any[] }) => void;
+  handleSpeechError: (event: { error?: string }) => void;
 }

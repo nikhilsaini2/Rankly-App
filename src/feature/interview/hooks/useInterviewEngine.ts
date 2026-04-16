@@ -1,6 +1,6 @@
 import * as Speech from "expo-speech";
 import { ExpoSpeechRecognitionModule } from "expo-speech-recognition";
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { AppState, AppStateStatus, Linking, Platform } from "react-native";
 import { supabase } from "../../../services/supabase/supabase";
 import {
@@ -139,6 +139,11 @@ function reducer(
         }
       }
 
+      // Force recording phase to "ready" if it was "recording" when saved
+      if (restoredPhase === "recording") {
+        restoredPhase = "ready";
+      }
+
       return {
         ...INITIAL_STATE,
         phase: restoredPhase,
@@ -147,6 +152,9 @@ function reducer(
         answers: action.session.answers,
         transcript: restoredPhase === "ready" ? "" : action.session.transcript,
         sessionConfig: action.session.sessionConfig,
+        // Ensure recording/speaking state is always false on restore
+        isRecording: false,
+        isSpeaking: false,
       };
     }
 
@@ -169,6 +177,10 @@ export function useInterviewEngine(): InterviewEngine {
   const sessionIdRef = useRef<string | null>(null);
   const questionsDbRef = useRef<{ id: string; questionOrder: number }[]>([]);
   const stateRef = useRef(state);
+  
+  // Memoize arrays to prevent infinite re-renders
+  const stableAnswers = useMemo(() => state.answers, [state.answers.length, state.answers.map(a => a.question + a.transcript + a.score).join('')]);
+  const stableQuestions = useMemo(() => state.questions, [state.questions.length, state.questions.join('')]);
 
   useEffect(() => {
     stateRef.current = state;
@@ -497,9 +509,26 @@ export function useInterviewEngine(): InterviewEngine {
   }, []);
 
   const restoreSession = useCallback((session: PersistedSession) => {
+    // Force-reset recording/speaking state before restoring so mic and input
+    // are never stuck in a broken intermediate state after nav-away
+    if (isRecordingRef.current) {
+      try { ExpoSpeechRecognitionModule.stop(); } catch {}
+    }
+    if (isSpeakingRef.current) {
+      try { Speech.stop(); } catch {}
+    }
+    
+    // Force reset all recording/speaking state to false
+    isRecordingRef.current = false;
+    isSpeakingRef.current = false;
+    accumulatedTranscriptRef.current = "";
+    
+    // Dispatch state resets before restoring session
+    dispatch({ type: "STOP_RECORDING" });
+    dispatch({ type: "STOP_SPEAKING" });
+    
     sessionIdRef.current = session.sessionId;
     questionsDbRef.current = session.questionsDb;
-    accumulatedTranscriptRef.current = session.transcript;
     dispatch({ type: "RESTORE_SESSION", session });
   }, []);
 
@@ -565,9 +594,9 @@ export function useInterviewEngine(): InterviewEngine {
 
   return {
     phase: state.phase,
-    questions: state.questions,
+    questions: stableQuestions,
     currentIndex: state.currentIndex,
-    answers: state.answers,
+    answers: stableAnswers,
     transcript: state.transcript,
     isRecording: state.isRecording,
     isSpeaking: state.isSpeaking,

@@ -245,7 +245,7 @@ export default function ResumeHistoryScreen() {
   // ── Preview view ────────────────────────────────────────────────
   if (selectedEntry) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: 16 }}>
         {/* Header */}
         <View
           style={{

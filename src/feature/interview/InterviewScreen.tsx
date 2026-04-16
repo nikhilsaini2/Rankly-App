@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSpeechRecognitionEvent } from "expo-speech-recognition";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -388,6 +388,7 @@ interface InterviewScreenProps {
   defaultRole?: string;
   onDiscussCoach?: () => void;
   onViewHistory?: () => void;
+  onRegisterHistoryHandler?: (handler: () => Promise<void>) => void;
   insetsBottom?: number;
 }
 
@@ -395,9 +396,13 @@ export function InterviewScreen({
   defaultRole = "",
   onDiscussCoach,
   onViewHistory,
+  onRegisterHistoryHandler,
   insetsBottom = 0,
 }: InterviewScreenProps) {
   const engine = useInterviewEngine();
+  const engineRef = useRef(engine);
+  engineRef.current = engine;
+
   const { sendInterviewContext } = useAIChatIntegration(engine.answers);
 
   const [savedSession, setSavedSession] = useState<PersistedSession | null>(
@@ -416,60 +421,98 @@ export function InterviewScreen({
 
   useFocusEffect(
     useCallback(() => {
-      // On Focus: do nothing special
+      // Reload saved session on focus so resume modal appears after nav-away
+      loadSession().then((s) => {
+        if (s) setSavedSession(s);
+      });
       return () => {
-        // On Blur: Stop recording/speaking
-        engine.stopRecording();
-        engine.stopSpeaking();
+        // Save session before stopping so resume modal appears on return
+        const phase = engineRef.current.phase;
+        if (phase === "ready" || phase === "recording" || phase === "processing") {
+          // Session will be saved automatically by the engine's state effect
+          // Force-stop recording/speaking so the persisted state is clean
+          engineRef.current.stopRecording();
+          engineRef.current.stopSpeaking();
+          engineRef.current.setTranscript("");
+        }
       };
-    }, [engine.stopRecording, engine.stopSpeaking]),
+    }, []),
   );
 
-  useSpeechRecognitionEvent("start", (engine as any).handleSpeechStart);
-  useSpeechRecognitionEvent("end", (engine as any).handleSpeechEnd);
-  useSpeechRecognitionEvent("result", (engine as any).handleSpeechResult);
-  useSpeechRecognitionEvent("error", (engine as any).handleSpeechError);
+  useSpeechRecognitionEvent("start", useCallback((e: any) => engineRef.current.handleSpeechStart(e), []));
+  useSpeechRecognitionEvent("end", useCallback((e: any) => engineRef.current.handleSpeechEnd(e), []));
+  useSpeechRecognitionEvent("result", useCallback((e: any) => engineRef.current.handleSpeechResult(e), []));
+  useSpeechRecognitionEvent("error", useCallback((e: any) => engineRef.current.handleSpeechError(e), []));
 
-  const handleSubmit = useCallback(
-    (text: string) => {
-      engine.submitAnswer(text);
-    },
-    [engine.submitAnswer],
-  );
+  const handleSubmit = useCallback((text: string) => {
+    engineRef.current.submitAnswer(text);
+  }, []);
 
   const handleMicPress = useCallback(() => {
-    engine.startRecording();
-  }, [engine.startRecording]);
+    engineRef.current.startRecording();
+  }, []);
 
   const handleMicStop = useCallback(() => {
-    engine.stopRecording();
-  }, [engine.stopRecording]);
+    engineRef.current.stopRecording();
+  }, []);
 
   const handleSpeaker = useCallback(() => {
-    if (engine.isSpeaking) {
-      engine.stopSpeaking();
+    if (engineRef.current.isSpeaking) {
+      engineRef.current.stopSpeaking();
     } else {
-      engine.speakQuestion();
+      engineRef.current.speakQuestion();
     }
-  }, [engine.isSpeaking, engine.speakQuestion, engine.stopSpeaking]);
+  }, []);
 
   const handleNext = useCallback(() => {
-    engine.setTranscript("");
-    engine.nextQuestion();
-  }, [engine.nextQuestion, engine.setTranscript]);
+    engineRef.current.setTranscript("");
+    engineRef.current.nextQuestion();
+  }, []);
 
   const handleReset = useCallback(() => {
-    engine.resetSession();
-  }, [engine.resetSession]);
+    engineRef.current.resetSession();
+  }, []);
 
   const handleDiscuss = useCallback(() => {
     sendInterviewContext();
     onDiscussCoach?.();
   }, [sendInterviewContext, onDiscussCoach]);
 
-  const handleViewHistory = useCallback(() => {
+  const handleViewHistory = useCallback(async () => {
+    // Save session before navigating so resume modal appears on return
+    const phase = engineRef.current.phase;
+    if (phase === "ready" || phase === "recording" || phase === "processing") {
+      // Session will be saved automatically by the engine's state effect
+      // but we need to ensure clean state before navigation
+      engineRef.current.stopRecording();
+      engineRef.current.stopSpeaking();
+      // Small delay to ensure state is persisted before navigation
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
     onViewHistory?.();
   }, [onViewHistory]);
+
+  // Create a separate handler for registration that doesn't call onViewHistory
+  const handleHistoryNavigation = useCallback(async () => {
+    // Save session before navigating so resume modal appears on return
+    const phase = engineRef.current.phase;
+    if (phase === "ready" || phase === "recording" || phase === "processing") {
+      // Session will be saved automatically by the engine's state effect
+      // but we need to ensure clean state before navigation
+      engineRef.current.stopRecording();
+      engineRef.current.stopSpeaking();
+      // Small delay to ensure state is persisted before navigation
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    // Don't call onViewHistory here - let the parent handle navigation directly
+  }, []);
+
+  // Register the navigation handler with parent component
+  useEffect(() => {
+    if (onRegisterHistoryHandler) {
+      onRegisterHistoryHandler(handleHistoryNavigation);
+    }
+  }, [onRegisterHistoryHandler, handleHistoryNavigation]);
 
   // Session Restore Modal built seamlessly into view
   if (savedSession && engine.phase === "idle") {
@@ -490,6 +533,10 @@ export function InterviewScreen({
             <PressableScale
               style={s.primaryButton}
               onPress={() => {
+                // Force-reset transcript and recording state before restoring
+                engineRef.current.setTranscript("");
+                engineRef.current.stopRecording();
+                engineRef.current.stopSpeaking();
                 engine.restoreSession(savedSession);
                 setSavedSession(null);
               }}

@@ -36,6 +36,7 @@ export default function AIScreen() {
   const [input, setInput] = useState("");
 
   const contextSentRef = useRef(false);
+  const interviewHistoryHandlerRef = useRef<(() => Promise<void>) | null>(null);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
 
@@ -75,8 +76,15 @@ export default function AIScreen() {
     await chat.send(t);
   }
 
-  const handleHistoryPress = () => {
-    navigation.navigate("InterviewHistory");
+  const handleHistoryPress = async () => {
+    // If we're on interview tab, use the InterviewScreen's handler to save session
+    if (segment === "interview" && interviewHistoryHandlerRef.current) {
+      await interviewHistoryHandlerRef.current();
+      // Navigate after session is saved
+      navigation.navigate("InterviewHistory");
+    } else {
+      navigation.navigate("InterviewHistory");
+    }
   };
 
   return (
@@ -108,6 +116,9 @@ export default function AIScreen() {
             defaultRole={user?.role ?? ""}
             onDiscussCoach={() => setSegment("chat")}
             onViewHistory={handleHistoryPress}
+            onRegisterHistoryHandler={(handler) => {
+              interviewHistoryHandlerRef.current = handler;
+            }}
             insetsBottom={insets.bottom}
           />
         )}
