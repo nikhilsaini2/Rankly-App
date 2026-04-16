@@ -21,6 +21,7 @@ interface EditProfileFormProps {
   roleModal: boolean;
   setRoleModal: (open: boolean) => void;
   setDraft: (draft: any) => void;
+  email?: string;
 }
 
 export function EditProfileForm({
@@ -28,6 +29,7 @@ export function EditProfileForm({
   roleModal,
   setRoleModal,
   setDraft,
+  email,
 }: EditProfileFormProps) {
   const isCustomRole = draft.role && !PREDEFINED_ROLES.includes(draft.role);
   const [showCustomInput, setShowCustomInput] = useState(isCustomRole);
@@ -44,6 +46,16 @@ export function EditProfileForm({
         value={draft.lastName ?? ""}
         onChange={(t) => setDraft((d: any) => ({ ...d, lastName: t }))}
       />
+      {email ? (
+        <View>
+          <Text style={styles.labelsRole}>Email</Text>
+          <View style={[styles.inputBase, { opacity: 0.55 }]}>
+            <Text style={{ color: colors.textPrimary, fontSize: 14 }} numberOfLines={1}>
+              {email}
+            </Text>
+          </View>
+        </View>
+      ) : null}
       <Text style={styles.labelsRole}>Target role</Text>
       <TouchableOpacity
         onPress={() => setRoleModal(true)}

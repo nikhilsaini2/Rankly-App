@@ -12,6 +12,7 @@ export const AuthNavigator = () => {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
+        animation: "none",
         contentStyle: { backgroundColor: "transparent" },
       }}
     >

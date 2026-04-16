@@ -385,6 +385,7 @@ export default function ProfileScreen() {
               roleModal={roleModal}
               setRoleModal={setRoleModal}
               setDraft={setDraft}
+              email={user?.email ?? ""}
             />
           ) : (
             <>

@@ -34,5 +34,5 @@ export const loginSchema = Yup.object({
 
   password: Yup.string()
     .matches(/^\S+$/, "No spaces allowed")
-    .required("Password required"),
+    .required("Password is required"),
 });

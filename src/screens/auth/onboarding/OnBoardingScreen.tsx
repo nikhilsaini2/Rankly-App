@@ -22,31 +22,18 @@ import { styles } from "./styles";
 
 const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
   const insets = useSafeAreaInsets();
-  const [isLoading, setIsLoading] = useState(false);
+  const [getStartedLoading, setGetStartedLoading] = useState(false);
 
-  const handleGetStarted = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      navigation.replace("Register");
-    } catch (error) {
-      console.error("Navigation error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [navigation]);
+  const handleGetStarted = useCallback(() => {
+    if (getStartedLoading) return;
+    setGetStartedLoading(true);
+    navigation.replace("Register");
+  }, [navigation, getStartedLoading]);
 
-  const handleLogin = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      navigation.replace("Login");
-    } catch (error) {
-      console.error("Navigation error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [navigation]);
+  const handleLogin = useCallback(() => {
+    if (getStartedLoading) return;
+    navigation.replace("Login");
+  }, [navigation, getStartedLoading]);
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={["bottom", "left", "right"]}>
@@ -142,16 +129,19 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
             <TouchableOpacity
               onPress={handleGetStarted}
               activeOpacity={0.85}
-              disabled={isLoading}
+              disabled={getStartedLoading}
               accessibilityLabel="Get Started - Create a new account"
               accessibilityRole="button"
-              style={[styles.ctaContainer, isLoading && { opacity: 0.6 }]}
+              style={[
+                styles.ctaContainer,
+                getStartedLoading && { opacity: 0.6 },
+              ]}
             >
               <LinearGradient
                 colors={[colors.primary, colors.primaryDark]}
                 style={[styles.cta, { paddingVertical: 14 }]}
               >
-                {isLoading ? (
+                {getStartedLoading ? (
                   <View style={styles.loadingContainer}>
                     <Text style={styles.ctaText}>Loading...</Text>
                   </View>
@@ -169,7 +159,7 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
               activeOpacity={0.85}
               style={[styles.ghostBtn, { paddingVertical: 12 }]}
               onPress={handleLogin}
-              disabled={isLoading}
+              disabled={getStartedLoading}
               accessibilityLabel="I already have an account - Go to login"
               accessibilityRole="button"
             >
