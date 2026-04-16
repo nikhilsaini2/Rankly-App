@@ -25,6 +25,7 @@ import {
   signInWithEmailPassword,
   signInWithGoogle,
 } from "../../../services/supabase/auth.supabase";
+import { supabase } from "../../../services/supabase/supabase";
 import { colors } from "../../../theme/color";
 import type { AuthScreenProps } from "../../../types/navigation.types";
 import { loginSchema } from "../../../validation/auth.schema";
@@ -45,19 +46,26 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
       try {
         setLoading(true);
         setGlobalError(null);
-        const user = await signInWithEmailPassword(
-          values.email.trim(),
-          values.password,
-        );
+        const email = values.email.trim().toLowerCase();
+
+        const { data: existingUser } = await supabase
+          .from("users")
+          .select("auth_id")
+          .eq("email", email)
+          .maybeSingle();
+
+        if (!existingUser) {
+          throw new Error("ACCOUNT_NOT_FOUND");
+        }
+
+        const user = await signInWithEmailPassword(email, values.password);
         await handleUserProfile(user);
       } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : typeof err === "object" && err !== null && "message" in err
-              ? String((err as { message?: unknown }).message ?? "")
-              : "Login failed";
-        setGlobalError(message);
+        if (err instanceof Error && err.message === "ACCOUNT_NOT_FOUND") {
+          setGlobalError("Account does not exist");
+        } else {
+          setGlobalError("Invalid email or password");
+        }
       } finally {
         setLoading(false);
       }
@@ -157,6 +165,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                     handleChange,
                     handleBlur,
                     handleSubmit,
+                    setFieldValue,
                     values,
                     errors,
                     touched,
@@ -183,8 +192,11 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                           placeholder="Enter Email"
                           placeholderTextColor={colors.placeholder}
                           value={values.email}
-                          onChangeText={handleChange("email")}
-                          onBlur={handleBlur("email")}
+                          onChangeText={(text) => handleChange("email")(text.trimStart())}
+                          onBlur={() => {
+                            setFieldValue("email", values.email.trim());
+                            handleBlur("email");
+                          }}
                           returnKeyType="next"
                           autoCapitalize="none"
                           autoCorrect={false}
@@ -328,13 +340,13 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                       >
                         <Text
                           style={{
-                            color: colors.textMuted,
+                            color: colors.inputLabel,
                             textAlign: "center",
                             marginTop: 12,
                           }}
                         >
                           Don't have an account?{" "}
-                          <Text style={{ color: colors.inputLabel }}>
+                          <Text style={{ color: colors.primary }}>
                             Register
                           </Text>
                         </Text>

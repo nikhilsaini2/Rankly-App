@@ -27,12 +27,14 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
   const handleGetStarted = useCallback(() => {
     if (getStartedLoading) return;
     setGetStartedLoading(true);
-    navigation.replace("Register");
+    navigation.navigate("Register");
+    setTimeout(() => setGetStartedLoading(false), 1000);
   }, [navigation, getStartedLoading]);
 
   const handleLogin = useCallback(() => {
     if (getStartedLoading) return;
-    navigation.replace("Login");
+    navigation.navigate("Login");
+    setTimeout(() => setGetStartedLoading(false), 1000);
   }, [navigation, getStartedLoading]);
 
   return (

@@ -290,8 +290,11 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                           placeholder="Enter Email"
                           placeholderTextColor={colors.placeholder}
                           value={values.email}
-                          onChangeText={handleChange("email")}
-                          onBlur={handleBlur("email")}
+                          onChangeText={(text) => handleChange("email")(text.trimStart())}
+                          onBlur={() => {
+                            setFieldValue("email", values.email.trim());
+                            handleBlur("email");
+                          }}
                           returnKeyType="next"
                           textContentType="emailAddress"
                           accessibilityLabel="Email address input"
