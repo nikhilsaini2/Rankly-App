@@ -30,6 +30,7 @@ import {
 import { useAppTheme } from "../../../theme/useAppTheme";
 import type { AuthScreenProps } from "../../../types/navigation.types";
 import { RegisterSchema } from "../../../validation/auth.schema";
+import { getGoogleAuthErrorMessage } from "../../../utils/googleAuthError";
 import { createRegisterStyles } from "./styles";
 
 const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
@@ -49,11 +50,9 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
   const [customRole, setCustomRole] = useState("");
 
   useEffect(() => {
-    getAuthSessionUser()
-      .then(async (user) => {
-        if (user) await handleUserProfile(user);
-      })
-      .catch(() => {});
+    // Intentionally removed: calling getAuthSessionUser on mount caused
+    // premature navigation before the user completed registration.
+    // RootNavigator's onAuthStateChange handles all session-driven navigation.
   }, []);
 
   const waitForSession = async (retries = 6) => {
@@ -68,22 +67,14 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
   const handleGoogleLogin = useCallback(async () => {
     try {
       setGoogleLoading(true);
-      setLoading(true);
       setGlobalError(null);
       await signInWithGoogle();
       const user = await waitForSession();
       await handleUserProfile(user);
+      // Navigation driven by onAuthStateChange — keep googleLoading until transition
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : typeof err === "object" && err !== null && "message" in err
-            ? String((err as { message?: unknown }).message ?? "")
-            : "";
-      setGlobalError("Google sign-in failed: " + (message || "Unknown error"));
-    } finally {
+      setGlobalError(getGoogleAuthErrorMessage(err));
       setGoogleLoading(false);
-      setLoading(false);
     }
   }, []);
 
@@ -98,56 +89,34 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
   const bottomPadding =
     Platform.OS === "android" ? Math.max(insets.bottom, 16) : insets.bottom;
 
-  if (loading) {
-    return (
-      <SafeAreaView style={{ flex: 1 }} edges={["bottom", "left", "right"]}>
-        <StatusBar style="light" />
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: theme.bgPrimary,
-          }}
-        >
-          <ActivityIndicator size="large" color={theme.primary} />
-          <Text
-            style={{ color: theme.textPrimary, fontSize: 18, marginTop: 15 }}
-          >
-            Loading...
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // FIX: No early return with full-screen loader — that causes flicker by
+  // unmounting the form. Loading state is shown inside the CTA button instead.
+  // RootNavigator's onAuthStateChange drives the navigation atomically.
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={["bottom", "left", "right"]}>
       <StatusBar style="light" />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 44 : 30}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 44 : 0}
       >
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-        >
-          <View style={styles.container}>
-            <ScrollView
-              contentContainerStyle={{
-                flexGrow: 1,
-                paddingBottom: bottomPadding + 50,
-              }}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-              bounces={false}
-            >
-              <View style={styles.header}>
-                <AppName size={30} />
-              </View>
+        <View style={styles.container}>
+          <ScrollView
+            contentContainerStyle={{
+              flexGrow: 1,
+              paddingBottom: bottomPadding + 40,
+            }}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            <View style={styles.header}>
+              <AppName size={26} />
+            </View>
 
-              <View style={styles.scroll}>
+            <View style={styles.scroll}>
                 <View style={styles.titleWrap}>
                   <Text style={styles.title}>Create Profile</Text>
                 </View>
@@ -162,6 +131,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                     role: roles[0],
                   }}
                   validationSchema={RegisterSchema}
+                  validateOnChange
                   onSubmit={async (values, { setSubmitting }) => {
                     try {
                       setLoading(true);
@@ -183,6 +153,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                         lastName: values.lastName.trim(),
                         role: finalRole,
                       });
+                      // Navigation driven by onAuthStateChange — keep spinner until transition
                     } catch (err) {
                       setLoading(false);
                       setSubmitting(false);
@@ -199,9 +170,6 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                       setGlobalError(
                         "Registration failed: " + (message || "Unknown error"),
                       );
-                    } finally {
-                      setLoading(false);
-                      setSubmitting(false);
                     }
                   }}
                 >
@@ -213,6 +181,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                     errors,
                     touched,
                     setFieldValue,
+                    setFieldTouched,
                     isValid,
                     dirty,
                   }) => (
@@ -294,8 +263,8 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                           value={values.email}
                           onChangeText={(text) => handleChange("email")(text.trimStart())}
                           onBlur={() => {
+                            setFieldTouched("email", true, true);
                             setFieldValue("email", values.email.trim());
-                            handleBlur("email");
                           }}
                           returnKeyType="next"
                           textContentType="emailAddress"
@@ -467,7 +436,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
 
                       <TouchableOpacity
                         onPress={() => handleSubmit()}
-                        disabled={!(isValid && dirty) || loading}
+                        disabled={!(isValid && dirty) || loading || googleLoading}
                         activeOpacity={0.9}
                         accessibilityLabel="Create account button"
                         accessibilityRole="button"
@@ -511,7 +480,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                           { opacity: googleLoading ? 0.8 : 1 },
                         ]}
                         onPress={handleGoogleLogin}
-                        disabled={googleLoading || loading}
+                        disabled={googleLoading}
                         activeOpacity={0.9}
                         accessibilityLabel="Continue with Google"
                         accessibilityRole="button"
@@ -559,10 +528,9 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                     </View>
                   )}
                 </Formik>
-              </View>
-            </ScrollView>
-          </View>
-        </ScrollView>
+            </View>
+          </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

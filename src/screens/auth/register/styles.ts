@@ -22,11 +22,10 @@ export function createRegisterStyles(theme: AppTheme) {
     },
 
     header: {
-      marginTop: 20,
-      paddingHorizontal: 20,
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
+      paddingHorizontal: 16,
+      paddingTop: 8,
+      marginBottom: 20,
+      alignItems: "flex-start",
     },
 
     backBtn: {
