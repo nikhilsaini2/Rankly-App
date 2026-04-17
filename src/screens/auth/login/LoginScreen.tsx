@@ -25,7 +25,6 @@ import {
   signInWithEmailPassword,
   signInWithGoogle,
 } from "../../../services/supabase/auth.supabase";
-import { supabase } from "../../../services/supabase/supabase";
 import { useAppTheme } from "../../../theme/useAppTheme";
 import type { AuthScreenProps } from "../../../types/navigation.types";
 import { loginSchema } from "../../../validation/auth.schema";
@@ -51,24 +50,29 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
         setGlobalError(null);
         const email = values.email.trim().toLowerCase();
 
-        const { data: existingUser } = await supabase
-          .from("users")
-          .select("auth_id")
-          .eq("email", email)
-          .maybeSingle();
-
-        if (!existingUser) {
-          throw new Error("ACCOUNT_NOT_FOUND");
-        }
-
+        // Attempt sign-in directly — Supabase Auth is the source of truth.
+        // Pre-checking the custom users table caused false "account not found"
+        // errors when the profile row hadn't been created yet or email casing differed.
         const user = await signInWithEmailPassword(email, values.password);
         await handleUserProfile(user);
         // Navigation is driven by onAuthStateChange in RootNavigator — no manual navigate needed
       } catch (err) {
-        if (err instanceof Error && err.message === "ACCOUNT_NOT_FOUND") {
-          setGlobalError("Account does not exist");
+        const message = err instanceof Error ? err.message : "";
+        if (
+          message.includes("Invalid login credentials") ||
+          message.includes("invalid_credentials") ||
+          message.includes("Invalid email or password")
+        ) {
+          setGlobalError("Incorrect email or password. Please try again.");
+        } else if (
+          message.includes("Email not confirmed") ||
+          message.includes("email_not_confirmed")
+        ) {
+          setGlobalError("Please verify your email before signing in.");
+        } else if (message.includes("User not found")) {
+          setGlobalError("No account found with this email. Please register.");
         } else {
-          setGlobalError("Invalid email or password");
+          setGlobalError("Sign-in failed. Please try again.");
         }
         setLoading(false);
       }
@@ -134,6 +138,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                 validationSchema={loginSchema}
                 validateOnMount
                 validateOnChange
+                validateOnBlur
                 onSubmit={handleEmailLogin}
               >
                 {({
@@ -237,7 +242,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                     </View>
 
                     <TouchableOpacity
-                      onPress={() => handleSubmit()}
+                      onPress={() => { Keyboard.dismiss(); handleSubmit(); }}
                       disabled={!isValid || !dirty || loading || googleLoading}
                       activeOpacity={0.9}
                       accessibilityLabel="Login button"

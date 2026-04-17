@@ -5,7 +5,15 @@ import { supabase } from "./supabase";
 
 export const signInWithGoogle = async () => {
   await GoogleSignin.hasPlayServices();
-  await GoogleSignin.signOut();
+
+  // Sign out silently — best-effort cleanup before a fresh sign-in.
+  // This throws if no user is currently signed in (first-time login),
+  // so we swallow the error and continue.
+  try {
+    await GoogleSignin.signOut();
+  } catch {
+    // No active Google session — safe to proceed with sign-in
+  }
 
   const userInfo = await GoogleSignin.signIn();
   const { idToken } = await GoogleSignin.getTokens();

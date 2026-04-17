@@ -31,6 +31,7 @@ import { useAppTheme } from "../../../theme/useAppTheme";
 import type { AuthScreenProps } from "../../../types/navigation.types";
 import { RegisterSchema } from "../../../validation/auth.schema";
 import { getGoogleAuthErrorMessage } from "../../../utils/googleAuthError";
+import { sanitizeFirstName, sanitizeLastName } from "../../../utils/nameValidation";
 import { createRegisterStyles } from "./styles";
 
 const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
@@ -105,10 +106,10 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
           <ScrollView
             contentContainerStyle={{
               flexGrow: 1,
-              paddingBottom: bottomPadding + 40,
+              paddingBottom: bottomPadding + 16,
             }}
             keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
+            keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
@@ -116,7 +117,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
               <AppName size={26} />
             </View>
 
-            <View style={styles.scroll}>
+            <View style={{ flexShrink: 1, paddingHorizontal: 16 }}>
                 <View style={styles.titleWrap}>
                   <Text style={styles.title}>Create Profile</Text>
                 </View>
@@ -132,6 +133,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                   }}
                   validationSchema={RegisterSchema}
                   validateOnChange
+                  validateOnBlur
                   onSubmit={async (values, { setSubmitting }) => {
                     try {
                       setLoading(true);
@@ -208,7 +210,9 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                             placeholder="Rahul"
                             placeholderTextColor={theme.placeholder}
                             value={values.firstName}
-                            onChangeText={handleChange("firstName")}
+                            onChangeText={(text) =>
+                              handleChange("firstName")(sanitizeFirstName(text))
+                            }
                             onBlur={handleBlur("firstName")}
                             returnKeyType="next"
                             textContentType="givenName"
@@ -235,7 +239,9 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                             placeholder="Singh"
                             placeholderTextColor={theme.placeholder}
                             value={values.lastName}
-                            onChangeText={handleChange("lastName")}
+                            onChangeText={(text) =>
+                              handleChange("lastName")(sanitizeLastName(text))
+                            }
                             onBlur={handleBlur("lastName")}
                             returnKeyType="next"
                             textContentType="familyName"
@@ -435,7 +441,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                       )}
 
                       <TouchableOpacity
-                        onPress={() => handleSubmit()}
+                        onPress={() => { Keyboard.dismiss(); handleSubmit(); }}
                         disabled={!(isValid && dirty) || loading || googleLoading}
                         activeOpacity={0.9}
                         accessibilityLabel="Create account button"

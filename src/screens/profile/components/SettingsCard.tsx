@@ -1,7 +1,7 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import React from "react";
-import { Switch, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../store/store";
@@ -32,8 +32,17 @@ export function SettingsCard({
     <Animated.View style={[styles.settingsCard]}>
       <TouchableOpacity activeOpacity={0.9} onPress={onResumeHistoryPress}>
         <View style={styles.settingsRow}>
-          <View style={[styles.settingsIconBox, { backgroundColor: "rgba(16,185,129,0.12)" }]}>
-            <Ionicons name="document-text-outline" size={16} color={theme.accent} />
+          <View
+            style={[
+              styles.settingsIconBox,
+              { backgroundColor: "rgba(16,185,129,0.12)" },
+            ]}
+          >
+            <Ionicons
+              name="document-text-outline"
+              size={16}
+              color={theme.accent}
+            />
           </View>
           <Text style={styles.settingsLabel}>Resume History</Text>
           <Feather name="chevron-right" size={16} color={theme.textSecondary} />
@@ -44,7 +53,12 @@ export function SettingsCard({
 
       <TouchableOpacity activeOpacity={0.9} onPress={onInterviewHistoryPress}>
         <View style={styles.settingsRow}>
-          <View style={[styles.settingsIconBox, { backgroundColor: "rgba(139,92,246,0.12)" }]}>
+          <View
+            style={[
+              styles.settingsIconBox,
+              { backgroundColor: "rgba(139,92,246,0.12)" },
+            ]}
+          >
             <Ionicons name="time-outline" size={16} color={theme.primary} />
           </View>
           <Text style={styles.settingsLabel}>Interview History</Text>
@@ -55,7 +69,7 @@ export function SettingsCard({
       <View style={styles.settingsDivider} />
 
       {/* Light Mode toggle — off = dark (default), on = light */}
-      <TouchableOpacity activeOpacity={0.85} onPress={onThemeToggle}>
+      {/* <TouchableOpacity activeOpacity={0.85} onPress={onThemeToggle}>
         <View style={styles.settingsRow}>
           <View style={[styles.settingsIconBox, { backgroundColor: "rgba(251,191,36,0.12)" }]}>
             <Ionicons name="sunny-outline" size={16} color="#F59E0B" />
@@ -69,13 +83,15 @@ export function SettingsCard({
             ios_backgroundColor={theme.border}
           />
         </View>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       <View style={styles.settingsDivider} />
 
       <TouchableOpacity
         activeOpacity={0.9}
-        onPress={() => Linking.openURL("https://example.com/privacy").catch(() => {})}
+        onPress={() =>
+          Linking.openURL("https://example.com/privacy").catch(() => {})
+        }
       >
         <View style={styles.settingsRow}>
           <View style={[styles.settingsIconBox, styles.settingsIconPrivacy]}>
@@ -90,7 +106,9 @@ export function SettingsCard({
 
       <TouchableOpacity
         activeOpacity={0.9}
-        onPress={() => Linking.openURL("https://example.com/terms").catch(() => {})}
+        onPress={() =>
+          Linking.openURL("https://example.com/terms").catch(() => {})
+        }
       >
         <View style={styles.settingsRow}>
           <View style={[styles.settingsIconBox, styles.settingsIconTerms]}>
