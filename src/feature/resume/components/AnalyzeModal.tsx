@@ -1,12 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
+  Animated,
   Keyboard,
-  KeyboardAvoidingView,
+  KeyboardEvent,
   Modal,
   Platform,
-  ScrollView,
   StyleProp,
   StyleSheet,
   Text,
@@ -40,91 +40,120 @@ export function AnalyzeModal({
   const modalStyles = createStyles(theme);
   const insets = useSafeAreaInsets();
 
+  // Animate the sheet upward when keyboard appears
+  const sheetBottom = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const onShow = (e: KeyboardEvent) => {
+      Animated.timing(sheetBottom, {
+        toValue: e.endCoordinates.height,
+        duration: Platform.OS === "ios" ? e.duration || 250 : 200,
+        useNativeDriver: false,
+      }).start();
+    };
+
+    const onHide = (e: KeyboardEvent) => {
+      Animated.timing(sheetBottom, {
+        toValue: 0,
+        duration: Platform.OS === "ios" ? e.duration || 250 : 200,
+        useNativeDriver: false,
+      }).start();
+    };
+
+    const showSub = Keyboard.addListener(showEvent, onShow);
+    const hideSub = Keyboard.addListener(hideEvent, onHide);
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [sheetBottom]);
+
+  useEffect(() => {
+    if (!visible) {
+      sheetBottom.setValue(0);
+    }
+  }, [visible, sheetBottom]);
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={80}
-      >
-        <View style={modalStyles.backdrop}>
-          <TouchableOpacity
-            style={StyleSheet.absoluteFillObject}
-            activeOpacity={1}
-            onPress={() => { Keyboard.dismiss(); onClose(); }}
-          />
+      <View style={modalStyles.backdrop}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFillObject}
+          activeOpacity={1}
+          onPress={() => { Keyboard.dismiss(); onClose(); }}
+        />
 
-          <View style={{ flex: 1, justifyContent: "flex-end" }}>
-            <View style={[modalStyles.sheet, { paddingBottom: insets.bottom + 20 }]}>
-              <ScrollView
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-                keyboardDismissMode="interactive"
-              >
-                <View style={modalStyles.handle} />
+        <Animated.View style={{ marginBottom: sheetBottom }}>
+          <View style={[modalStyles.sheet, { paddingBottom: insets.bottom + 16 }]}>
 
-                <View style={modalStyles.headerRow}>
-                  <View style={modalStyles.headerIcon}>
-                    <LinearGradient
-                      colors={["rgba(108,99,255,0.2)", "rgba(108,99,255,0.08)"]}
-                      style={{ borderRadius: 12 } as StyleProp<ViewStyle>}
-                    />
-                    <Ionicons name="flash" size={18} color={theme.primary} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={modalStyles.title}>Analyze resume</Text>
-                    <Text style={modalStyles.subtitle}>
-                      Add a job description for a tailored score
-                    </Text>
-                  </View>
-                  <TouchableOpacity style={modalStyles.closeBtn} onPress={onClose}>
-                    <Ionicons name="close" size={18} color={theme.textMuted} />
-                  </TouchableOpacity>
-                </View>
+            <View style={modalStyles.handle} />
 
-                <View style={modalStyles.inputWrap}>
-                  <View style={modalStyles.inputLabelRow}>
-                    <Ionicons name="briefcase-outline" size={13} color={theme.textMuted} />
-                    <Text style={modalStyles.inputLabel}>
-                      Job description{" "}
-                      <Text style={modalStyles.inputLabelOpt}>(optional)</Text>
-                    </Text>
-                  </View>
-                  <TextInput
-                    style={modalStyles.input}
-                    placeholder="Paste the job description here for a more accurate keyword and relevance score…"
-                    placeholderTextColor={theme.placeholder}
-                    value={jobDescription}
-                    onChangeText={onChangeText}
-                    multiline
-                    numberOfLines={5}
-                    onSubmitEditing={Keyboard.dismiss}
-                  />
-                </View>
-
-                <View style={modalStyles.tipRow}>
-                  <Ionicons name="information-circle-outline" size={13} color={theme.accent} />
-                  <Text style={modalStyles.tipText}>
-                    Without a job description, you'll get a general ATS score
-                  </Text>
-                </View>
-
-                <PressableScale onPress={onAnalyze} style={modalStyles.cta}>
-                  <LinearGradient
-                    colors={[theme.primary, theme.primaryDark]}
-                    style={modalStyles.ctaInner}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  >
-                    <Ionicons name="flash" size={16} color="#fff" />
-                    <Text style={modalStyles.ctaText}>Run ATS Analysis</Text>
-                  </LinearGradient>
-                </PressableScale>
-              </ScrollView>
+            <View style={modalStyles.headerRow}>
+              <View style={modalStyles.headerIcon}>
+                <LinearGradient
+                  colors={["rgba(108,99,255,0.2)", "rgba(108,99,255,0.08)"]}
+                  style={{ borderRadius: 12 } as StyleProp<ViewStyle>}
+                />
+                <Ionicons name="flash" size={18} color={theme.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={modalStyles.title}>Analyze resume</Text>
+                <Text style={modalStyles.subtitle}>
+                  Add a job description for a tailored score
+                </Text>
+              </View>
+              <TouchableOpacity style={modalStyles.closeBtn} onPress={onClose}>
+                <Ionicons name="close" size={18} color={theme.textMuted} />
+              </TouchableOpacity>
             </View>
+
+            <View style={modalStyles.inputWrap}>
+              <View style={modalStyles.inputLabelRow}>
+                <Ionicons name="briefcase-outline" size={13} color={theme.textMuted} />
+                <Text style={modalStyles.inputLabel}>
+                  Job description{" "}
+                  <Text style={modalStyles.inputLabelOpt}>(optional)</Text>
+                </Text>
+              </View>
+              <TextInput
+                style={modalStyles.input}
+                placeholder="Paste the job description here for a more accurate keyword and relevance score…"
+                placeholderTextColor={theme.placeholder}
+                value={jobDescription}
+                onChangeText={onChangeText}
+                multiline
+                numberOfLines={4}
+                blurOnSubmit={false}
+                onSubmitEditing={Keyboard.dismiss}
+              />
+            </View>
+
+            <View style={modalStyles.tipRow}>
+              <Ionicons name="information-circle-outline" size={13} color={theme.accent} />
+              <Text style={modalStyles.tipText}>
+                Without a job description, you'll get a general ATS score
+              </Text>
+            </View>
+
+            <PressableScale onPress={onAnalyze} style={modalStyles.cta}>
+              <LinearGradient
+                colors={[theme.primary, theme.primaryDark]}
+                style={modalStyles.ctaInner}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Ionicons name="flash" size={16} color="#fff" />
+                <Text style={modalStyles.ctaText}>Run ATS Analysis</Text>
+              </LinearGradient>
+            </PressableScale>
+
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        </Animated.View>
+      </View>
     </Modal>
   );
 }
@@ -140,11 +169,12 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       backgroundColor: theme.surface,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
-      padding: 24,
+      paddingHorizontal: 24,
+      paddingTop: 16,
       borderWidth: 1,
       borderColor: theme.border,
       borderBottomWidth: 0,
-      gap: 16,
+      gap: 14,
     },
     handle: {
       width: 36,
@@ -152,7 +182,6 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       borderRadius: 2,
       backgroundColor: theme.border,
       alignSelf: "center",
-      marginBottom: 4,
     },
     headerRow: {
       flexDirection: "row",
@@ -209,7 +238,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       fontWeight: "400",
     },
     input: {
-      minHeight: 110,
+      height: 90,
       backgroundColor: theme.surfaceAlt,
       borderRadius: 14,
       borderWidth: 1,
@@ -241,10 +270,9 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     cta: {
       borderRadius: 14,
       overflow: "hidden",
-      marginTop: 4,
     },
     ctaInner: {
-      height: 52,
+      height: 50,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
