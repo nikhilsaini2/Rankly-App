@@ -12,13 +12,13 @@ import Reanimated, {
 } from "react-native-reanimated";
 import { PressableScale } from "../../../components/atoms/PressableScale";
 import { getResumePublicUrl } from "../../../services/resume/resumeService";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import type { ResumeRow } from "../../../types/common.types";
 import { AtsScoreSummary } from "../../../types/common.types";
 import type { RootStackParamList } from "../../../types/navigation.types";
 import { formatResumeDate, truncateFilename } from "../../../utils/format";
 import { scoreTierColor } from "../../../utils/score";
-import { cardStyles } from "./ResumeCard.styles";
+import { createCardStyles } from "./ResumeCard.styles";
 
 type Props = {
   item: ResumeRow;
@@ -39,11 +39,12 @@ export function ResumeCard({
   onAnalyze,
   onDelete,
 }: Props) {
+  const theme = useAppTheme();
+  const cardStyles = createCardStyles(theme);
+
   const fname = item.fileName ?? item.title;
   const score = latestScore?.overall_score ?? null;
-  const scoreColor = score !== null ? scoreTierColor(score) : colors.textMuted;
-
-  // Determine if this resume came from builder or from upload
+  const scoreColor = score !== null ? scoreTierColor(score) : theme.textMuted;
   const isBuilderResume = !item.fileUrl;
 
   const anim = useSharedValue(0);
@@ -62,19 +63,13 @@ export function ResumeCard({
   const handleViewResume = async () => {
     try {
       const publicUrl = await getResumePublicUrl(item);
-      if (!publicUrl) {
-        console.error("Failed to get resume URL");
-        // Could show a toast or alert here
-        return;
-      }
-
+      if (!publicUrl) return;
       rootNav?.navigate("PdfViewer", {
         url: publicUrl,
         fileName: item.fileName ?? item.title ?? "Resume.pdf",
       });
     } catch (error) {
       console.error("Failed to view resume:", error);
-      // Could show a toast or alert here
     }
   };
 
@@ -83,16 +78,12 @@ export function ResumeCard({
       <View style={cardStyles.card}>
         <View style={cardStyles.leftCol}>
           <LinearGradient
-            colors={[colors.danger, colors.danger]}
+            colors={[theme.danger, theme.danger]}
             style={cardStyles.pdfIconWrap}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Ionicons
-              name="document-text-outline"
-              size={20}
-              color={colors.textPrimary}
-            />
+            <Ionicons name="document-text-outline" size={20} color={theme.textPrimary} />
             <Text style={cardStyles.pdfLabel}>{"PDF"}</Text>
           </LinearGradient>
         </View>
@@ -103,40 +94,21 @@ export function ResumeCard({
           </Text>
 
           <View style={cardStyles.metaRow}>
-            <Ionicons
-              name="time-outline"
-              size={11}
-              color={colors.textMuted}
-              style={{ marginRight: 4 }}
-            />
-            <Text style={cardStyles.metaText}>
-              {formatResumeDate(item.createdAt)}
-            </Text>
+            <Ionicons name="time-outline" size={11} color={theme.textMuted} style={{ marginRight: 4 }} />
+            <Text style={cardStyles.metaText}>{formatResumeDate(item.createdAt)}</Text>
             {item.status && (
               <>
                 <View style={cardStyles.metaDot} />
-                <View
-                  style={[
-                    cardStyles.statusPill,
-                    item.status === "analyzed"
-                      ? {
-                          backgroundColor: colors.success + "20",
-                          borderColor: colors.success + "40",
-                        }
-                      : {
-                          backgroundColor: colors.warning + "20",
-                          borderColor: colors.warning + "40",
-                        },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      cardStyles.statusText,
-                      item.status === "analyzed"
-                        ? { color: colors.success }
-                        : { color: colors.warning },
-                    ]}
-                  >
+                <View style={[
+                  cardStyles.statusPill,
+                  item.status === "analyzed"
+                    ? { backgroundColor: theme.success + "20", borderColor: theme.success + "40" }
+                    : { backgroundColor: theme.warning + "20", borderColor: theme.warning + "40" },
+                ]}>
+                  <Text style={[
+                    cardStyles.statusText,
+                    item.status === "analyzed" ? { color: theme.success } : { color: theme.warning },
+                  ]}>
                     {item.status === "analyzed" ? "Analyzed" : "Uploaded"}
                   </Text>
                 </View>
@@ -145,23 +117,9 @@ export function ResumeCard({
             {score !== null && (
               <>
                 <View style={cardStyles.metaDot} />
-                <View
-                  style={[
-                    cardStyles.scorePill,
-                    { borderColor: scoreColor + "55" },
-                  ]}
-                >
-                  <View
-                    style={[
-                      cardStyles.scorePillDot,
-                      { backgroundColor: scoreColor },
-                    ]}
-                  />
-                  <Text
-                    style={[cardStyles.scorePillText, { color: scoreColor }]}
-                  >
-                    ATS {score}
-                  </Text>
+                <View style={[cardStyles.scorePill, { borderColor: scoreColor + "55" }]}>
+                  <View style={[cardStyles.scorePillDot, { backgroundColor: scoreColor }]} />
+                  <Text style={[cardStyles.scorePillText, { color: scoreColor }]}>ATS {score}</Text>
                 </View>
               </>
             )}
@@ -177,32 +135,17 @@ export function ResumeCard({
 
           <View style={cardStyles.actions}>
             {!isBuilderResume && (
-              <PressableScale
-                style={cardStyles.primaryBtn}
-                onPress={() => onAnalyze(item.id)}
-                disabled={scoring}
-              >
+              <PressableScale style={cardStyles.primaryBtn} onPress={() => onAnalyze(item.id)} disabled={scoring}>
                 <LinearGradient
-                  colors={
-                    scoring
-                      ? [colors.surfaceAlt, colors.surfaceAlt]
-                      : ["rgba(108,99,255,0.22)", "rgba(108,99,255,0.12)"]
-                  }
+                  colors={scoring
+                    ? [theme.surfaceAlt, theme.surfaceAlt]
+                    : ["rgba(108,99,255,0.22)", "rgba(108,99,255,0.12)"]}
                   style={cardStyles.primaryBtnInner}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  <Ionicons
-                    name="flash-outline"
-                    size={13}
-                    color={scoring ? colors.textMuted : colors.primary}
-                  />
-                  <Text
-                    style={[
-                      cardStyles.primaryBtnText,
-                      scoring && { color: colors.textMuted },
-                    ]}
-                  >
+                  <Ionicons name="flash-outline" size={13} color={scoring ? theme.textMuted : theme.primary} />
+                  <Text style={[cardStyles.primaryBtnText, scoring && { color: theme.textMuted }]}>
                     {score !== null ? "Re-analyze" : "Get ATS Score"}
                   </Text>
                 </LinearGradient>
@@ -212,18 +155,9 @@ export function ResumeCard({
             {score !== null && (
               <PressableScale
                 style={cardStyles.secondaryBtn}
-                onPress={() =>
-                  rootNav?.navigate("AtsScore", {
-                    resumeId: item.id,
-                    scoreId: latestScore!.id,
-                  })
-                }
+                onPress={() => rootNav?.navigate("AtsScore", { resumeId: item.id, scoreId: latestScore!.id })}
               >
-                <Ionicons
-                  name="bar-chart-outline"
-                  size={13}
-                  color={colors.accent}
-                />
+                <Ionicons name="bar-chart-outline" size={13} color={theme.accent} />
                 <Text style={cardStyles.secondaryBtnText}>View Report</Text>
               </PressableScale>
             )}
@@ -233,7 +167,7 @@ export function ResumeCard({
               onPress={() => onDelete(item)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Ionicons name="trash-outline" size={16} color={colors.danger} />
+              <Ionicons name="trash-outline" size={16} color={theme.danger} />
             </TouchableOpacity>
           </View>
         </View>

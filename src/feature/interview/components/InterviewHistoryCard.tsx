@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { memo } from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
-import { colors } from '../../../theme/color';
+import { useAppTheme } from '../../../theme/useAppTheme';
 import { scoreTierColor } from '../../../utils/score';
 import type { InterviewReport } from '../services/interviewStorage';
 
@@ -18,12 +18,6 @@ function relativeTime(ts: number): string {
   return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function difficultyColor(d: string): string {
-  if (d === 'easy') return colors.accent;
-  if (d === 'medium') return colors.warning;
-  return colors.danger;
-}
-
 interface Props {
   report: InterviewReport;
   onPress: (report: InterviewReport) => void;
@@ -31,6 +25,14 @@ interface Props {
 }
 
 export const InterviewHistoryCard = memo(({ report, onPress, onDelete }: Props) => {
+  const theme = useAppTheme();
+
+  function difficultyColor(d: string): string {
+    if (d === 'easy') return theme.accent;
+    if (d === 'medium') return theme.warning;
+    return theme.danger;
+  }
+
   const handleDelete = () => {
     Alert.alert(
       'Delete Interview',
@@ -51,10 +53,10 @@ export const InterviewHistoryCard = memo(({ report, onPress, onDelete }: Props) 
       activeOpacity={0.75}
       onPress={() => onPress(report)}
       style={{
-        backgroundColor: colors.surface,
+        backgroundColor: theme.surface,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: theme.border,
         padding: 14,
         marginBottom: 10,
         flexDirection: 'row',
@@ -86,7 +88,7 @@ export const InterviewHistoryCard = memo(({ report, onPress, onDelete }: Props) 
       {/* Info */}
       <View style={{ flex: 1, gap: 4 }}>
         <Text
-          style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}
+          style={{ fontSize: 15, fontWeight: '700', color: theme.textPrimary }}
           numberOfLines={1}
         >
           {report.role}
@@ -114,17 +116,17 @@ export const InterviewHistoryCard = memo(({ report, onPress, onDelete }: Props) 
 
           {/* Session type badge */}
           <View style={{
-            backgroundColor: colors.primary + '15',
+            backgroundColor: theme.primary + '15',
             borderRadius: 6,
             paddingHorizontal: 7,
             paddingVertical: 2,
             borderWidth: 1,
-            borderColor: colors.primary + '30',
+            borderColor: theme.primary + '30',
           }}>
             <Text style={{
               fontSize: 11,
               fontWeight: '600',
-              color: colors.primary,
+              color: theme.primary,
               textTransform: 'capitalize',
             }}>
               {report.sessionType}
@@ -132,12 +134,12 @@ export const InterviewHistoryCard = memo(({ report, onPress, onDelete }: Props) 
           </View>
 
           {/* Questions count */}
-          <Text style={{ fontSize: 11, color: colors.textMuted, alignSelf: 'center' }}>
+          <Text style={{ fontSize: 11, color: theme.textMuted, alignSelf: 'center' }}>
             {report.questionsCount}Q
           </Text>
         </View>
 
-        <Text style={{ fontSize: 12, color: colors.textMuted }}>
+        <Text style={{ fontSize: 12, color: theme.textMuted }}>
           {relativeTime(report.createdAt)}
         </Text>
       </View>
@@ -149,9 +151,9 @@ export const InterviewHistoryCard = memo(({ report, onPress, onDelete }: Props) 
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={{ padding: 6 }}
         >
-          <Ionicons name="trash-outline" size={18} color={colors.textMuted} />
+          <Ionicons name="trash-outline" size={18} color={theme.textMuted} />
         </TouchableOpacity>
-        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+        <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
       </View>
     </TouchableOpacity>
   );

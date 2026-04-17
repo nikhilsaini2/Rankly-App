@@ -17,7 +17,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PressableScale } from "../../../components/atoms/PressableScale";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 
 type Props = {
   visible: boolean;
@@ -36,15 +36,12 @@ export function AnalyzeModal({
   onAnalyze,
   onClose,
 }: Props) {
+  const theme = useAppTheme();
+  const modalStyles = createStyles(theme);
   const insets = useSafeAreaInsets();
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -54,16 +51,11 @@ export function AnalyzeModal({
           <TouchableOpacity
             style={StyleSheet.absoluteFillObject}
             activeOpacity={1}
-            onPress={() => {
-              Keyboard.dismiss();
-              onClose();
-            }}
+            onPress={() => { Keyboard.dismiss(); onClose(); }}
           />
 
           <View style={{ flex: 1, justifyContent: "flex-end" }}>
-            <View
-              style={[modalStyles.sheet, { paddingBottom: insets.bottom + 20 }]}
-            >
+            <View style={[modalStyles.sheet, { paddingBottom: insets.bottom + 20 }]}>
               <ScrollView
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
@@ -77,7 +69,7 @@ export function AnalyzeModal({
                       colors={["rgba(108,99,255,0.2)", "rgba(108,99,255,0.08)"]}
                       style={{ borderRadius: 12 } as StyleProp<ViewStyle>}
                     />
-                    <Ionicons name="flash" size={18} color={colors.primary} />
+                    <Ionicons name="flash" size={18} color={theme.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={modalStyles.title}>Analyze resume</Text>
@@ -85,21 +77,14 @@ export function AnalyzeModal({
                       Add a job description for a tailored score
                     </Text>
                   </View>
-                  <TouchableOpacity
-                    style={modalStyles.closeBtn}
-                    onPress={onClose}
-                  >
-                    <Ionicons name="close" size={18} color={colors.textMuted} />
+                  <TouchableOpacity style={modalStyles.closeBtn} onPress={onClose}>
+                    <Ionicons name="close" size={18} color={theme.textMuted} />
                   </TouchableOpacity>
                 </View>
 
                 <View style={modalStyles.inputWrap}>
                   <View style={modalStyles.inputLabelRow}>
-                    <Ionicons
-                      name="briefcase-outline"
-                      size={13}
-                      color={colors.textMuted}
-                    />
+                    <Ionicons name="briefcase-outline" size={13} color={theme.textMuted} />
                     <Text style={modalStyles.inputLabel}>
                       Job description{" "}
                       <Text style={modalStyles.inputLabelOpt}>(optional)</Text>
@@ -108,7 +93,7 @@ export function AnalyzeModal({
                   <TextInput
                     style={modalStyles.input}
                     placeholder="Paste the job description here for a more accurate keyword and relevance score…"
-                    placeholderTextColor={colors.placeholder}
+                    placeholderTextColor={theme.placeholder}
                     value={jobDescription}
                     onChangeText={onChangeText}
                     multiline
@@ -118,11 +103,7 @@ export function AnalyzeModal({
                 </View>
 
                 <View style={modalStyles.tipRow}>
-                  <Ionicons
-                    name="information-circle-outline"
-                    size={13}
-                    color={colors.accent}
-                  />
+                  <Ionicons name="information-circle-outline" size={13} color={theme.accent} />
                   <Text style={modalStyles.tipText}>
                     Without a job description, you'll get a general ATS score
                   </Text>
@@ -130,7 +111,7 @@ export function AnalyzeModal({
 
                 <PressableScale onPress={onAnalyze} style={modalStyles.cta}>
                   <LinearGradient
-                    colors={[colors.primary, colors.primaryDark]}
+                    colors={[theme.primary, theme.primaryDark]}
                     style={modalStyles.ctaInner}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
@@ -148,130 +129,132 @@ export function AnalyzeModal({
   );
 }
 
-const modalStyles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderBottomWidth: 0,
-    gap: 16,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.border,
-    alignSelf: "center",
-    marginBottom: 4,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  headerIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(108,99,255,0.2)",
-    overflow: "hidden",
-  },
-  title: {
-    color: colors.textPrimary,
-    fontSize: 17,
-    fontWeight: "700",
-    letterSpacing: -0.3,
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    marginTop: 1,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: colors.surfaceAlt,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  inputWrap: {
-    gap: 8,
-  },
-  inputLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-  inputLabel: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 0.3,
-  },
-  inputLabelOpt: {
-    color: colors.textMuted,
-    fontWeight: "400",
-  },
-  input: {
-    minHeight: 110,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: colors.textPrimary,
-    textAlignVertical: "top",
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  tipRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(0,212,170,0.06)",
-    borderWidth: 1,
-    borderColor: "rgba(0,212,170,0.15)",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  tipText: {
-    color: colors.accent,
-    fontSize: 11,
-    flex: 1,
-    lineHeight: 16,
-  },
-  cta: {
-    borderRadius: 14,
-    overflow: "hidden",
-    marginTop: 4,
-  },
-  ctaInner: {
-    height: 52,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  ctaText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "800",
-    letterSpacing: 0.2,
-  },
-});
+function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  return StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      justifyContent: "flex-end",
+    },
+    sheet: {
+      backgroundColor: theme.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 24,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderBottomWidth: 0,
+      gap: 16,
+    },
+    handle: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: theme.border,
+      alignSelf: "center",
+      marginBottom: 4,
+    },
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    headerIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: "rgba(108,99,255,0.2)",
+      overflow: "hidden",
+    },
+    title: {
+      color: theme.textPrimary,
+      fontSize: 17,
+      fontWeight: "700",
+      letterSpacing: -0.3,
+    },
+    subtitle: {
+      color: theme.textSecondary,
+      fontSize: 12,
+      marginTop: 1,
+    },
+    closeBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: theme.surfaceAlt,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    inputWrap: {
+      gap: 8,
+    },
+    inputLabelRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+    },
+    inputLabel: {
+      color: theme.textSecondary,
+      fontSize: 12,
+      fontWeight: "600",
+      letterSpacing: 0.3,
+    },
+    inputLabelOpt: {
+      color: theme.textMuted,
+      fontWeight: "400",
+    },
+    input: {
+      minHeight: 110,
+      backgroundColor: theme.surfaceAlt,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.border,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      color: theme.textPrimary,
+      textAlignVertical: "top",
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    tipRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      backgroundColor: "rgba(0,212,170,0.06)",
+      borderWidth: 1,
+      borderColor: "rgba(0,212,170,0.15)",
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    tipText: {
+      color: theme.accent,
+      fontSize: 11,
+      flex: 1,
+      lineHeight: 16,
+    },
+    cta: {
+      borderRadius: 14,
+      overflow: "hidden",
+      marginTop: 4,
+    },
+    ctaInner: {
+      height: 52,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+    },
+    ctaText: {
+      color: "#fff",
+      fontSize: 15,
+      fontWeight: "800",
+      letterSpacing: 0.2,
+    },
+  });
+}

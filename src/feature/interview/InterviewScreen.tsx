@@ -25,9 +25,9 @@ import Animated, {
 import { PressableScale } from "../../components/atoms/PressableScale";
 import { ScoreRing } from "../../components/atoms/ScoreRing";
 import { useAIChatIntegration } from "../../hooks/useAIChatIntegration";
-import { colors } from "../../theme/color";
+import { useAppTheme } from "../../theme/useAppTheme";
 import { getInterviewResultMessage, scoreTierColor } from "../../utils/score";
-import { interviewStyles as s } from "./Interview.styles";
+import { createInterviewStyles } from "./Interview.styles";
 import { InterviewInput } from "./components/InterviewInput";
 import { QuestionHeader } from "./components/QuestionHeader";
 import { useInterviewEngine } from "./hooks/useInterviewEngine";
@@ -46,6 +46,7 @@ function Pill({
   tone: "primary" | "easy" | "medium" | "hard";
   onPress: () => void;
 }) {
+  const theme = useAppTheme();
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -59,44 +60,44 @@ function Pill({
 
   const toneIconColor =
     tone === "easy"
-      ? colors.accent
+      ? theme.accent
       : tone === "medium"
-        ? colors.warning
+        ? theme.warning
         : tone === "hard"
-          ? colors.danger
-          : colors.primary;
+          ? theme.danger
+          : theme.primary;
 
   const pillBgStyle = selected
     ? tone === "primary"
       ? {
           backgroundColor: "rgba(108,99,255,0.15)",
-          borderColor: colors.primary,
+          borderColor: theme.primary,
         }
       : tone === "easy"
         ? {
             backgroundColor: "rgba(0,212,170,0.15)",
-            borderColor: colors.accent,
+            borderColor: theme.accent,
           }
         : tone === "medium"
           ? {
               backgroundColor: "rgba(255,179,71,0.15)",
-              borderColor: colors.warning,
+              borderColor: theme.warning,
             }
           : {
               backgroundColor: "rgba(255,92,92,0.15)",
-              borderColor: colors.danger,
+              borderColor: theme.danger,
             }
-    : { backgroundColor: "transparent", borderColor: colors.border };
+    : { backgroundColor: "transparent", borderColor: theme.border };
 
   const pillTextColor = selected
     ? tone === "easy"
-      ? colors.accent
+      ? theme.accent
       : tone === "medium"
-        ? colors.warning
+        ? theme.warning
         : tone === "hard"
-          ? colors.danger
-          : colors.primary
-    : colors.textSecondary;
+          ? theme.danger
+          : theme.primary
+    : theme.textSecondary;
 
   return (
     <AnimatedTouchable
@@ -149,6 +150,8 @@ function SetupPhase({
   isLoading: boolean;
   defaultRole: string;
 }) {
+  const theme = useAppTheme();
+  const s = createInterviewStyles(theme);
   const [role, setRole] = useState(defaultRole);
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">(
     "medium",
@@ -203,7 +206,7 @@ function SetupPhase({
       <View style={s.setupHeaderWrap}>
         <View style={s.setupHeaderRow}>
           <View style={s.setupIconCircle}>
-            <Ionicons name="chatbubbles" size={18} color={colors.textPrimary} />
+            <Ionicons name="chatbubbles" size={18} color={theme.textPrimary} />
           </View>
           <Text style={s.setupTitle}>Mock Interview</Text>
         </View>
@@ -220,7 +223,7 @@ function SetupPhase({
           value={role}
           onChangeText={setRole}
           placeholder="e.g. Software Engineer, Product Manager"
-          placeholderTextColor={colors.placeholder}
+          placeholderTextColor={theme.placeholder}
           onFocus={() => setRoleFocused(true)}
           onBlur={() => setRoleFocused(false)}
         />
@@ -278,22 +281,22 @@ function SetupPhase({
         disabled={isLoading || !role.trim()}
       >
         <LinearGradient
-          colors={[colors.primary, colors.primaryDark]}
+          colors={[theme.primary, theme.primaryDark]}
           style={[
             s.startBtn,
             (isLoading || !role.trim()) && s.startBtnDisabled,
           ]}
         >
           {isLoading ? (
-            <ActivityIndicator color={colors.textPrimary} />
+            <ActivityIndicator color={theme.textPrimary} />
           ) : (
             <View style={s.startBtnRow}>
-              <Ionicons name="play" size={18} color={colors.textPrimary} />
+              <Ionicons name="play" size={18} color={theme.textPrimary} />
               <Text style={s.startBtnText}>Start Session</Text>
               <Ionicons
                 name="arrow-forward"
                 size={16}
-                color={colors.textPrimary}
+                color={theme.textPrimary}
               />
             </View>
           )}
@@ -318,6 +321,8 @@ function CompletePhase({
   onDiscussCoach: () => void;
   onViewHistory: () => void;
 }) {
+  const theme = useAppTheme();
+  const s = createInterviewStyles(theme);
   return (
     <FlatList
       data={answers}
@@ -395,6 +400,8 @@ export function InterviewScreen({
   onRegisterHistoryHandler,
   insetsBottom = 0,
 }: InterviewScreenProps) {
+  const theme = useAppTheme();
+  const s = createInterviewStyles(theme);
   const engine = useInterviewEngine();
   const engineRef = useRef(engine);
   engineRef.current = engine;
@@ -515,7 +522,7 @@ export function InterviewScreen({
     return (
       <View style={{
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: theme.background,
         justifyContent: "center",
         alignItems: "center",
         paddingHorizontal: 24,
@@ -525,9 +532,9 @@ export function InterviewScreen({
           maxWidth: 360,
           borderRadius: 24,
           overflow: "hidden",
-          backgroundColor: colors.surface,
+          backgroundColor: theme.surface,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: theme.border,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 12 },
           shadowOpacity: 0.4,
@@ -538,7 +545,7 @@ export function InterviewScreen({
           {/* Top accent strip */}
           <View style={{
             height: 3,
-            backgroundColor: colors.primary,
+            backgroundColor: theme.primary,
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
           }} />
@@ -557,13 +564,13 @@ export function InterviewScreen({
                 alignItems: "center",
                 marginBottom: 16,
               }}>
-                <Ionicons name="play-circle-outline" size={26} color={colors.primary} />
+                <Ionicons name="play-circle-outline" size={26} color={theme.primary} />
               </View>
 
               <Text style={{
                 fontSize: 21,
                 fontWeight: "700",
-                color: colors.textPrimary,
+                color: theme.textPrimary,
                 letterSpacing: -0.4,
                 textAlign: "center",
               }}>
@@ -572,13 +579,13 @@ export function InterviewScreen({
 
               <Text style={{
                 fontSize: 14,
-                color: colors.textSecondary,
+                color: theme.textSecondary,
                 marginTop: 6,
                 textAlign: "center",
                 lineHeight: 20,
               }}>
                 Continue your{" "}
-                <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>
+                <Text style={{ color: theme.textPrimary, fontWeight: "600" }}>
                   {savedSession.sessionConfig.role}
                 </Text>
                 {" "}session where you left off.
@@ -601,14 +608,14 @@ export function InterviewScreen({
                   paddingHorizontal: 10,
                   paddingVertical: 5,
                   borderRadius: 8,
-                  backgroundColor: colors.surfaceAlt,
+                  backgroundColor: theme.surfaceAlt,
                   borderWidth: 1,
-                  borderColor: colors.border,
+                  borderColor: theme.border,
                 }}>
                   <Text style={{
                     fontSize: 12,
                     fontWeight: "500",
-                    color: colors.textSecondary,
+                    color: theme.textSecondary,
                     textTransform: "capitalize",
                   }}>
                     {tag}
@@ -624,7 +631,7 @@ export function InterviewScreen({
                 borderRadius: 14,
                 justifyContent: "center",
                 alignItems: "center",
-                backgroundColor: colors.primary,
+                backgroundColor: theme.primary,
               }}
               onPress={() => {
                 // Force-reset transcript and recording state before restoring
@@ -654,7 +661,7 @@ export function InterviewScreen({
                 setSavedSession(null);
               }}
             >
-              <Text style={{ color: colors.textMuted, fontWeight: "500", fontSize: 14 }}>
+              <Text style={{ color: theme.textMuted, fontWeight: "500", fontSize: 14 }}>
                 Start New Session
               </Text>
             </PressableScale>
@@ -733,7 +740,7 @@ export function InterviewScreen({
       {engine.error && (
         <View style={s.errorOverlay}>
           <View style={s.errorCard}>
-            <Ionicons name="warning" size={48} color={colors.error} />
+            <Ionicons name="warning" size={48} color={theme.error} />
             <Text style={s.errorTitle}>Interview Error</Text>
             <Text style={s.errorMessage}>{engine.error}</Text>
             <TouchableOpacity style={s.errorBtn} onPress={handleReset}>
@@ -745,7 +752,7 @@ export function InterviewScreen({
 
       {engine.isLoading && engine.phase === "processing" && (
         <View style={s.loadingOverlay}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={theme.primary} />
           <Text style={s.loadingText}>Evaluating your answer…</Text>
         </View>
       )}

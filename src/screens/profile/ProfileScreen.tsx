@@ -35,7 +35,9 @@ import {
   UserProfileUpdate,
 } from "../../services/profile/profileService";
 import { supabase } from "../../services/supabase/supabase";
-import { colors } from "../../theme/color";
+import { useDispatch } from "react-redux";
+import { toggleTheme } from "../../store/themeSlice";
+import { useAppTheme } from "../../theme/useAppTheme";
 import type { User } from "../../types/common.types";
 import type { RootStackParamList } from "../../types/navigation.types";
 import { BioCard } from "./components/BioCard";
@@ -44,11 +46,14 @@ import { EditProfileForm } from "./components/EditProfileForm";
 import { ProfileHero } from "./components/ProfileHero";
 import { SettingsCard } from "./components/SettingsCard";
 import { StatsStrip } from "./components/StatsStrip";
-import { styles as profileStyles } from "./styles";
+import { createProfileStyles } from "./styles";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const toast = useToast();
+  const theme = useAppTheme();
+  const profileStyles = createProfileStyles(theme);
+  const dispatch = useDispatch();
   const { user, loading, error, refetch: refetchProfile } = useProfile();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
@@ -309,6 +314,10 @@ export default function ProfileScreen() {
     () => navigation.navigate("ResumeHistory"),
     [navigation],
   );
+  const handleThemeToggle = useCallback(
+    () => dispatch(toggleTheme()),
+    [dispatch],
+  );
   const fullName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
   const initials = getInitials(user?.firstName, user?.lastName);
   const planLabel = (user?.plan === "pro" ? "Pro" : "Free").toUpperCase();
@@ -320,12 +329,12 @@ export default function ProfileScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.bgPrimary,
+          backgroundColor: theme.bgPrimary,
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -335,18 +344,18 @@ export default function ProfileScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.bgPrimary,
+          backgroundColor: theme.bgPrimary,
           justifyContent: "center",
           alignItems: "center",
           padding: 24,
         }}
       >
-        <Text style={{ color: colors.textSecondary, textAlign: "center" }}>
+        <Text style={{ color: theme.textSecondary, textAlign: "center" }}>
           {error ?? "Could not load profile"}
         </Text>
         <Text
           onPress={refetchProfile}
-          style={{ color: colors.primary, marginTop: 16, fontWeight: "600" }}
+          style={{ color: theme.primary, marginTop: 16, fontWeight: "600" }}
         >
           Try again
         </Text>
@@ -401,6 +410,7 @@ export default function ProfileScreen() {
                 onToggleNotif={onToggleNotif}
                 onInterviewHistoryPress={handleInterviewHistoryPress}
                 onResumeHistoryPress={handleResumeHistoryPress}
+                onThemeToggle={handleThemeToggle}
               />
               <DangerZone
                 appVersion={appVersion}

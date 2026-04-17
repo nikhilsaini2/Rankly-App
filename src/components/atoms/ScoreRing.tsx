@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
-import { colors } from "../../theme/color";
+import { useAppTheme } from "../../theme/useAppTheme";
 import { Props } from "../../types";
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -17,11 +17,15 @@ export function ScoreRing({
   size = 120,
   strokeWidth = 8,
   progress,
-  strokeColor = colors.accent,
+  strokeColor,
   displayValue,
   subtitle = "ATS",
   animated = false,
 }: Props) {
+  const theme = useAppTheme();
+  const styles = createStyles(theme);
+  const resolvedStrokeColor = strokeColor ?? theme.accent;
+
   const score = Math.max(0, Math.min(100, displayValue ?? progress));
 
   const radius = (size - strokeWidth) / 2;
@@ -33,8 +37,6 @@ export function ScoreRing({
   );
 
   const animatedProps = useAnimatedProps(() => {
-    // pct animates from 0 → score (0–100 range)
-    // Use pct.value directly as the fill percentage
     const clamped = Math.max(0, Math.min(100, pct.value));
     const offset = circumference - (circumference * clamped) / 100;
     return {
@@ -71,7 +73,7 @@ export function ScoreRing({
       <Svg width={size} height={size}>
         {/* Background track */}
         <Circle
-          stroke={colors.border}
+          stroke={theme.border}
           fill="none"
           cx={size / 2}
           cy={size / 2}
@@ -84,7 +86,7 @@ export function ScoreRing({
         {animated ? (
           <AnimatedCircle
             animatedProps={animatedProps}
-            stroke={strokeColor}
+            stroke={resolvedStrokeColor}
             fill="none"
             cx={size / 2}
             cy={size / 2}
@@ -96,7 +98,7 @@ export function ScoreRing({
           />
         ) : (
           <Circle
-            stroke={strokeColor}
+            stroke={resolvedStrokeColor}
             fill="none"
             cx={size / 2}
             cy={size / 2}
@@ -126,19 +128,21 @@ export function ScoreRing({
   );
 }
 
-const styles = StyleSheet.create({
-  center: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  score: {
-    fontWeight: "900",
-    color: colors.textPrimary,
-    letterSpacing: -1,
-  },
-  sub: {
-    color: colors.textSecondary,
-    marginTop: -2,
-  },
-});
+function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  return StyleSheet.create({
+    center: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    score: {
+      fontWeight: "900",
+      color: theme.textPrimary,
+      letterSpacing: -1,
+    },
+    sub: {
+      color: theme.textSecondary,
+      marginTop: -2,
+    },
+  });
+}

@@ -6,8 +6,8 @@ import {
   deleteUserAccountData,
   logout,
 } from "../../../services/profile/profileService";
-import { colors } from "../../../theme/color";
-import { styles } from "../styles";
+import { useAppTheme } from "../../../theme/useAppTheme";
+import { createProfileStyles } from "../styles";
 
 interface DangerZoneProps {
   appVersion: string;
@@ -16,6 +16,9 @@ interface DangerZoneProps {
 }
 
 export function DangerZone({ appVersion, onError, onSuccess }: DangerZoneProps) {
+  const theme = useAppTheme();
+  const styles = createProfileStyles(theme);
+
   async function handleDeleteAccount() {
     try {
       await deleteUserAccountData();
@@ -40,10 +43,10 @@ export function DangerZone({ appVersion, onError, onSuccess }: DangerZoneProps) 
         ]}
       >
         <View style={[styles.dangerIconCircle, styles.dangerIconPrimaryBg]}>
-          <Feather name="log-out" size={16} color={colors.primary} />
+          <Feather name="log-out" size={16} color={theme.primary} />
         </View>
         <Text style={styles.signOutText}>Sign Out</Text>
-        <Feather name="chevron-right" size={16} color={colors.textSecondary} />
+        <Feather name="chevron-right" size={16} color={theme.textSecondary} />
       </Pressable>
 
       <Pressable
@@ -53,11 +56,7 @@ export function DangerZone({ appVersion, onError, onSuccess }: DangerZoneProps) 
             "This will permanently delete your account and all data. You will not be able to log in again.",
             [
               { text: "Cancel", style: "cancel" },
-              {
-                text: "Delete",
-                style: "destructive",
-                onPress: handleDeleteAccount,
-              },
+              { text: "Delete", style: "destructive", onPress: handleDeleteAccount },
             ],
           )
         }
@@ -68,7 +67,7 @@ export function DangerZone({ appVersion, onError, onSuccess }: DangerZoneProps) 
         ]}
       >
         <View style={[styles.dangerIconCircle, styles.dangerIconDangerBg]}>
-          <Feather name="trash-2" size={16} color={colors.danger} />
+          <Feather name="trash-2" size={16} color={theme.danger} />
         </View>
         <Text style={styles.deleteText}>Delete Account</Text>
         <Feather name="chevron-right" size={16} color={"rgba(255,92,92,0.5)"} />

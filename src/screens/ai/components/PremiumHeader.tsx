@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { colors } from "../../../theme/color";
-import { styles } from "../styles";
+import { useAppTheme } from "../../../theme/useAppTheme";
+import { createAIStyles } from "../styles";
 import { StatusPulseDot } from "./StatusPulseDot";
 
 interface PremiumHeaderProps {
@@ -13,6 +13,9 @@ interface PremiumHeaderProps {
 }
 
 export function PremiumHeader({ onHistoryPress, hasHistory }: PremiumHeaderProps) {
+  const theme = useAppTheme();
+  const styles = createAIStyles(theme);
+
   return (
     <View style={styles.headerWrap}>
       <View style={styles.headerTopRow}>
@@ -28,7 +31,7 @@ export function PremiumHeader({ onHistoryPress, hasHistory }: PremiumHeaderProps
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             activeOpacity={0.65}
           >
-            <Ionicons name="time-outline" size={22} color={colors.textSecondary} />
+            <Ionicons name="time-outline" size={22} color={theme.textSecondary} />
             {hasHistory && (
               <View style={{
                 position: "absolute",
@@ -37,9 +40,9 @@ export function PremiumHeader({ onHistoryPress, hasHistory }: PremiumHeaderProps
                 width: 7,
                 height: 7,
                 borderRadius: 4,
-                backgroundColor: colors.primary,
+                backgroundColor: theme.primary,
                 borderWidth: 1.5,
-                borderColor: colors.background,
+                borderColor: theme.background,
               }} />
             )}
           </TouchableOpacity>

@@ -2,8 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { memo, useMemo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { colors } from "../../../theme/color";
-import { interviewStyles as s } from "../Interview.styles";
+import { useAppTheme } from "../../../theme/useAppTheme";
+import { createInterviewStyles } from "../Interview.styles";
 
 interface QuestionHeaderProps {
   question: string;
@@ -26,6 +26,9 @@ function QuestionHeaderComponent({
   onSpeakerPress,
   progress,
 }: QuestionHeaderProps) {
+  const theme = useAppTheme();
+  const s = createInterviewStyles(theme);
+
   const { diffBg, diffBorder } = useMemo(() => {
     const bg =
       difficulty === "easy"
@@ -35,12 +38,12 @@ function QuestionHeaderComponent({
           : "rgba(255,92,92,0.15)";
     const border =
       difficulty === "easy"
-        ? colors.accent
+        ? theme.accent
         : difficulty === "medium"
-          ? colors.warning
-          : colors.danger;
+          ? theme.warning
+          : theme.danger;
     return { diffBg: bg, diffBorder: border };
-  }, [difficulty]);
+  }, [difficulty, theme]);
 
   const typeLabel = sessionType.charAt(0).toUpperCase() + sessionType.slice(1);
   const diffLabel = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
@@ -57,7 +60,7 @@ function QuestionHeaderComponent({
       <View style={s.progressTrack}>
         {progressWidth > 0 && (
           <LinearGradient
-            colors={[colors.secondary, colors.primary]}
+            colors={[theme.secondary, theme.primary]}
             style={[s.progressFill, { width: `${progressWidth}%` }]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
@@ -67,7 +70,7 @@ function QuestionHeaderComponent({
 
       <View style={s.questionCard}>
         <LinearGradient
-          colors={[colors.secondary, colors.primary]}
+          colors={[theme.secondary, theme.primary]}
           style={s.questionAccentBar}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
@@ -86,7 +89,7 @@ function QuestionHeaderComponent({
             <Ionicons
               name={isSpeaking ? "volume-high" : "volume-medium-outline"}
               size={18}
-              color={isSpeaking ? colors.primary : colors.textSecondary}
+              color={isSpeaking ? theme.primary : theme.textSecondary}
             />
           </TouchableOpacity>
         </View>
@@ -97,15 +100,8 @@ function QuestionHeaderComponent({
           <View style={s.metaChipPrimary}>
             <Text style={s.metaChipTextPrimary}>{typeLabel}</Text>
           </View>
-          <View
-            style={[
-              s.metaChip,
-              { backgroundColor: diffBg, borderColor: diffBorder },
-            ]}
-          >
-            <Text style={[s.metaChipText, { color: diffBorder }]}>
-              {diffLabel}
-            </Text>
+          <View style={[s.metaChip, { backgroundColor: diffBg, borderColor: diffBorder }]}>
+            <Text style={[s.metaChipText, { color: diffBorder }]}>{diffLabel}</Text>
           </View>
         </View>
       </View>

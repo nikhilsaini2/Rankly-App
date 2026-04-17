@@ -5,7 +5,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { colors } from "../../theme/color";
+import { useAppTheme } from "../../theme/useAppTheme";
 
 type Props = {
   label: string;
@@ -19,9 +19,13 @@ export function ScoreBar({
   label,
   value,
   max = 100,
-  fillColor = colors.primary,
+  fillColor,
   delayMs = 0,
 }: Props) {
+  const theme = useAppTheme();
+  const styles = createStyles(theme);
+  const resolvedFillColor = fillColor ?? theme.primary;
+
   const pct = useSharedValue(0);
   const target = Math.max(0, Math.min(100, (value / max) * 100));
 
@@ -41,7 +45,7 @@ export function ScoreBar({
       <Text style={styles.label}>{label}</Text>
       <View style={styles.track}>
         <Animated.View
-          style={[styles.fill, { backgroundColor: fillColor }, fillStyle]}
+          style={[styles.fill, { backgroundColor: resolvedFillColor }, fillStyle]}
         />
       </View>
       <Text style={styles.val}>{Math.round(value)}</Text>
@@ -49,26 +53,28 @@ export function ScoreBar({
   );
 }
 
-const styles = StyleSheet.create({
-  row: { marginBottom: 14 },
-  label: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    marginBottom: 6,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
-  track: {
-    height: 8,
-    borderRadius: 6,
-    backgroundColor: colors.surfaceAlt,
-    overflow: "hidden",
-  },
-  fill: { height: "100%", borderRadius: 6 },
-  val: {
-    color: colors.textMuted,
-    fontSize: 12,
-    marginTop: 4,
-    alignSelf: "flex-end",
-  },
-});
+function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  return StyleSheet.create({
+    row: { marginBottom: 14 },
+    label: {
+      color: theme.textSecondary,
+      fontSize: 12,
+      marginBottom: 6,
+      textTransform: "uppercase",
+      letterSpacing: 1.2,
+    },
+    track: {
+      height: 8,
+      borderRadius: 6,
+      backgroundColor: theme.surfaceAlt,
+      overflow: "hidden",
+    },
+    fill: { height: "100%", borderRadius: 6 },
+    val: {
+      color: theme.textMuted,
+      fontSize: 12,
+      marginTop: 4,
+      alignSelf: "flex-end",
+    },
+  });
+}

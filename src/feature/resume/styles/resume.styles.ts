@@ -1,10 +1,11 @@
 import { StyleSheet } from "react-native";
-import { colors } from "../../../theme/color";
+import type { AppTheme } from "../../../theme";
 
-export const resumeStyles = StyleSheet.create({
+export function createResumeStyles(theme: AppTheme) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: "row",
@@ -17,7 +18,7 @@ export const resumeStyles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     textAlign: "center",
     flex: 1,
   },
@@ -32,9 +33,9 @@ export const resumeStyles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.accent + "12",
+    backgroundColor: theme.accent + "12",
     borderWidth: 1,
-    borderColor: colors.accent + "25",
+    borderColor: theme.accent + "25",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 32,
@@ -42,14 +43,14 @@ export const resumeStyles = StyleSheet.create({
   loadingTitle: {
     fontSize: 22,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     textAlign: "center",
     marginVertical: 10,
     letterSpacing: -0.3,
   },
   loadingSubtitle: {
     fontSize: 15,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textAlign: "center",
     lineHeight: 22,
     marginBottom: 32,
@@ -65,7 +66,7 @@ export const resumeStyles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.15)",
   },
   loadingDotActive: {
-    backgroundColor: colors.accent,
+    backgroundColor: theme.accent,
     width: 24,
   },
   progressBarContainer: {
@@ -79,7 +80,7 @@ export const resumeStyles = StyleSheet.create({
   progressBarFill: {
     height: 3,
     borderRadius: 2,
-    backgroundColor: colors.accent,
+    backgroundColor: theme.accent,
   },
   stepMeta: {
     flexDirection: "row",
@@ -88,18 +89,18 @@ export const resumeStyles = StyleSheet.create({
   },
   stepMetaText: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   stepMetaTitle: {
     fontSize: 12,
-    color: colors.accent,
+    color: theme.accent,
     fontWeight: "600",
   },
   stepTitleCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.06)",
@@ -110,26 +111,26 @@ export const resumeStyles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.accent + "15",
+    backgroundColor: theme.accent + "15",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: colors.accent + "30",
+    borderColor: theme.accent + "30",
   },
   stepTitle: {
     fontSize: 17,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     letterSpacing: -0.3,
     marginBottom: 3,
   },
   stepSubtitle: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     lineHeight: 18,
   },
   formCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.06)",
@@ -142,22 +143,22 @@ export const resumeStyles = StyleSheet.create({
   fieldLabel: {
     fontSize: 12,
     fontWeight: "600",
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     letterSpacing: 0.5,
     textTransform: "uppercase",
     marginBottom: 8,
   },
   required: {
-    color: colors.accent,
+    color: theme.accent,
   },
   // ─── Input system ────────────────────────────────────────────────
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.bgSecondary,
+    backgroundColor: theme.bgSecondary,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     paddingHorizontal: 12,
     height: 48,
     overflow: "hidden",
@@ -174,7 +175,7 @@ export const resumeStyles = StyleSheet.create({
   inputSingleLine: {
     flex: 1,
     fontSize: 15,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     height: 48,
     paddingVertical: 0,
     paddingHorizontal: 4,
@@ -183,16 +184,16 @@ export const resumeStyles = StyleSheet.create({
     // alias — kept for backward compat
     flex: 1,
     fontSize: 15,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     height: "100%",
   },
   inputWrapperMultiline: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: colors.bgSecondary,
+    backgroundColor: theme.bgSecondary,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     paddingHorizontal: 12,
     paddingTop: 12,
     paddingBottom: 12,
@@ -201,7 +202,7 @@ export const resumeStyles = StyleSheet.create({
   inputMultiline: {
     flex: 1,
     fontSize: 15,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     textAlignVertical: "top",
     paddingHorizontal: 4,
     paddingVertical: 0,
@@ -209,7 +210,7 @@ export const resumeStyles = StyleSheet.create({
   },
   fieldHint: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: theme.textMuted,
     marginTop: 4,
   },
   pillGrid: {
@@ -223,24 +224,24 @@ export const resumeStyles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgSecondary,
+    borderColor: theme.border,
+    backgroundColor: theme.bgSecondary,
   },
   pillSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   pillText: {
     fontSize: 13,
     fontWeight: "500",
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   pillTextSelected: {
     color: "#fff",
     fontWeight: "700",
   },
   expCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.06)",
@@ -260,22 +261,22 @@ export const resumeStyles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.accent + "20",
+    backgroundColor: theme.accent + "20",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: colors.accent + "40",
+    borderColor: theme.accent + "40",
   },
   expCardNumberText: {
     fontSize: 13,
     fontWeight: "700",
-    color: colors.accent,
+    color: theme.accent,
   },
   expCardTitle: {
     flex: 1,
     fontSize: 14,
     fontWeight: "600",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
   },
   expDeleteBtn: {
     padding: 4,
@@ -283,7 +284,7 @@ export const resumeStyles = StyleSheet.create({
   addRoleBtn: {
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.accent + "30",
+    borderColor: theme.accent + "30",
     borderStyle: "dashed",
     marginBottom: 16,
     overflow: "hidden",
@@ -294,12 +295,12 @@ export const resumeStyles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     padding: 16,
-    backgroundColor: colors.accent + "08",
+    backgroundColor: theme.accent + "08",
   },
   addRoleBtnText: {
     fontSize: 14,
     fontWeight: "600",
-    color: colors.accent,
+    color: theme.accent,
   },
   navButtons: {
     flexDirection: "row",
@@ -313,13 +314,13 @@ export const resumeStyles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgSecondary,
+    borderColor: theme.border,
+    backgroundColor: theme.bgSecondary,
     justifyContent: "center",
   },
   backButtonText: {
     fontSize: 15,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontWeight: "500",
   },
   nextButton: {
@@ -330,7 +331,7 @@ export const resumeStyles = StyleSheet.create({
     gap: 8,
     height: 56,
     borderRadius: 16,
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
   },
   nextButtonDisabled: {
     opacity: 0.4,
@@ -355,7 +356,7 @@ export const resumeStyles = StyleSheet.create({
     padding: 20,
   },
   resultCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.06)",
@@ -365,18 +366,18 @@ export const resumeStyles = StyleSheet.create({
   resultTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     marginBottom: 4,
   },
   resultSubtitle: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.accent,
+    color: theme.accent,
     marginBottom: 8,
   },
   resultMeta: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
   },
   bulletRow: {
@@ -387,14 +388,14 @@ export const resumeStyles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.accent,
+    backgroundColor: theme.accent,
     marginRight: 8,
     marginTop: 7,
   },
   bulletText: {
     flex: 1,
     fontSize: 14,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     lineHeight: 20,
   },
   skillRow: {
@@ -412,17 +413,17 @@ export const resumeStyles = StyleSheet.create({
   eduDegree: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
   },
   eduInstitution: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontStyle: "italic",
     marginBottom: 4,
   },
   eduRight: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textAlign: "right",
   },
   infoNote: {
@@ -435,19 +436,19 @@ export const resumeStyles = StyleSheet.create({
   },
   infoNoteText: {
     fontSize: 13,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     marginLeft: 8,
     flex: 1,
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     marginBottom: 12,
   },
   cardContent: {
     fontSize: 14,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     lineHeight: 20,
   },
   buttonRow: {
@@ -455,7 +456,7 @@ export const resumeStyles = StyleSheet.create({
     gap: 12,
   },
   primaryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 24,
@@ -472,7 +473,7 @@ export const resumeStyles = StyleSheet.create({
     backgroundColor: "transparent",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: "center",
@@ -482,11 +483,11 @@ export const resumeStyles = StyleSheet.create({
   ghostButtonText: {
     fontSize: 16,
     fontWeight: "500",
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   // Preview-specific buttons — full width, no flex: 1 (used in vertical stack)
   previewPrimaryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     borderRadius: 16,
     height: 56,
     alignItems: "center",
@@ -497,7 +498,7 @@ export const resumeStyles = StyleSheet.create({
     backgroundColor: "transparent",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     height: 56,
     alignItems: "center",
     justifyContent: "center",
@@ -523,12 +524,12 @@ export const resumeStyles = StyleSheet.create({
     borderRadius: 10,
   },
   tabActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
   },
   tabText: {
     fontSize: 13,
     fontWeight: "600",
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   tabTextActive: {
     color: "#fff",
@@ -541,7 +542,7 @@ export const resumeStyles = StyleSheet.create({
   },
   historyLoadingText: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   emptyState: {
     alignItems: "center",
@@ -562,12 +563,12 @@ export const resumeStyles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textAlign: "center",
     lineHeight: 20,
     marginBottom: 24,
@@ -576,7 +577,7 @@ export const resumeStyles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
   },
   emptyActionText: {
     fontSize: 14,
@@ -594,16 +595,16 @@ export const resumeStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     padding: 14,
   },
   historyCardIcon: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: colors.accent + "15",
+    backgroundColor: theme.accent + "15",
     borderWidth: 1,
-    borderColor: colors.accent + "25",
+    borderColor: theme.accent + "25",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
@@ -615,12 +616,12 @@ export const resumeStyles = StyleSheet.create({
   historyCardName: {
     fontSize: 15,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     letterSpacing: -0.2,
   },
   historyCardRole: {
     fontSize: 13,
-    color: colors.accent,
+    color: theme.accent,
     fontWeight: "500",
   },
   historyCardMeta: {
@@ -639,19 +640,19 @@ export const resumeStyles = StyleSheet.create({
   },
   metaPillText: {
     fontSize: 11,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontWeight: "500",
   },
   metaPillAccent: {
-    backgroundColor: colors.accent + "15",
-    borderColor: colors.accent + "25",
+    backgroundColor: theme.accent + "15",
+    borderColor: theme.accent + "25",
   },
   metaPillAccentText: {
-    color: colors.accent,
+    color: theme.accent,
   },
   historyCardSkills: {
     fontSize: 11,
-    color: colors.textMuted,
+    color: theme.textMuted,
     marginTop: 2,
   },
   historyCardRight: {
@@ -661,7 +662,7 @@ export const resumeStyles = StyleSheet.create({
   },
   historyCardDate: {
     fontSize: 11,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   historyDeleteBtn: {
     padding: 2,
@@ -679,7 +680,7 @@ export const resumeStyles = StyleSheet.create({
   },
   historyViewBannerText: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontWeight: "500",
   },
   fixedFooter: {
@@ -688,15 +689,7 @@ export const resumeStyles = StyleSheet.create({
     paddingBottom: 12,
     borderTopWidth: 1,
     borderTopColor: "rgba(255,255,255,0.06)",
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
-});
-
-// Export individual style groups if needed for specific components:
-export const historyStyles = StyleSheet.create({
-  // history-specific styles can be added here if needed
-});
-
-export const previewStyles = StyleSheet.create({
-  // preview-specific styles can be added here if needed
-});
+  });
+}

@@ -26,12 +26,14 @@ import {
   signInWithGoogle,
 } from "../../../services/supabase/auth.supabase";
 import { supabase } from "../../../services/supabase/supabase";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import type { AuthScreenProps } from "../../../types/navigation.types";
 import { loginSchema } from "../../../validation/auth.schema";
-import { styles } from "./styles";
+import { createLoginStyles } from "./styles";
 
 const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
+  const theme = useAppTheme();
+  const styles = createLoginStyles(theme);
   const insets = useSafeAreaInsets();
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -110,12 +112,12 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
             flex: 1,
             justifyContent: "center",
             alignItems: "center",
-            backgroundColor: colors.bgPrimary,
+            backgroundColor: theme.bgPrimary,
           }}
         >
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={theme.primary} />
           <Text
-            style={{ color: colors.textPrimary, fontSize: 18, marginTop: 15 }}
+            style={{ color: theme.textPrimary, fontSize: 18, marginTop: 15 }}
           >
             Loading...
           </Text>
@@ -190,9 +192,11 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                             touched.email && errors.email && styles.inputError,
                           ]}
                           placeholder="Enter Email"
-                          placeholderTextColor={colors.placeholder}
+                          placeholderTextColor={theme.placeholder}
                           value={values.email}
-                          onChangeText={(text) => handleChange("email")(text.trimStart())}
+                          onChangeText={(text) =>
+                            handleChange("email")(text.trimStart())
+                          }
                           onBlur={() => {
                             setFieldValue("email", values.email.trim());
                             handleBlur("email");
@@ -224,7 +228,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                                 styles.inputError,
                             ]}
                             placeholder="Enter your password"
-                            placeholderTextColor={colors.placeholder}
+                            placeholderTextColor={theme.placeholder}
                             secureTextEntry={!showPassword}
                             value={values.password}
                             onChangeText={handleChange("password")}
@@ -249,7 +253,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                             <Ionicons
                               name={showPassword ? "eye" : "eye-off"}
                               size={20}
-                              color={colors.textMuted}
+                              color={theme.textMuted}
                             />
                           </TouchableOpacity>
                         </View>
@@ -271,7 +275,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                         }
                       >
                         <LinearGradient
-                          colors={[colors.primary, colors.primaryDark]}
+                          colors={[theme.primary, theme.primaryDark]}
                           style={[
                             styles.cta,
                             { opacity: isValid && dirty ? 1 : 0.5 },
@@ -340,15 +344,13 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                       >
                         <Text
                           style={{
-                            color: colors.inputLabel,
+                            color: theme.inputLabel,
                             textAlign: "center",
                             marginTop: 12,
                           }}
                         >
                           Don't have an account?{" "}
-                          <Text style={{ color: colors.primary }}>
-                            Register
-                          </Text>
+                          <Text style={{ color: theme.primary }}>Register</Text>
                         </Text>
                       </TouchableOpacity>
                     </View>

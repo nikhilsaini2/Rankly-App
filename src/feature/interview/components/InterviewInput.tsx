@@ -16,8 +16,8 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { colors } from "../../../theme/color";
-import { interviewStyles as s } from "../Interview.styles";
+import { useAppTheme } from "../../../theme/useAppTheme";
+import { createInterviewStyles } from "../Interview.styles";
 import type { InterviewPhase } from "../types/interview.types";
 
 interface InterviewInputProps {
@@ -43,6 +43,8 @@ function InterviewInputComponent({
   onMicPress,
   onMicStop,
 }: InterviewInputProps) {
+  const theme = useAppTheme();
+  const s = createInterviewStyles(theme);
   const inputRef = useRef<TextInput>(null);
   const pulseOpacity = useSharedValue(1);
 
@@ -91,7 +93,7 @@ function InterviewInputComponent({
         multiline
         editable={isReady || isRecording}
         placeholder="Type your answer here or tap the mic to speak…"
-        placeholderTextColor={colors.placeholder}
+        placeholderTextColor={theme.placeholder}
         value={transcript}
         onChangeText={onTranscriptChange}
         style={[s.answerInput, isRecording && s.answerInputRecording]}
@@ -118,18 +120,12 @@ function InterviewInputComponent({
             ]}
           >
             {isProcessing ? (
-              <ActivityIndicator color={colors.primary} size="small" />
+              <ActivityIndicator color={theme.primary} size="small" />
             ) : (
               <Ionicons
                 name={isRecording ? "stop" : "mic"}
                 size={20}
-                color={
-                  isRecording
-                    ? colors.danger
-                    : canRecord
-                      ? colors.primary
-                      : colors.textMuted
-                }
+                color={isRecording ? theme.danger : canRecord ? theme.primary : theme.textMuted}
               />
             )}
           </TouchableOpacity>
@@ -141,7 +137,7 @@ function InterviewInputComponent({
             style={[s.submitBtn, !canSubmit && s.submitBtnDisabled]}
           >
             <LinearGradient
-              colors={[colors.primary, colors.primaryDark]}
+              colors={[theme.primary, theme.primaryDark]}
               style={s.submitGrad}
             >
               <Text style={s.submitText}>

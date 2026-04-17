@@ -1,14 +1,18 @@
 import React from "react";
 import { Text, View } from "react-native";
 import Animated from "react-native-reanimated";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import type { User } from "../../../types/common.types";
-import { styles } from "../styles";
+import { createProfileStyles } from "../styles";
 
 interface BioCardProps {
   user: User;
 }
 
 export function BioCard({ user }: BioCardProps) {
+  const theme = useAppTheme();
+  const styles = createProfileStyles(theme);
+
   return (
     <Animated.View style={[styles.bioCard]}>
       <View style={styles.bioHeaderRow}>

@@ -16,7 +16,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useToast } from "../../../components/atoms/Toast";
 import type { ResumeHistoryEntry } from "../../../services/resume/resumeHistoryStorage";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import type { RootStackParamList } from "../../../types/navigation.types";
 import { ResumeRenderer } from "../components/ResumeRenderer";
 import { useResumeHistory } from "../hooks/useResumeHistory";
@@ -46,6 +46,7 @@ interface CardProps {
 }
 
 const ResumeHistoryCard = memo(({ entry, onPress, onDelete }: CardProps) => {
+  const theme = useAppTheme();
   const handleDelete = () => {
     Alert.alert("Delete Resume", "Remove this resume from your history?", [
       { text: "Cancel", style: "cancel" },
@@ -64,10 +65,10 @@ const ResumeHistoryCard = memo(({ entry, onPress, onDelete }: CardProps) => {
       activeOpacity={0.75}
       onPress={() => onPress(entry)}
       style={{
-        backgroundColor: colors.surface,
+        backgroundColor: theme.surface,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: theme.border,
         padding: 14,
         marginBottom: 10,
         flexDirection: "row",
@@ -82,12 +83,12 @@ const ResumeHistoryCard = memo(({ entry, onPress, onDelete }: CardProps) => {
           height: 44,
           borderRadius: 12,
           backgroundColor: isImproved
-            ? colors.accent + "18"
-            : colors.primary + "18",
+            ? theme.accent + "18"
+            : theme.primary + "18",
           borderWidth: 1,
           borderColor: isImproved
-            ? colors.accent + "30"
-            : colors.primary + "30",
+            ? theme.accent + "30"
+            : theme.primary + "30",
           alignItems: "center",
           justifyContent: "center",
           flexShrink: 0,
@@ -96,21 +97,21 @@ const ResumeHistoryCard = memo(({ entry, onPress, onDelete }: CardProps) => {
         <Ionicons
           name={isImproved ? "sparkles-outline" : "document-text-outline"}
           size={20}
-          color={isImproved ? colors.accent : colors.primary}
+          color={isImproved ? theme.accent : theme.primary}
         />
       </View>
 
       {/* Info */}
       <View style={{ flex: 1, gap: 3 }}>
         <Text
-          style={{ fontSize: 15, fontWeight: "700", color: colors.textPrimary }}
+          style={{ fontSize: 15, fontWeight: "700", color: theme.textPrimary }}
           numberOfLines={1}
         >
           {entry.title}
         </Text>
         {entry.meta.role ? (
           <Text
-            style={{ fontSize: 13, color: colors.primary, fontWeight: "500" }}
+            style={{ fontSize: 13, color: theme.primary, fontWeight: "500" }}
             numberOfLines={1}
           >
             {entry.meta.role}
@@ -128,28 +129,28 @@ const ResumeHistoryCard = memo(({ entry, onPress, onDelete }: CardProps) => {
           <View
             style={{
               backgroundColor: isImproved
-                ? colors.accent + "18"
-                : colors.primary + "18",
+                ? theme.accent + "18"
+                : theme.primary + "18",
               borderRadius: 6,
               paddingHorizontal: 7,
               paddingVertical: 2,
               borderWidth: 1,
               borderColor: isImproved
-                ? colors.accent + "35"
-                : colors.primary + "35",
+                ? theme.accent + "35"
+                : theme.primary + "35",
             }}
           >
             <Text
               style={{
                 fontSize: 11,
-                color: isImproved ? colors.accent : colors.primary,
+                color: isImproved ? theme.accent : theme.primary,
                 fontWeight: "600",
               }}
             >
               {isImproved ? "AI Optimized" : "Generated"}
             </Text>
           </View>
-          <Text style={{ fontSize: 12, color: colors.textMuted }}>
+          <Text style={{ fontSize: 12, color: theme.textMuted }}>
             {relativeTime(entry.createdAt)}
           </Text>
         </View>
@@ -162,9 +163,9 @@ const ResumeHistoryCard = memo(({ entry, onPress, onDelete }: CardProps) => {
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={{ padding: 6 }}
         >
-          <Ionicons name="trash-outline" size={18} color={colors.textMuted} />
+          <Ionicons name="trash-outline" size={18} color={theme.textMuted} />
         </TouchableOpacity>
-        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+        <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
       </View>
     </TouchableOpacity>
   );
@@ -173,6 +174,7 @@ const ResumeHistoryCard = memo(({ entry, onPress, onDelete }: CardProps) => {
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function ResumeHistoryScreen() {
   const insets = useSafeAreaInsets();
+  const theme = useAppTheme();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const bottomInset =
     Platform.OS === "android" ? Math.max(insets.bottom, 48) : insets.bottom;
@@ -245,7 +247,7 @@ export default function ResumeHistoryScreen() {
   // ── Preview view ────────────────────────────────────────────────
   if (selectedEntry) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: 16 }}>
+      <View style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}>
         {/* Header */}
         <View
           style={{
@@ -254,7 +256,7 @@ export default function ResumeHistoryScreen() {
             flexDirection: "row",
             alignItems: "center",
             borderBottomWidth: 1,
-            borderBottomColor: colors.border,
+            borderBottomColor: theme.border,
           }}
         >
           <TouchableOpacity
@@ -262,21 +264,21 @@ export default function ResumeHistoryScreen() {
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={{ padding: 4, marginRight: 10 }}
           >
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+            <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text
               style={{
                 fontSize: 17,
                 fontWeight: "700",
-                color: colors.textPrimary,
+                color: theme.textPrimary,
               }}
               numberOfLines={1}
             >
               {selectedEntry.title}
             </Text>
             {selectedEntry.meta.role ? (
-              <Text style={{ fontSize: 12, color: colors.textMuted }}>
+              <Text style={{ fontSize: 12, color: theme.textMuted }}>
                 {selectedEntry.meta.role} ·{" "}
                 {relativeTime(selectedEntry.createdAt)}
               </Text>
@@ -301,7 +303,7 @@ export default function ResumeHistoryScreen() {
   // ── History list ────────────────────────────────────────────────
   return (
     <View
-      style={{ flex: 1, backgroundColor: colors.background, paddingTop: 16 }}
+      style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}
     >
       {/* Header */}
       <View
@@ -311,7 +313,7 @@ export default function ResumeHistoryScreen() {
           flexDirection: "row",
           alignItems: "center",
           borderBottomWidth: 1,
-          borderBottomColor: colors.border,
+          borderBottomColor: theme.border,
         }}
       >
         <TouchableOpacity
@@ -319,20 +321,20 @@ export default function ResumeHistoryScreen() {
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={{ padding: 4, marginRight: 10 }}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
         </TouchableOpacity>
         <Text
           style={{
             fontSize: 20,
             fontWeight: "700",
-            color: colors.textPrimary,
+            color: theme.textPrimary,
             flex: 1,
           }}
         >
           Resume History
         </Text>
         {history.length > 0 && (
-          <Text style={{ fontSize: 13, color: colors.textMuted }}>
+          <Text style={{ fontSize: 13, color: theme.textMuted }}>
             {history.length} resume{history.length !== 1 ? "s" : ""}
           </Text>
         )}
@@ -342,7 +344,7 @@ export default function ResumeHistoryScreen() {
         <View
           style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >
-          <ActivityIndicator color={colors.primary} />
+          <ActivityIndicator color={theme.primary} />
         </View>
       ) : history.length === 0 ? (
         <View
@@ -359,9 +361,9 @@ export default function ResumeHistoryScreen() {
               width: 80,
               height: 80,
               borderRadius: 40,
-              backgroundColor: colors.surface,
+              backgroundColor: theme.surface,
               borderWidth: 1,
-              borderColor: colors.border,
+              borderColor: theme.border,
               alignItems: "center",
               justifyContent: "center",
               marginBottom: 20,
@@ -370,14 +372,14 @@ export default function ResumeHistoryScreen() {
             <Ionicons
               name="document-text-outline"
               size={36}
-              color={colors.textMuted}
+              color={theme.textMuted}
             />
           </View>
           <Text
             style={{
               fontSize: 20,
               fontWeight: "700",
-              color: colors.textPrimary,
+              color: theme.textPrimary,
               marginBottom: 10,
               textAlign: "center",
             }}
@@ -387,7 +389,7 @@ export default function ResumeHistoryScreen() {
           <Text
             style={{
               fontSize: 14,
-              color: colors.textSecondary,
+              color: theme.textSecondary,
               textAlign: "center",
               lineHeight: 22,
               marginBottom: 28,
@@ -397,7 +399,7 @@ export default function ResumeHistoryScreen() {
           </Text>
           <TouchableOpacity
             style={{
-              backgroundColor: colors.primary,
+              backgroundColor: theme.primary,
               borderRadius: 14,
               paddingVertical: 14,
               paddingHorizontal: 28,

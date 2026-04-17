@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { memo } from 'react';
 import { Platform, Text, TextInput, TextInputProps, TextStyle, View } from 'react-native';
-import { colors } from '../../../theme/color';
-import { resumeStyles } from '../styles/resume.styles';
+import { useAppTheme } from '../../../theme/useAppTheme';
+import { createResumeStyles } from '../styles/resume.styles';
 
 interface FieldInputProps extends TextInputProps {
   label: string;
@@ -16,36 +16,37 @@ const androidFontStyle: TextStyle =
 
 export const FieldInput: React.FC<FieldInputProps> = memo(({
   label, icon, required, multiline, style, onBlur, onFocus, ...props
-}) => (
-  <View style={resumeStyles.fieldGroup}>
-    <Text
-      style={resumeStyles.fieldLabel}
-      allowFontScaling={false}
-      accessibilityRole="text"
-    >
-      {label}
-      {required && <Text style={resumeStyles.required}> *</Text>}
-    </Text>
-    <View style={multiline ? resumeStyles.inputWrapperMultiline : resumeStyles.inputWrapper}>
-      <View style={resumeStyles.inputIconContainer}>
-        <Ionicons name={icon as any} size={16} color={colors.textMuted} />
+}) => {
+  const theme = useAppTheme();
+  const resumeStyles = createResumeStyles(theme);
+
+  return (
+    <View style={resumeStyles.fieldGroup}>
+      <Text style={resumeStyles.fieldLabel} allowFontScaling={false} accessibilityRole="text">
+        {label}
+        {required && <Text style={resumeStyles.required}> *</Text>}
+      </Text>
+      <View style={multiline ? resumeStyles.inputWrapperMultiline : resumeStyles.inputWrapper}>
+        <View style={resumeStyles.inputIconContainer}>
+          <Ionicons name={icon as any} size={16} color={theme.textMuted} />
+        </View>
+        <TextInput
+          style={[
+            multiline ? resumeStyles.inputMultiline : resumeStyles.inputSingleLine,
+            androidFontStyle,
+            style,
+          ]}
+          placeholderTextColor={theme.placeholder}
+          multiline={multiline}
+          scrollEnabled={multiline}
+          textAlignVertical={multiline ? 'top' : 'center'}
+          allowFontScaling={false}
+          numberOfLines={multiline ? undefined : 1}
+          onBlur={onBlur}
+          onFocus={onFocus}
+          {...props}
+        />
       </View>
-      <TextInput
-        style={[
-          multiline ? resumeStyles.inputMultiline : resumeStyles.inputSingleLine,
-          androidFontStyle,
-          style,
-        ]}
-        placeholderTextColor={colors.placeholder}
-        multiline={multiline}
-        scrollEnabled={multiline}
-        textAlignVertical={multiline ? 'top' : 'center'}
-        allowFontScaling={false}
-        numberOfLines={multiline ? undefined : 1}
-        onBlur={onBlur}
-        onFocus={onFocus}
-        {...props}
-      />
     </View>
-  </View>
-));
+  );
+});

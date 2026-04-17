@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScoreRing } from "../../../components/atoms/ScoreRing";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import type { RootStackParamList } from "../../../types/navigation.types";
 import { scoreTierColor } from "../../../utils/score";
 import { InterviewHistoryCard } from "../components/InterviewHistoryCard";
@@ -28,6 +28,7 @@ function ReportDetail({
   report: InterviewReport;
   bottomInset: number;
 }) {
+  const theme = useAppTheme();
   return (
     <FlatList
       data={report.answers}
@@ -53,7 +54,7 @@ function ReportDetail({
             <Text
               style={{
                 fontSize: 14,
-                color: colors.textSecondary,
+                color: theme.textSecondary,
                 textTransform: "capitalize",
                 flex: 1,
               }}
@@ -98,10 +99,10 @@ function ReportDetail({
       renderItem={({ item, index }: { item: Answer; index: number }) => (
         <View
           style={{
-            backgroundColor: colors.surface,
+            backgroundColor: theme.surface,
             borderRadius: 14,
             borderWidth: 1,
-            borderColor: colors.border,
+            borderColor: theme.border,
             padding: 14,
             marginBottom: 10,
           }}
@@ -116,7 +117,7 @@ function ReportDetail({
           >
             <Text
               style={{
-                color: colors.textMuted,
+                color: theme.textMuted,
                 fontWeight: "700",
                 fontSize: 12,
               }}
@@ -138,7 +139,7 @@ function ReportDetail({
           </View>
           <Text
             style={{
-              color: colors.textPrimary,
+              color: theme.textPrimary,
               fontWeight: "700",
               fontSize: 14,
               marginBottom: 6,
@@ -150,7 +151,7 @@ function ReportDetail({
           {item.transcript && item.transcript !== "(No answer recorded)" && (
             <Text
               style={{
-                color: colors.textSecondary,
+                color: theme.textSecondary,
                 fontSize: 13,
                 lineHeight: 20,
                 marginBottom: 8,
@@ -161,14 +162,14 @@ function ReportDetail({
           )}
           <View
             style={{
-              backgroundColor: colors.surfaceAlt,
+              backgroundColor: theme.surfaceAlt,
               borderRadius: 10,
               padding: 12,
             }}
           >
             <Text
               style={{
-                color: colors.textMuted,
+                color: theme.textMuted,
                 fontSize: 11,
                 textTransform: "uppercase",
                 letterSpacing: 1,
@@ -178,7 +179,7 @@ function ReportDetail({
               AI Feedback
             </Text>
             <Text
-              style={{ color: colors.accent, fontSize: 13, lineHeight: 20 }}
+              style={{ color: theme.accent, fontSize: 13, lineHeight: 20 }}
             >
               {item.overall}
             </Text>
@@ -192,6 +193,7 @@ function ReportDetail({
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function InterviewHistoryScreen() {
   const insets = useSafeAreaInsets();
+  const theme = useAppTheme();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const bottomInset =
     Platform.OS === "android" ? Math.max(insets.bottom, 48) : insets.bottom;
@@ -216,7 +218,7 @@ export default function InterviewHistoryScreen() {
 
   return (
     <View
-      style={{ flex: 1, backgroundColor: colors.background, paddingTop: 16 }}
+      style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}
     >
       {/* Single header — owns all navigation for this screen */}
       <View
@@ -226,7 +228,7 @@ export default function InterviewHistoryScreen() {
           flexDirection: "row",
           alignItems: "center",
           borderBottomWidth: 1,
-          borderBottomColor: colors.border,
+          borderBottomColor: theme.border,
         }}
       >
         <TouchableOpacity
@@ -234,20 +236,20 @@ export default function InterviewHistoryScreen() {
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={{ padding: 4, marginRight: 10 }}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
         </TouchableOpacity>
         <Text
           style={{
             fontSize: 20,
             fontWeight: "700",
-            color: colors.textPrimary,
+            color: theme.textPrimary,
             flex: 1,
           }}
         >
           {selectedReport ? "Interview Report" : "Interview History"}
         </Text>
         {!selectedReport && history.length > 0 && (
-          <Text style={{ fontSize: 13, color: colors.textMuted }}>
+          <Text style={{ fontSize: 13, color: theme.textMuted }}>
             {history.length} session{history.length !== 1 ? "s" : ""}
           </Text>
         )}
@@ -260,7 +262,7 @@ export default function InterviewHistoryScreen() {
         <View
           style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >
-          <ActivityIndicator color={colors.primary} />
+          <ActivityIndicator color={theme.primary} />
         </View>
       ) : history.length === 0 ? (
         // Empty state
@@ -278,21 +280,21 @@ export default function InterviewHistoryScreen() {
               width: 80,
               height: 80,
               borderRadius: 40,
-              backgroundColor: colors.surface,
+              backgroundColor: theme.surface,
               borderWidth: 1,
-              borderColor: colors.border,
+              borderColor: theme.border,
               alignItems: "center",
               justifyContent: "center",
               marginBottom: 20,
             }}
           >
-            <Ionicons name="time-outline" size={36} color={colors.textMuted} />
+            <Ionicons name="time-outline" size={36} color={theme.textMuted} />
           </View>
           <Text
             style={{
               fontSize: 20,
               fontWeight: "700",
-              color: colors.textPrimary,
+              color: theme.textPrimary,
               marginBottom: 10,
               textAlign: "center",
             }}
@@ -302,7 +304,7 @@ export default function InterviewHistoryScreen() {
           <Text
             style={{
               fontSize: 14,
-              color: colors.textSecondary,
+              color: theme.textSecondary,
               textAlign: "center",
               lineHeight: 22,
               marginBottom: 28,
@@ -313,7 +315,7 @@ export default function InterviewHistoryScreen() {
           </Text>
           <TouchableOpacity
             style={{
-              backgroundColor: colors.primary,
+              backgroundColor: theme.primary,
               borderRadius: 14,
               paddingVertical: 14,
               paddingHorizontal: 28,

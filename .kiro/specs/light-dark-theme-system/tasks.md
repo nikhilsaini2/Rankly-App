@@ -12,56 +12,56 @@ Install Redux Toolkit, create the light theme and Redux slice, wire the Provider
   - Verify both packages appear in `package.json` under `dependencies` and `devDependencies` respectively
   - _Requirements: 2.1, 2.5_
 
-- [ ] 2. Create the light theme and shared AppTheme type
+- [-] 2. Create the light theme and shared AppTheme type
   - [x] 2.1 Create `src/theme/lightTheme.ts`
     - Import `colors` from `./color` and derive `lightColors` with the exact token values specified in the design
     - Export `lightColors as const`
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
-  - [-] 2.2 Export `AppTheme` type from `src/theme/index.ts`
+  - [x] 2.2 Export `AppTheme` type from `src/theme/index.ts`
     - Add `export type AppTheme = typeof import('./color').colors` (or an explicit type alias matching the design's `AppTheme` shape) so `createStyles(theme: AppTheme)` is typed across the codebase
     - _Requirements: 1.1, 4.2_
-  - [ ]* 2.3 Write property test — Property 1: Brand tokens are inherited unchanged
+  - [ ] 2.3 Write property test — Property 1: Brand tokens are inherited unchanged
     - **Property 1: Brand tokens are inherited unchanged**
     - **Validates: Requirements 1.4**
-  - [ ]* 2.4 Write property test — Property 2: Dark theme is immutable
+  - [ ] 2.4 Write property test — Property 2: Dark theme is immutable
     - **Property 2: Dark theme is immutable**
     - **Validates: Requirements 1.8**
 
 - [ ] 3. Create the Redux theme slice and store
-  - [ ] 3.1 Create `src/store/themeSlice.ts`
+  - [x] 3.1 Create `src/store/themeSlice.ts`
     - Define `ThemeMode = 'dark' | 'light'`, `ThemeState`, and `initialState = { mode: 'dark' }`
     - Implement `toggleTheme` and `setTheme` reducers using `createSlice`
     - Export actions and default reducer
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
-  - [ ] 3.2 Create `src/store/store.ts`
+  - [x] 3.2 Create `src/store/store.ts`
     - Configure the Redux store with `themeReducer` under the `theme` key
     - Export `RootState` and `AppDispatch` types
     - _Requirements: 2.5_
-  - [ ]* 3.3 Write property test — Property 3: toggleTheme is an involution
+  - [ ] 3.3 Write property test — Property 3: toggleTheme is an involution
     - **Property 3: toggleTheme is an involution (round-trip)**
     - **Validates: Requirements 2.3, 6.1**
-  - [ ]* 3.4 Write property test — Property 4: setTheme is idempotent and exact
+  - [ ] 3.4 Write property test — Property 4: setTheme is idempotent and exact
     - **Property 4: setTheme is idempotent and exact**
     - **Validates: Requirements 2.4**
-  - [ ]* 3.5 Write unit tests for themeSlice
+  - [ ] 3.5 Write unit tests for themeSlice
     - Assert initial state is `{ mode: "dark" }`
     - Assert `toggleTheme` flips dark→light and light→dark
     - Assert `setTheme("light")` sets mode to `"light"` regardless of prior state
     - _Requirements: 2.2, 2.3, 2.4_
 
 - [ ] 4. Create the `useAppTheme` hook
-  - [ ] 4.1 Create `src/theme/useAppTheme.ts`
+  - [x] 4.1 Create `src/theme/useAppTheme.ts`
     - Use `useSelector` to read `state.theme.mode` from the Redux store
     - Return `colors` when mode is `"dark"`, `lightColors` when mode is `"light"`
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
-  - [ ]* 4.2 Write property test — Property 5: useAppTheme returns the correct theme for any mode
+  - [ ] 4.2 Write property test — Property 5: useAppTheme returns the correct theme for any mode
     - **Property 5: useAppTheme returns the correct theme for any mode**
     - **Validates: Requirements 3.2, 3.3, 3.5**
-  - [ ]* 4.3 Write property test — Property 7: Missing Provider causes a descriptive error
+  - [ ] 4.3 Write property test — Property 7: Missing Provider causes a descriptive error
     - **Property 7: Missing Provider causes a descriptive error**
     - **Validates: Requirements 7.3**
 
-- [ ] 5. Wire Redux Provider into App.tsx
+- [x] 5. Wire Redux Provider into App.tsx
   - Import `Provider` from `react-redux` and `store` from `./src/store/store`
   - Wrap `SafeAreaProvider` (and all children) inside `<Provider store={store}>` as the outermost wrapper inside `AppProviders`
   - Verify the app still boots without errors
@@ -71,200 +71,200 @@ Install Redux Toolkit, create the light theme and Redux slice, wire the Provider
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 7. Refactor shared style sheets to `createStyles(theme)` factories
-  - [ ] 7.1 Refactor `src/feature/resume/styles/resume.styles.ts`
+  - [x] 7.1 Refactor `src/feature/resume/styles/resume.styles.ts`
     - Convert `StyleSheet.create({ ... colors.X ... })` to `export function createResumeStyles(theme: AppTheme) { return StyleSheet.create({ ... theme.X ... }) }`
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 7.2 Refactor `src/feature/resume/styles.ts`
+  - [x] 7.2 Refactor `src/feature/resume/styles.ts`
     - Same factory pattern as 7.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 7.3 Refactor `src/feature/interview/Interview.styles.ts`
+  - [x] 7.3 Refactor `src/feature/interview/Interview.styles.ts`
     - Convert to `export function createInterviewStyles(theme: AppTheme)` factory
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 7.4 Refactor `src/screens/ai/styles.ts`
+  - [x] 7.4 Refactor `src/screens/ai/styles.ts`
     - Convert to `export function createAIStyles(theme: AppTheme)` factory
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 7.5 Refactor `src/screens/home/styles.ts`
+  - [x] 7.5 Refactor `src/screens/home/styles.ts`
     - Convert to `export function createHomeStyles(theme: AppTheme)` factory
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 7.6 Refactor `src/screens/profile/styles.ts`
+  - [x] 7.6 Refactor `src/screens/profile/styles.ts`
     - Convert to `export function createProfileStyles(theme: AppTheme)` factory
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 7.7 Refactor `src/screens/auth/onboarding/styles.ts`
+  - [x] 7.7 Refactor `src/screens/auth/onboarding/styles.ts`
     - Convert to `export function createOnboardingStyles(theme: AppTheme)` factory
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 7.8 Refactor `src/screens/auth/login/styles.ts`
+  - [x] 7.8 Refactor `src/screens/auth/login/styles.ts`
     - Convert to `export function createLoginStyles(theme: AppTheme)` factory
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 7.9 Refactor `src/screens/auth/register/styles.ts`
+  - [x] 7.9 Refactor `src/screens/auth/register/styles.ts`
     - Convert to `export function createRegisterStyles(theme: AppTheme)` factory
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 7.10 Refactor `src/feature/resume/components/ResumeCard.styles.ts`
+  - [x] 7.10 Refactor `src/feature/resume/components/ResumeCard.styles.ts`
     - Convert to `export function createCardStyles(theme: AppTheme)` factory
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 8. Refactor shared atom and layout components
-  - [ ] 8.1 Refactor `src/components/atoms/Button.tsx`
+- [x] 8. Refactor shared atom and layout components
+  - [x] 8.1 Refactor `src/components/atoms/Button.tsx`
     - Add `const theme = useAppTheme()` and `const styles = createStyles(theme)` inside the component; remove static `colors` import
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.2 Refactor `src/components/atoms/Input.tsx`
+  - [x] 8.2 Refactor `src/components/atoms/Input.tsx`
     - Same pattern as 8.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.3 Refactor `src/components/atoms/Toast.tsx`
+  - [x] 8.3 Refactor `src/components/atoms/Toast.tsx`
     - Same pattern as 8.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.4 Refactor `src/components/atoms/Skeleton.tsx`
+  - [x] 8.4 Refactor `src/components/atoms/Skeleton.tsx`
     - Same pattern as 8.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.5 Refactor `src/components/atoms/Badge.tsx`
+  - [x] 8.5 Refactor `src/components/atoms/Badge.tsx`
     - Same pattern as 8.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.6 Refactor `src/components/atoms/Pill.tsx`
+  - [x] 8.6 Refactor `src/components/atoms/Pill.tsx`
     - Same pattern as 8.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.7 Refactor `src/components/atoms/ScoreBar.tsx`
+  - [x] 8.7 Refactor `src/components/atoms/ScoreBar.tsx`
     - Same pattern as 8.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.8 Refactor `src/components/atoms/ScoreRing.tsx`
+  - [x] 8.8 Refactor `src/components/atoms/ScoreRing.tsx`
     - Same pattern as 8.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.9 Refactor `src/components/atoms/AppName.tsx`
+  - [x] 8.9 Refactor `src/components/atoms/AppName.tsx`
     - Same pattern as 8.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.10 Refactor `src/components/atoms/ProgressRing.tsx`
+  - [x] 8.10 Refactor `src/components/atoms/ProgressRing.tsx`
     - Same pattern as 8.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.11 Refactor `src/components/atoms/Card.tsx`
+  - [x] 8.11 Refactor `src/components/atoms/Card.tsx`
     - Same pattern as 8.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.12 Refactor `src/components/GlobalBackground.tsx`
+  - [x] 8.12 Refactor `src/components/GlobalBackground.tsx`
     - Same pattern as 8.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.13 Refactor `src/components/ErrorBoundary.tsx`
+  - [x] 8.13 Refactor `src/components/ErrorBoundary.tsx`
     - Note: `ErrorBoundary` is a class component — call `useAppTheme()` in a wrapper functional component that passes the theme as a prop, or convert to a functional component
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.14 Refactor `src/components/layouts/HeroHeader.tsx`
+  - [x] 8.14 Refactor `src/components/layouts/HeroHeader.tsx`
     - Same pattern as 8.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.15 Refactor `src/components/layouts/profileHeader.tsx`
+  - [x] 8.15 Refactor `src/components/layouts/profileHeader.tsx`
     - Also remove the `shadows` import from `color.ts` if it is only used for color values; otherwise keep it
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.16 Refactor `src/components/layouts/profileStats.tsx`
+  - [x] 8.16 Refactor `src/components/layouts/profileStats.tsx`
     - Same pattern as 8.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 9. Refactor navigation components
-  - [ ] 9.1 Refactor `src/navigation/TabBar.tsx`
+- [x] 9. Refactor navigation components
+  - [x] 9.1 Refactor `src/navigation/TabBar.tsx`
     - Add `const theme = useAppTheme()` and pass theme tokens into the tab bar styles
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 9.2 Refactor `src/navigation/RootNavigator.tsx`
+  - [x] 9.2 Refactor `src/navigation/RootNavigator.tsx`
     - Replace static `colors` import with `useAppTheme()` inside the component
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 10. Refactor home screen components
-  - [ ] 10.1 Refactor `src/screens/home/components/QuickActions.tsx`
+- [x] 10. Refactor home screen components
+  - [x] 10.1 Refactor `src/screens/home/components/QuickActions.tsx`
     - Call `useAppTheme()` inside the component; call `createHomeStyles(theme)` from the refactored `styles.ts`
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 10.2 Refactor `src/screens/home/components/StatsRow.tsx`
+  - [x] 10.2 Refactor `src/screens/home/components/StatsRow.tsx`
     - Same pattern as 10.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 10.3 Refactor `src/screens/home/components/LatestScoreCard.tsx`
+  - [x] 10.3 Refactor `src/screens/home/components/LatestScoreCard.tsx`
     - Same pattern as 10.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 11. Refactor AI screen components
-  - [ ] 11.1 Refactor `src/screens/ai/styles.ts` consumers — `src/screens/ai/components/ChatTab.tsx`
+- [x] 11. Refactor AI screen components
+  - [x] 11.1 Refactor `src/screens/ai/styles.ts` consumers — `src/screens/ai/components/ChatTab.tsx`
     - Call `useAppTheme()` inside the component; call `createAIStyles(theme)` from the refactored `styles.ts`
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 11.2 Refactor `src/screens/ai/components/PremiumHeader.tsx`
+  - [x] 11.2 Refactor `src/screens/ai/components/PremiumHeader.tsx`
     - Same pattern as 11.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 11.3 Refactor `src/screens/ai/components/PremiumTabSwitcher.tsx`
+  - [x] 11.3 Refactor `src/screens/ai/components/PremiumTabSwitcher.tsx`
     - Same pattern as 11.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 12. Refactor auth screen components
-  - [ ] 12.1 Refactor `src/screens/auth/onboarding/OnBoardingScreen.tsx`
+- [x] 12. Refactor auth screen components
+  - [x] 12.1 Refactor `src/screens/auth/onboarding/OnBoardingScreen.tsx`
     - Call `useAppTheme()` and `createOnboardingStyles(theme)` inside the component
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 12.2 Refactor `src/screens/auth/login/LoginScreen.tsx`
+  - [x] 12.2 Refactor `src/screens/auth/login/LoginScreen.tsx`
     - Call `useAppTheme()` and `createLoginStyles(theme)` inside the component
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 12.3 Refactor `src/screens/auth/register/RegisterScreen.tsx`
+  - [x] 12.3 Refactor `src/screens/auth/register/RegisterScreen.tsx`
     - Call `useAppTheme()` and `createRegisterStyles(theme)` inside the component
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 13. Refactor salary screen
-  - [ ] 13.1 Refactor `src/screens/salary/SalaryNegotiationScreen.tsx`
+- [x] 13. Refactor salary screen
+  - [x] 13.1 Refactor `src/screens/salary/SalaryNegotiationScreen.tsx`
     - Call `useAppTheme()` and `createStyles(theme)` inside the component
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 14. Refactor resume feature components and screens
-  - [ ] 14.1 Refactor `src/feature/resume/components/AnalyzeModal.tsx`
+- [x] 14. Refactor resume feature components and screens
+  - [x] 14.1 Refactor `src/feature/resume/components/AnalyzeModal.tsx`
     - Call `useAppTheme()` inside the component; use `createStyles(theme)` locally or call the shared `createResumeStyles(theme)` factory
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 14.2 Refactor `src/feature/resume/components/ExperienceCard.tsx`
+  - [x] 14.2 Refactor `src/feature/resume/components/ExperienceCard.tsx`
     - Same pattern as 14.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 14.3 Refactor `src/feature/resume/components/FieldInput.tsx`
+  - [x] 14.3 Refactor `src/feature/resume/components/FieldInput.tsx`
     - Same pattern as 14.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 14.4 Refactor `src/feature/resume/components/PillSelector.tsx`
+  - [x] 14.4 Refactor `src/feature/resume/components/PillSelector.tsx`
     - Same pattern as 14.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 14.5 Refactor `src/feature/resume/components/ResumeAnalyzingOverlay.tsx`
+  - [x] 14.5 Refactor `src/feature/resume/components/ResumeAnalyzingOverlay.tsx`
     - Same pattern as 14.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 14.6 Refactor `src/feature/resume/components/ResumeCard.tsx`
+  - [x] 14.6 Refactor `src/feature/resume/components/ResumeCard.tsx`
     - Call `useAppTheme()` and `createCardStyles(theme)` from the refactored `ResumeCard.styles.ts`
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 14.7 Refactor `src/feature/resume/components/ResumeHistoryList.tsx`
+  - [x] 14.7 Refactor `src/feature/resume/components/ResumeHistoryList.tsx`
     - Same pattern as 14.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 14.8 Refactor `src/feature/resume/components/ResumeRenderer.tsx`
+  - [x] 14.8 Refactor `src/feature/resume/components/ResumeRenderer.tsx`
     - Same pattern as 14.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 14.9 Refactor `src/feature/resume/components/StepTitleCard.tsx`
+  - [x] 14.9 Refactor `src/feature/resume/components/StepTitleCard.tsx`
     - Same pattern as 14.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 14.10 Refactor `src/feature/resume/components/Uploadingoverlay.tsx`
+  - [x] 14.10 Refactor `src/feature/resume/components/Uploadingoverlay.tsx`
     - Same pattern as 14.1
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 14.11 Refactor `src/feature/resume/screens/ATSScoreScreen.tsx`
+  - [x] 14.11 Refactor `src/feature/resume/screens/ATSScoreScreen.tsx`
     - Call `useAppTheme()` and `createStyles(theme)` inside the screen component
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 14.12 Refactor `src/feature/resume/screens/ImprovedResumePreviewScreen.tsx`
+  - [x] 14.12 Refactor `src/feature/resume/screens/ImprovedResumePreviewScreen.tsx`
     - Same pattern as 14.11
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 14.13 Refactor `src/feature/resume/screens/ResumeBuilderScreen.tsx`
+  - [x] 14.13 Refactor `src/feature/resume/screens/ResumeBuilderScreen.tsx`
     - Same pattern as 14.11
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 14.14 Refactor `src/feature/resume/screens/ResumeHistoryScreen.tsx`
+  - [x] 14.14 Refactor `src/feature/resume/screens/ResumeHistoryScreen.tsx`
     - Same pattern as 14.11
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 14.15 Refactor `src/feature/resume/screens/ResumeScreen.tsx`
+  - [x] 14.15 Refactor `src/feature/resume/screens/ResumeScreen.tsx`
     - Same pattern as 14.11
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 15. Refactor interview feature components and screens
-  - [ ] 15.1 Refactor `src/feature/interview/Interview.styles.ts`
+- [x] 15. Refactor interview feature components and screens
+  - [x] 15.1 Refactor `src/feature/interview/Interview.styles.ts`
     - Convert to `export function createInterviewStyles(theme: AppTheme)` factory (already covered in 7.3 — update all callers in this step)
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 15.2 Refactor `src/feature/interview/InterviewScreen.tsx`
+  - [x] 15.2 Refactor `src/feature/interview/InterviewScreen.tsx`
     - Call `useAppTheme()` and `createInterviewStyles(theme)` inside the screen
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 15.3 Refactor `src/feature/interview/components/FeedbackCard.tsx`
+  - [x] 15.3 Refactor `src/feature/interview/components/FeedbackCard.tsx`
     - Same pattern as 15.2
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 15.4 Refactor `src/feature/interview/components/InterviewHistoryCard.tsx`
+  - [x] 15.4 Refactor `src/feature/interview/components/InterviewHistoryCard.tsx`
     - Same pattern as 15.2
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 15.5 Refactor `src/feature/interview/components/InterviewInput.tsx`
+  - [x] 15.5 Refactor `src/feature/interview/components/InterviewInput.tsx`
     - Same pattern as 15.2
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 15.6 Refactor `src/feature/interview/components/QuestionHeader.tsx`
+  - [x] 15.6 Refactor `src/feature/interview/components/QuestionHeader.tsx`
     - Same pattern as 15.2
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 15.7 Refactor `src/feature/interview/screens/InterviewHistoryScreen.tsx`
+  - [x] 15.7 Refactor `src/feature/interview/screens/InterviewHistoryScreen.tsx`
     - Same pattern as 15.2
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
@@ -272,20 +272,20 @@ Install Redux Toolkit, create the light theme and Redux slice, wire the Provider
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 17. Add theme toggle to Profile screen Settings card
-  - [ ] 17.1 Update `src/screens/profile/components/SettingsCard.tsx`
+  - [x] 17.1 Update `src/screens/profile/components/SettingsCard.tsx`
     - Add `onThemeToggle: () => void` to `SettingsCardProps`
     - Read `mode` from Redux via `useSelector`
     - Insert the Theme_Toggle row (sun/moon icon + "Light Mode"/"Dark Mode" label + chevron) above the Privacy Policy row, using the existing `settingsRow` and `settingsIconBox` styles
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.6_
-  - [ ] 17.2 Update `src/screens/profile/ProfileScreen.tsx`
+  - [x] 17.2 Update `src/screens/profile/ProfileScreen.tsx`
     - Import `useDispatch` and `toggleTheme`
     - Create `handleThemeToggle` callback that dispatches `toggleTheme()`
     - Pass `onThemeToggle={handleThemeToggle}` to `SettingsCard`
     - _Requirements: 5.4, 5.5_
-  - [ ]* 17.3 Write property test — Property 6: Theme toggle label and icon reflect the opposite mode
+  - [ ] 17.3 Write property test — Property 6: Theme toggle label and icon reflect the opposite mode
     - **Property 6: Theme toggle label and icon reflect the opposite mode**
     - **Validates: Requirements 5.2, 5.3**
-  - [ ]* 17.4 Write unit tests for SettingsCard theme toggle
+  - [ ] 17.4 Write unit tests for SettingsCard theme toggle
     - Render with dark mode store → assert "Light Mode" label and sun icon are present
     - Render with light mode store → assert "Dark Mode" label and moon icon are present
     - Simulate press on toggle row → assert `toggleTheme` action was dispatched
@@ -293,10 +293,10 @@ Install Redux Toolkit, create the light theme and Redux slice, wire the Provider
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.6_
 
 - [ ] 18. Integration wiring and smoke tests
-  - [ ]* 18.1 Write integration test — App renders with Provider
+  - [ ] 18.1 Write integration test — App renders with Provider
     - Verify `App.tsx` renders without error with the `Provider` wrapping the full tree
     - _Requirements: 7.1, 7.2_
-  - [ ]* 18.2 Write integration test — toggleTheme causes re-render with new theme
+  - [ ] 18.2 Write integration test — toggleTheme causes re-render with new theme
     - Dispatch `toggleTheme` from a test and verify a subscribed component re-renders with the new theme tokens (end-to-end Redux → hook → component cycle)
     - _Requirements: 3.5, 6.1, 6.2_
 

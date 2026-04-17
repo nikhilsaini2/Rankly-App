@@ -29,7 +29,7 @@ import {
 } from "../../../services/resume/improveResumeService";
 import { saveResume } from "../../../services/resume/resumeHistoryStorage";
 import { supabase } from "../../../services/supabase";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import type { RootStackParamList } from "../../../types/navigation.types";
 import type { ResumeFormData } from "../types/resume.types";
 import { generateResumeHTML } from "../utils/resumeHTML";
@@ -46,6 +46,7 @@ const LOADING_MESSAGES = [
 
 export default function ImprovedResumePreviewScreen() {
   const insets = useSafeAreaInsets();
+  const theme = useAppTheme();
   const bottomInset =
     Platform.OS === "android" ? Math.max(insets.bottom, 48) : insets.bottom;
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -256,7 +257,7 @@ export default function ImprovedResumePreviewScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.background,
+          backgroundColor: theme.background,
           alignItems: "center",
           justifyContent: "center",
           paddingHorizontal: 40,
@@ -268,27 +269,23 @@ export default function ImprovedResumePreviewScreen() {
             width: 120,
             height: 120,
             borderRadius: 60,
-            backgroundColor: colors.primary + "15",
+            backgroundColor: theme.primary + "15",
             borderWidth: 1,
-            borderColor: colors.primary + "30",
+            borderColor: theme.primary + "30",
             alignItems: "center",
             justifyContent: "center",
             marginBottom: 32,
           }}
         >
           <Animated.View style={pulseStyle}>
-            <Ionicons
-              name="sparkles-outline"
-              size={56}
-              color={colors.primary}
-            />
+            <Ionicons name="sparkles-outline" size={56} color={theme.primary} />
           </Animated.View>
         </View>
         <Text
           style={{
             fontSize: 22,
             fontWeight: "700",
-            color: colors.textPrimary,
+            color: theme.textPrimary,
             textAlign: "center",
             marginBottom: 10,
           }}
@@ -298,7 +295,7 @@ export default function ImprovedResumePreviewScreen() {
         <Text
           style={{
             fontSize: 15,
-            color: colors.textSecondary,
+            color: theme.textSecondary,
             textAlign: "center",
             lineHeight: 22,
             marginBottom: 32,
@@ -315,9 +312,7 @@ export default function ImprovedResumePreviewScreen() {
                 height: 8,
                 borderRadius: 4,
                 backgroundColor:
-                  msgIndex % 3 === i
-                    ? colors.primary
-                    : "rgba(255,255,255,0.15)",
+                  msgIndex % 3 === i ? theme.primary : "rgba(255,255,255,0.15)",
               }}
             />
           ))}
@@ -332,18 +327,18 @@ export default function ImprovedResumePreviewScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.background,
+          backgroundColor: theme.background,
           alignItems: "center",
           justifyContent: "center",
           paddingHorizontal: 32,
         }}
       >
-        <Ionicons name="alert-circle-outline" size={64} color={colors.error} />
+        <Ionicons name="alert-circle-outline" size={64} color={theme.error} />
         <Text
           style={{
             fontSize: 20,
             fontWeight: "700",
-            color: colors.textPrimary,
+            color: theme.textPrimary,
             textAlign: "center",
             marginTop: 16,
             marginBottom: 8,
@@ -354,7 +349,7 @@ export default function ImprovedResumePreviewScreen() {
         <Text
           style={{
             fontSize: 14,
-            color: colors.textSecondary,
+            color: theme.textSecondary,
             textAlign: "center",
             lineHeight: 22,
             marginBottom: 32,
@@ -364,7 +359,7 @@ export default function ImprovedResumePreviewScreen() {
         </Text>
         <TouchableOpacity
           style={{
-            backgroundColor: colors.primary,
+            backgroundColor: theme.primary,
             borderRadius: 14,
             paddingVertical: 14,
             paddingHorizontal: 32,
@@ -383,9 +378,18 @@ export default function ImprovedResumePreviewScreen() {
   const r = result!;
   const exp = r.generatedResume.enhancedExperiences;
 
+  const cardStyle = {
+    backgroundColor: theme.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)" as const,
+    padding: 16,
+    marginBottom: 12,
+  };
+
   return (
     <View
-      style={{ flex: 1, backgroundColor: colors.background, paddingTop: 16 }}
+      style={{ flex: 1, backgroundColor: theme.background, paddingTop: 16 }}
     >
       {/* Header */}
       <View
@@ -394,7 +398,7 @@ export default function ImprovedResumePreviewScreen() {
           alignItems: "center",
           paddingHorizontal: 16,
           borderBottomWidth: 1,
-          borderBottomColor: colors.border,
+          borderBottomColor: theme.border,
         }}
       >
         <TouchableOpacity
@@ -402,13 +406,13 @@ export default function ImprovedResumePreviewScreen() {
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
         </TouchableOpacity>
         <Text
           style={{
             fontSize: 18,
             fontWeight: "700",
-            color: colors.textPrimary,
+            color: theme.textPrimary,
             flex: 1,
             textAlign: "center",
             marginRight: 36,
@@ -432,7 +436,7 @@ export default function ImprovedResumePreviewScreen() {
             style={{
               fontSize: 22,
               fontWeight: "800",
-              color: colors.textPrimary,
+              color: theme.textPrimary,
               letterSpacing: -0.3,
             }}
           >
@@ -442,7 +446,7 @@ export default function ImprovedResumePreviewScreen() {
             style={{
               fontSize: 14,
               fontWeight: "600",
-              color: colors.primary,
+              color: theme.primary,
               marginTop: 2,
             }}
           >
@@ -451,7 +455,7 @@ export default function ImprovedResumePreviewScreen() {
           <Text
             style={{
               fontSize: 12,
-              color: colors.textSecondary,
+              color: theme.textSecondary,
               marginTop: 6,
               lineHeight: 18,
             }}
@@ -464,7 +468,7 @@ export default function ImprovedResumePreviewScreen() {
             <Text
               style={{
                 fontSize: 12,
-                color: colors.textSecondary,
+                color: theme.textSecondary,
                 marginTop: 2,
               }}
             >
@@ -474,9 +478,9 @@ export default function ImprovedResumePreviewScreen() {
         </View>
 
         {/* Summary */}
-        <SectionCard title="Professional Summary">
+        <SectionCard theme={theme} title="Professional Summary">
           <Text
-            style={{ fontSize: 14, color: colors.textPrimary, lineHeight: 22 }}
+            style={{ fontSize: 14, color: theme.textPrimary, lineHeight: 22 }}
           >
             {r.generatedResume.professionalSummary}
           </Text>
@@ -484,7 +488,7 @@ export default function ImprovedResumePreviewScreen() {
 
         {/* Experience */}
         {exp.length > 0 && (
-          <SectionCard title="Work Experience">
+          <SectionCard theme={theme} title="Work Experience">
             {exp.map((e, i) => (
               <View
                 key={i}
@@ -501,7 +505,7 @@ export default function ImprovedResumePreviewScreen() {
                     style={{
                       fontSize: 14,
                       fontWeight: "700",
-                      color: colors.textPrimary,
+                      color: theme.textPrimary,
                       flex: 1,
                     }}
                   >
@@ -510,7 +514,7 @@ export default function ImprovedResumePreviewScreen() {
                   <Text
                     style={{
                       fontSize: 12,
-                      color: colors.textSecondary,
+                      color: theme.textSecondary,
                       marginLeft: 8,
                     }}
                   >
@@ -520,7 +524,7 @@ export default function ImprovedResumePreviewScreen() {
                 <Text
                   style={{
                     fontSize: 13,
-                    color: colors.textSecondary,
+                    color: theme.textSecondary,
                     fontStyle: "italic",
                     marginBottom: 8,
                   }}
@@ -537,7 +541,7 @@ export default function ImprovedResumePreviewScreen() {
                         width: 5,
                         height: 5,
                         borderRadius: 3,
-                        backgroundColor: colors.primary,
+                        backgroundColor: theme.primary,
                         marginRight: 8,
                         marginTop: 8,
                         flexShrink: 0,
@@ -547,7 +551,7 @@ export default function ImprovedResumePreviewScreen() {
                       style={{
                         flex: 1,
                         fontSize: 13,
-                        color: colors.textPrimary,
+                        color: theme.textPrimary,
                         lineHeight: 20,
                       }}
                     >
@@ -561,7 +565,7 @@ export default function ImprovedResumePreviewScreen() {
         )}
 
         {/* Education */}
-        <SectionCard title="Education">
+        <SectionCard theme={theme} title="Education">
           <View
             style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
@@ -570,7 +574,7 @@ export default function ImprovedResumePreviewScreen() {
                 style={{
                   fontSize: 14,
                   fontWeight: "600",
-                  color: colors.textPrimary,
+                  color: theme.textPrimary,
                 }}
               >
                 {r.education.degree}
@@ -578,44 +582,44 @@ export default function ImprovedResumePreviewScreen() {
               <Text
                 style={{
                   fontSize: 13,
-                  color: colors.textSecondary,
+                  color: theme.textSecondary,
                   fontStyle: "italic",
                 }}
               >
                 {r.education.institution}
               </Text>
               {r.education.grade ? (
-                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                <Text style={{ fontSize: 12, color: theme.textSecondary }}>
                   {r.education.grade}
                 </Text>
               ) : null}
             </View>
-            <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+            <Text style={{ fontSize: 13, color: theme.textSecondary }}>
               {r.education.graduationYear}
             </Text>
           </View>
         </SectionCard>
 
         {/* Skills */}
-        <SectionCard title="Core Skills">
+        <SectionCard theme={theme} title="Core Skills">
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {r.generatedResume.coreSkills.map((s, i) => (
               <View
                 key={i}
                 style={{
-                  backgroundColor: colors.primary + "18",
+                  backgroundColor: theme.primary + "18",
                   borderRadius: 20,
                   paddingHorizontal: 12,
                   paddingVertical: 5,
                   borderWidth: 1,
-                  borderColor: colors.primary + "35",
+                  borderColor: theme.primary + "35",
                 }}
               >
                 <Text
                   style={{
                     fontSize: 12,
                     fontWeight: "600",
-                    color: colors.primary,
+                    color: theme.primary,
                   }}
                 >
                   {s}
@@ -636,9 +640,9 @@ export default function ImprovedResumePreviewScreen() {
           paddingHorizontal: 16,
           paddingTop: 12,
           paddingBottom: insets.bottom + 5,
-          backgroundColor: colors.background,
+          backgroundColor: theme.background,
           borderTopWidth: 1,
-          borderTopColor: colors.border,
+          borderTopColor: theme.border,
           gap: 10,
         }}
       >
@@ -647,7 +651,7 @@ export default function ImprovedResumePreviewScreen() {
           style={{
             height: 52,
             borderRadius: 14,
-            backgroundColor: colors.primary,
+            backgroundColor: theme.primary,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
@@ -680,7 +684,7 @@ export default function ImprovedResumePreviewScreen() {
         >
           <Text
             style={{
-              color: colors.textSecondary,
+              color: theme.textSecondary,
               fontWeight: "500",
               fontSize: 14,
             }}
@@ -694,29 +698,31 @@ export default function ImprovedResumePreviewScreen() {
 }
 
 // ── Helpers ────────────────────────────────────────────────────
-const cardStyle = {
-  backgroundColor: colors.surface,
-  borderRadius: 16,
-  borderWidth: 1,
-  borderColor: "rgba(255,255,255,0.06)" as const,
-  padding: 16,
-  marginBottom: 12,
-};
-
 function SectionCard({
   title,
   children,
+  theme,
 }: {
   title: string;
   children: React.ReactNode;
+  theme: ReturnType<typeof useAppTheme>;
 }) {
+  const cardStyle = {
+    backgroundColor: theme.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)" as const,
+    padding: 16,
+    marginBottom: 12,
+  };
+
   return (
     <View style={cardStyle}>
       <Text
         style={{
           fontSize: 11,
           fontWeight: "700",
-          color: colors.textSecondary,
+          color: theme.textSecondary,
           letterSpacing: 1.2,
           textTransform: "uppercase",
           marginBottom: 10,

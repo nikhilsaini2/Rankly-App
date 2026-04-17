@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useRef, useState } from "react";
 import { Animated, StyleSheet, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors } from "../../theme/color";
+import { useAppTheme } from "../../theme/useAppTheme";
 
 export type ToastVariant = "success" | "error" | "info";
 
@@ -13,6 +13,7 @@ export function useToast() {
 }
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const theme = useAppTheme();
   const [state, setState] = useState<{
     message: string;
     variant: ToastVariant;
@@ -44,10 +45,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const borderColor =
     state?.variant === "success"
-      ? colors.accent
+      ? theme.accent
       : state?.variant === "error"
-        ? colors.danger
-        : colors.primary;
+        ? theme.danger
+        : theme.primary;
+
+  const styles = createStyles(theme);
 
   return (
     <ToastContext.Provider value={show}>
@@ -71,19 +74,21 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-const styles = StyleSheet.create({
-  banner: {
-    position: "absolute",
-    left: 20,
-    right: 20,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    borderRadius: 14,
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderLeftWidth: 4,
-    zIndex: 9999,
-  },
-  text: { color: colors.textPrimary, textAlign: "center", fontWeight: "600" },
-});
+function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  return StyleSheet.create({
+    banner: {
+      position: "absolute",
+      left: 20,
+      right: 20,
+      paddingVertical: 14,
+      paddingHorizontal: 18,
+      borderRadius: 14,
+      backgroundColor: theme.surfaceAlt,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderLeftWidth: 4,
+      zIndex: 9999,
+    },
+    text: { color: theme.textPrimary, textAlign: "center", fontWeight: "600" },
+  });
+}

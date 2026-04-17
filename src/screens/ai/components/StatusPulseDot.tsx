@@ -6,9 +6,12 @@ import {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
-import { styles } from "../styles";
+import { useAppTheme } from "../../../theme/useAppTheme";
+import { createAIStyles } from "../styles";
 
 export function StatusPulseDot() {
+  const theme = useAppTheme();
+  const styles = createAIStyles(theme);
   const pulseScale = useSharedValue(1);
   const pulseOpacity = useSharedValue(0.6);
 
@@ -32,7 +35,6 @@ export function StatusPulseDot() {
 
   return (
     <View style={styles.statusDotWrap}>
-      {/* <Animated.View style={[styles.statusDotRing, ringStyle]} /> */}
       <View style={styles.statusDotInner} />
     </View>
   );

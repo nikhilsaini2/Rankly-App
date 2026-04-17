@@ -13,7 +13,8 @@ import {
   deleteUserAccountData,
   logout,
 } from "../../services/profile/profileService";
-import { colors, gradients } from "../../theme/color";
+import { gradients } from "../../theme/color";
+import { useAppTheme } from "../../theme/useAppTheme";
 
 export default function ProfileActions({
   notificationsOn,
@@ -24,6 +25,7 @@ export default function ProfileActions({
   onToggleNotifications: (v: boolean) => void;
   onDeleted: () => void;
 }) {
+  const theme = useAppTheme();
   return (
     <View>
       <LinearGradient
@@ -36,19 +38,19 @@ export default function ProfileActions({
           alignItems: "center",
           justifyContent: "space-between",
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: theme.border,
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Ionicons name="notifications-outline" size={20} color={colors.primaryLight} />
-          <Text style={{ color: colors.textPrimary, fontWeight: "500" }}>
+          <Ionicons name="notifications-outline" size={20} color={theme.primaryLight} />
+          <Text style={{ color: theme.textPrimary, fontWeight: "500" }}>
             Notifications
           </Text>
         </View>
         <Switch
           value={notificationsOn}
           onValueChange={onToggleNotifications}
-          trackColor={{ false: colors.surfaceAlt, true: colors.primaryDark }}
+          trackColor={{ false: theme.surfaceAlt, true: theme.primaryDark }}
         />
       </LinearGradient>
 
@@ -68,11 +70,11 @@ export default function ProfileActions({
             alignItems: "center",
             gap: 12,
             borderWidth: 1,
-            borderColor: colors.border,
+            borderColor: theme.border,
           }}
         >
-          <Ionicons name="shield-outline" size={20} color={colors.primaryLight} />
-          <Text style={{ color: colors.textPrimary, fontWeight: "500" }}>
+          <Ionicons name="shield-outline" size={20} color={theme.primaryLight} />
+          <Text style={{ color: theme.textPrimary, fontWeight: "500" }}>
             Privacy Policy
           </Text>
         </LinearGradient>
@@ -94,11 +96,11 @@ export default function ProfileActions({
             alignItems: "center",
             gap: 12,
             borderWidth: 1,
-            borderColor: colors.border,
+            borderColor: theme.border,
           }}
         >
-          <Ionicons name="document-text-outline" size={20} color={colors.primaryLight} />
-          <Text style={{ color: colors.textPrimary, fontWeight: "500" }}>
+          <Ionicons name="document-text-outline" size={20} color={theme.primaryLight} />
+          <Text style={{ color: theme.textPrimary, fontWeight: "500" }}>
             Terms of Service
           </Text>
         </LinearGradient>
@@ -111,10 +113,10 @@ export default function ProfileActions({
           padding: 16,
           borderRadius: 18,
           borderWidth: 1,
-          borderColor: colors.error,
+          borderColor: theme.error,
         }}
       >
-        <Text style={{ color: colors.error, textAlign: "center" }}>Sign out</Text>
+        <Text style={{ color: theme.error, textAlign: "center" }}>Sign out</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -144,10 +146,10 @@ export default function ProfileActions({
           padding: 16,
           borderRadius: 18,
           borderWidth: 1,
-          borderColor: colors.danger,
+          borderColor: theme.danger,
         }}
       >
-        <Text style={{ color: colors.danger, textAlign: "center", fontWeight: "600" }}>
+        <Text style={{ color: theme.danger, textAlign: "center", fontWeight: "600" }}>
           Delete account
         </Text>
       </TouchableOpacity>

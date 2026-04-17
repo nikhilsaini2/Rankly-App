@@ -1,8 +1,9 @@
 import { StyleSheet } from "react-native";
-import { colors } from "../../theme/color";
+import type { AppTheme } from "../../theme";
 
-export const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
+export function createProfileStyles(theme: AppTheme) {
+  return StyleSheet.create({
+  root: { flex: 1, backgroundColor: theme.background },
   scrollContent: { paddingHorizontal: 20, paddingTop: 0 },
 
   heroWrap: { marginBottom: 18 },
@@ -33,7 +34,7 @@ export const styles = StyleSheet.create({
     right: 2.5,
     bottom: 2.5,
     borderRadius: 46,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     padding: 2,
     overflow: "hidden",
     alignItems: "center",
@@ -44,11 +45,11 @@ export const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 42,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: theme.surfaceAlt,
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarInitials: { fontSize: 28, fontWeight: "700", color: colors.primary },
+  avatarInitials: { fontSize: 28, fontWeight: "700", color: theme.primary },
   avatarEditBtn: {
     position: "absolute",
     right: -4,
@@ -56,11 +57,11 @@ export const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: colors.background,
+    borderColor: theme.background,
   },
 
   heroNameContainer: {
@@ -71,7 +72,7 @@ export const styles = StyleSheet.create({
   heroName: {
     fontSize: 24,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     letterSpacing: -0.5,
     textAlign: "center",
     width: "100%",
@@ -80,7 +81,7 @@ export const styles = StyleSheet.create({
   heroRole: {
     marginTop: 4,
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textAlign: "center",
   },
   badgeRow: {
@@ -101,7 +102,7 @@ export const styles = StyleSheet.create({
     borderColor: "rgba(108,99,255,0.3)",
   },
   planBadgeText: {
-    color: colors.primary,
+    color: theme.primary,
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 1,
@@ -119,7 +120,7 @@ export const styles = StyleSheet.create({
     borderColor: "rgba(0,212,170,0.3)",
   },
   creditsBadgeText: {
-    color: colors.accent,
+    color: theme.accent,
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 1,
@@ -130,13 +131,13 @@ export const styles = StyleSheet.create({
     gap: 8,
     marginTop: 10,
   },
-  avatarBusyText: { color: colors.textSecondary, fontSize: 12 },
+  avatarBusyText: { color: theme.textSecondary, fontSize: 12 },
 
   statsStrip: {
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     marginTop: 5,
     paddingVertical: 20,
     flexDirection: "row",
@@ -145,18 +146,18 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   statCell: { flex: 1, alignItems: "center" },
-  statDivider: { width: 1, height: 32, backgroundColor: colors.border },
+  statDivider: { width: 1, height: 32, backgroundColor: theme.border },
   statValue: {
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     fontSize: 26,
     fontWeight: "800",
     letterSpacing: -1,
   },
-  statValueMuted: { color: colors.textSecondary },
-  statBest: { color: colors.accent },
+  statValueMuted: { color: theme.textSecondary },
+  statBest: { color: theme.accent },
   statLabel: {
     marginTop: 4,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontSize: 10,
     fontWeight: "600",
     textTransform: "uppercase",
@@ -164,7 +165,7 @@ export const styles = StyleSheet.create({
   },
 
   sectionCap: {
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontSize: 10,
     fontWeight: "700",
     textTransform: "uppercase",
@@ -173,10 +174,10 @@ export const styles = StyleSheet.create({
 
   bioCard: {
     marginTop: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     padding: 20,
   },
   bioHeaderRow: {
@@ -184,21 +185,21 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  bioEditLink: { color: colors.primary, fontSize: 13, fontWeight: "600" },
+  bioEditLink: { color: theme.primary, fontSize: 13, fontWeight: "600" },
   bioText: {
     marginTop: 12,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     fontSize: 14,
     lineHeight: 22,
   },
-  bioPlaceholder: { color: colors.textSecondary, fontStyle: "italic" },
+  bioPlaceholder: { color: theme.textSecondary, fontStyle: "italic" },
 
   settingsCard: {
     marginTop: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     overflow: "hidden",
   },
   settingsRow: {
@@ -220,22 +221,22 @@ export const styles = StyleSheet.create({
   settingsLabel: {
     flex: 1,
     marginLeft: 14,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     fontSize: 15,
     fontWeight: "500",
   },
   settingsDivider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
     marginLeft: 68,
   },
 
   dangerWrap: { marginTop: 16 },
   dangerRow: {
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     marginHorizontal: 0,
     padding: 18,
     flexDirection: "row",
@@ -253,29 +254,29 @@ export const styles = StyleSheet.create({
   dangerIconDangerBg: { backgroundColor: "rgba(255,92,92,0.12)" },
   signOutText: {
     flex: 1,
-    color: colors.primary,
+    color: theme.primary,
     fontSize: 15,
     fontWeight: "600",
   },
   deleteRow: { marginTop: 10, borderColor: "rgba(255,92,92,0.2)" },
   deleteText: {
     flex: 1,
-    color: colors.danger,
+    color: theme.danger,
     fontSize: 15,
     fontWeight: "500",
   },
 
   footerCaption: {
     textAlign: "center",
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontSize: 11,
     marginTop: 24,
     marginBottom: 8,
   },
-  footerHeart: { color: colors.danger },
+  footerHeart: { color: theme.danger },
 
   labelsRole: {
-    color: colors.textMuted,
+    color: theme.textMuted,
     fontSize: 11,
     letterSpacing: 1.5,
     textTransform: "uppercase" as const,
@@ -283,23 +284,23 @@ export const styles = StyleSheet.create({
   },
 
   inputBase: {
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: theme.surfaceAlt,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     fontSize: 16,
   },
   inputArea: {
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: theme.surfaceAlt,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     fontSize: 16,
     minHeight: 100,
     textAlignVertical: "top" as const,
@@ -310,22 +311,22 @@ export const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderColor: theme.border,
+    backgroundColor: theme.surface,
   },
 
   chipsActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.surfaceAlt,
+    borderColor: theme.primary,
+    backgroundColor: theme.surfaceAlt,
   },
 
   chipsText: {
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontSize: 13,
   },
 
   chipsTextActive: {
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     fontWeight: "700" as const,
   },
 
@@ -341,18 +342,18 @@ export const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingTop: 16,
     paddingHorizontal: 16,
     paddingBottom: 32,
     borderTopWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
 
   modalTitle: {
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     fontSize: 18,
     fontWeight: "700" as const,
     marginBottom: 12,
@@ -363,11 +364,11 @@ export const styles = StyleSheet.create({
     alignItems: "center" as const,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
 
   modalRowActive: {
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: theme.surfaceAlt,
   },
 
   // ─── ADD THESE TO YOUR styles.ts StyleSheet.create({...}) ───────────────────
@@ -386,7 +387,7 @@ export const styles = StyleSheet.create({
     backgroundColor: "rgba(108,99,255,0.08)",
   },
   heroEditProfileText: {
-    color: colors.primary,
+    color: theme.primary,
     fontSize: 13,
     fontWeight: "600",
     letterSpacing: 0.2,
@@ -402,9 +403,9 @@ export const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 20,
     paddingTop: 14,
-    backgroundColor: colors.background, // or colors.surface
+    backgroundColor: theme.background, // or theme.surface
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   editCancelBtn: {
     flex: 1,
@@ -413,11 +414,11 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
+    borderColor: theme.border,
+    backgroundColor: theme.surfaceAlt,
   },
   editCancelText: {
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontSize: 15,
     fontWeight: "600",
   },
@@ -427,7 +428,7 @@ export const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
   },
   editSaveText: {
     color: "#fff",
@@ -461,16 +462,16 @@ export const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: colors.accent + "15",
+    backgroundColor: theme.accent + "15",
     borderWidth: 1,
-    borderColor: colors.accent + "25",
+    borderColor: theme.accent + "25",
     alignItems: "center",
     justifyContent: "center",
   },
   sectionTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     letterSpacing: -0.2,
   },
   viewAllBtn: {
@@ -480,7 +481,7 @@ export const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: 13,
-    color: colors.accent,
+    color: theme.accent,
     fontWeight: "600",
   },
   resumeMiniCard: {
@@ -498,7 +499,7 @@ export const styles = StyleSheet.create({
     width: 3,
     height: 36,
     borderRadius: 2,
-    backgroundColor: colors.accent,
+    backgroundColor: theme.accent,
     marginHorizontal: 16,
   },
   resumeMiniContent: {
@@ -513,22 +514,22 @@ export const styles = StyleSheet.create({
   resumeMiniName: {
     fontSize: 14,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     flex: 1,
   },
   resumeMiniDate: {
     fontSize: 11,
-    color: colors.textMuted,
+    color: theme.textMuted,
     marginLeft: 8,
   },
   resumeMiniRole: {
     fontSize: 12,
-    color: colors.accent,
+    color: theme.accent,
     fontWeight: "500",
   },
   resumeMiniSkills: {
     fontSize: 11,
-    color: colors.textMuted,
+    color: theme.textMuted,
     lineHeight: 16,
   },
   resumeEmptyCard: {
@@ -538,12 +539,12 @@ export const styles = StyleSheet.create({
   },
   resumeEmptyText: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontWeight: "500",
   },
   resumeEmptyAction: {
     fontSize: 13,
-    color: colors.accent,
+    color: theme.accent,
     fontWeight: "600",
   },
   resumeLoadingRow: {
@@ -555,7 +556,7 @@ export const styles = StyleSheet.create({
   },
   resumeLoadingText: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   buildNewBtn: {
     flexDirection: "row",
@@ -569,6 +570,7 @@ export const styles = StyleSheet.create({
   buildNewBtnText: {
     fontSize: 13,
     fontWeight: "600",
-    color: colors.primary,
+    color: theme.primary,
   },
-});
+  });
+}

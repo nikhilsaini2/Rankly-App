@@ -27,7 +27,7 @@ import { useAtsScore } from "../../../hooks/useAtsScore";
 import { useProfile } from "../../../hooks/useProfile";
 import { useResumeUpload } from "../../../hooks/useResumeUpload";
 import { fetchResumeScreenData } from "../../../services/resume/resumeService";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import type { ResumeRow } from "../../../types/common.types";
 import { AtsScoreSummary } from "../../../types/common.types";
 import type {
@@ -39,7 +39,7 @@ import { FeatureRow } from "../components/FeatureRow";
 import { ResumeAnalyzingOverlay } from "../components/ResumeAnalyzingOverlay";
 import { ResumeCard } from "../components/ResumeCard";
 import { UploadingOverlay } from "../components/Uploadingoverlay";
-import { styles } from "../styles";
+import { createResumeScreenStyles } from "../styles";
 
 function getLatestAtsScore(resume: ResumeRow): AtsScoreSummary | null {
   if (!resume.ats_scores?.length) return null;
@@ -52,6 +52,8 @@ function getLatestAtsScore(resume: ResumeRow): AtsScoreSummary | null {
 export default function ResumeScreen() {
   const insets = useSafeAreaInsets();
   const toast = useToast();
+  const theme = useAppTheme();
+  const styles = createResumeScreenStyles(theme);
   const { user } = useProfile();
   const navigation = useNavigation<NavigationProp<RootTabParamList>>();
   const rootNav = navigation.getParent() as
@@ -209,8 +211,8 @@ export default function ResumeScreen() {
     return (
       <Reanimated.View style={[{ flex: 1 }, screenStyle]}>
         <View style={[styles.center, { paddingTop: insets.top }]}>
-          <ActivityIndicator color={colors.primary} />
-          <Text style={{ marginTop: 12, color: colors.textSecondary }}>
+          <ActivityIndicator color={theme.primary} />
+          <Text style={{ marginTop: 12, color: theme.textSecondary }}>
             Loading...
           </Text>
         </View>
@@ -222,7 +224,7 @@ export default function ResumeScreen() {
     return (
       <Reanimated.View style={[{ flex: 1 }, screenStyle]}>
         <ScrollView
-          style={{ flex: 1, backgroundColor: colors.background }}
+          style={{ flex: 1, backgroundColor: theme.background }}
           contentContainerStyle={[
             styles.emptyScroll,
             { paddingTop: insets.top + 16 },
@@ -235,7 +237,7 @@ export default function ResumeScreen() {
             <Ionicons
               name="newspaper-outline"
               size={60}
-              color={colors.accent}
+              color={theme.accent}
             />
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
@@ -256,14 +258,14 @@ export default function ResumeScreen() {
           <View style={styles.emptyFeatureList}>
             <FeatureRow
               iconName="analytics-outline"
-              iconColor={colors.primary}
+              iconColor={theme.primary}
               iconBg="rgba(108,99,255,0.10)"
               title="ATS Score"
               subtitle="0–100 score across 4 metrics"
             />
             <FeatureRow
               iconName="search-outline"
-              iconColor={colors.accent}
+              iconColor={theme.accent}
               iconBg="rgba(0,212,170,0.08)"
               title="Keyword analysis"
               subtitle="Found & missing keywords"
@@ -283,7 +285,7 @@ export default function ResumeScreen() {
             style={styles.emptyUploadBtn}
           >
             <LinearGradient
-              colors={[colors.primary, colors.primaryDark]}
+              colors={[theme.primary, theme.primaryDark]}
               style={styles.emptyUploadGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -332,7 +334,7 @@ export default function ResumeScreen() {
             style={styles.uploadIconBtn}
           >
             <LinearGradient
-              colors={[colors.primary, colors.primaryDark]}
+              colors={[theme.primary, theme.primaryDark]}
               style={styles.uploadIconBtnInner}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -361,19 +363,19 @@ export default function ResumeScreen() {
             alignItems: "center",
             gap: 10,
           }}>
-            <Ionicons name="warning-outline" size={18} color={colors.danger} />
+            <Ionicons name="warning-outline" size={18} color={theme.danger} />
             <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.danger, fontSize: 13, fontWeight: "600" }}>
+              <Text style={{ color: theme.danger, fontSize: 13, fontWeight: "600" }}>
                 Analysis failed
               </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
+              <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
                 {analyzeError}
               </Text>
             </View>
             <TouchableOpacity
               onPress={retryAnalyze}
               style={{
-                backgroundColor: colors.danger,
+                backgroundColor: theme.danger,
                 paddingHorizontal: 12,
                 paddingVertical: 6,
                 borderRadius: 8,

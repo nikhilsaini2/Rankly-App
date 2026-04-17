@@ -14,12 +14,15 @@ import { useInterviewHistory } from "../../feature/interview/hooks/useInterviewH
 import { useAIChat } from "../../hooks/useAIChat";
 import { useProfile } from "../../hooks/useProfile";
 import type { RootStackParamList, RootTabParamList } from "../../types/navigation.types";
+import { useAppTheme } from "../../theme/useAppTheme";
 import { ChatTab } from "./components/ChatTab";
 import { PremiumHeader } from "./components/PremiumHeader";
 import { PremiumTabSwitcher } from "./components/PremiumTabSwitcher";
-import { styles } from "./styles";
+import { createAIStyles } from "./styles";
 
 export default function AIScreen() {
+  const theme = useAppTheme();
+  const styles = createAIStyles(theme);
   const insets = useSafeAreaInsets();
   const route = useRoute<RouteProp<RootTabParamList, "AI">>();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();

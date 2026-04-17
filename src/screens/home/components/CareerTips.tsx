@@ -1,9 +1,13 @@
 import React from "react";
 import { FlatList, Text, View } from "react-native";
 import { CAREER_TIPS } from "../../../constants/content";
-import { styles } from "../styles";
+import { useAppTheme } from "../../../theme/useAppTheme";
+import { createHomeStyles } from "../styles";
 
 export function CareerTips() {
+  const theme = useAppTheme();
+  const styles = createHomeStyles(theme);
+
   return (
     <>
       <Text style={styles.sectionTitle}>Career tips</Text>

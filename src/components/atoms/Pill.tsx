@@ -3,9 +3,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
 } from "react-native";
-import { colors } from "../../theme/color";
+import { useAppTheme } from "../../theme/useAppTheme";
 
 interface PillProps {
   label: string;
@@ -15,58 +14,60 @@ interface PillProps {
 }
 
 export function Pill({ label, selected, tone, onPress }: PillProps) {
+  const theme = useAppTheme();
+
   const getBackgroundColor = () => {
     if (selected) {
       switch (tone) {
         case "primary":
-          return colors.primary;
+          return theme.primary;
         case "easy":
-          return colors.accent;
+          return theme.accent;
         case "medium":
-          return colors.warning;
+          return theme.warning;
         case "hard":
-          return colors.danger;
+          return theme.danger;
         default:
-          return colors.primary;
+          return theme.primary;
       }
     }
-    return colors.surfaceAlt;
+    return theme.surfaceAlt;
   };
 
   const getTextColor = () => {
     if (selected) {
       switch (tone) {
         case "primary":
-          return colors.textPrimary;
+          return theme.textPrimary;
         case "easy":
           return "#000000";
         case "medium":
-          return colors.textPrimary;
+          return theme.textPrimary;
         case "hard":
-          return colors.textPrimary;
+          return theme.textPrimary;
         default:
-          return colors.textPrimary;
+          return theme.textPrimary;
       }
     }
-    return colors.textSecondary;
+    return theme.textSecondary;
   };
 
   const getBorderColor = () => {
     if (selected) {
       switch (tone) {
         case "primary":
-          return colors.primary;
+          return theme.primary;
         case "easy":
-          return colors.accent;
+          return theme.accent;
         case "medium":
-          return colors.warning;
+          return theme.warning;
         case "hard":
-          return colors.danger;
+          return theme.danger;
         default:
-          return colors.primary;
+          return theme.primary;
       }
     }
-    return colors.border;
+    return theme.border;
   };
 
   return (

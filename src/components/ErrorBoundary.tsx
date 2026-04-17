@@ -1,11 +1,14 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { colors } from "../theme/color";
+import type { AppTheme } from "../theme";
+import { useAppTheme } from "../theme/useAppTheme";
 
 type Props = { children: ReactNode };
 type State = { err: Error | null };
 
-export class ErrorBoundary extends Component<Props, State> {
+type InnerProps = Props & { theme: AppTheme };
+
+class ErrorBoundaryInner extends Component<InnerProps, State> {
   state: State = { err: null };
 
   static getDerivedStateFromError(err: Error): State {
@@ -15,6 +18,9 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(_e: Error, _i: ErrorInfo) {}
 
   render() {
+    const { theme } = this.props;
+    const styles = createStyles(theme);
+
     if (this.state.err) {
       return (
         <View style={styles.wrap}>
@@ -33,26 +39,33 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    flex: 1,
-    backgroundColor: colors.background,
-    justifyContent: "center",
-    padding: 24,
-  },
-  title: {
-    color: colors.textPrimary,
-    fontSize: 20,
-    fontWeight: "800",
-    marginBottom: 8,
-  },
-  sub: { color: colors.textSecondary, marginBottom: 24 },
-  btn: {
-    alignSelf: "flex-start",
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-  },
-  btnText: { color: colors.textPrimary, fontWeight: "700" },
-});
+export function ErrorBoundary({ children }: Props) {
+  const theme = useAppTheme();
+  return <ErrorBoundaryInner theme={theme}>{children}</ErrorBoundaryInner>;
+}
+
+function createStyles(theme: AppTheme) {
+  return StyleSheet.create({
+    wrap: {
+      flex: 1,
+      backgroundColor: theme.background,
+      justifyContent: "center",
+      padding: 24,
+    },
+    title: {
+      color: theme.textPrimary,
+      fontSize: 20,
+      fontWeight: "800",
+      marginBottom: 8,
+    },
+    sub: { color: theme.textSecondary, marginBottom: 24 },
+    btn: {
+      alignSelf: "flex-start",
+      backgroundColor: theme.primary,
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 12,
+    },
+    btnText: { color: theme.textPrimary, fontWeight: "700" },
+  });
+}

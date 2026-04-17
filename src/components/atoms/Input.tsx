@@ -6,7 +6,7 @@ import {
   TextInputProps,
   View,
 } from "react-native";
-import { colors } from "../../theme/color";
+import { useAppTheme } from "../../theme/useAppTheme";
 
 type Props = TextInputProps & {
   label?: string;
@@ -14,6 +14,8 @@ type Props = TextInputProps & {
 };
 
 export const Input = ({ label, rightIcon, ...props }: Props) => {
+  const theme = useAppTheme();
+  const styles = createStyles(theme);
   const [focused, setFocused] = useState(false);
 
   return (
@@ -23,7 +25,7 @@ export const Input = ({ label, rightIcon, ...props }: Props) => {
       <View style={[styles.inputContainer, focused && styles.inputFocused]}>
         <TextInput
           {...props}
-          placeholderTextColor={colors.placeholder}
+          placeholderTextColor={theme.placeholder}
           style={styles.input}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
@@ -35,45 +37,47 @@ export const Input = ({ label, rightIcon, ...props }: Props) => {
   );
 };
 
-const styles = StyleSheet.create({
-  wrapper: {
-    width: "100%",
-  },
+function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  return StyleSheet.create({
+    wrapper: {
+      width: "100%",
+    },
 
-  label: {
-    color: colors.textMuted,
-    fontSize: 11,
-    marginBottom: 6,
-    letterSpacing: 0.6,
-  },
+    label: {
+      color: theme.textMuted,
+      fontSize: 11,
+      marginBottom: 6,
+      letterSpacing: 0.6,
+    },
 
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    inputContainer: {
+      flexDirection: "row",
+      alignItems: "center",
 
-    backgroundColor: colors.glass,
-    borderRadius: 14,
-    paddingHorizontal: 14,
+      backgroundColor: theme.glass,
+      borderRadius: 14,
+      paddingHorizontal: 14,
 
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
 
-  inputFocused: {
-    borderColor: colors.secondary,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-  },
+    inputFocused: {
+      borderColor: theme.secondary,
+      shadowColor: theme.primary,
+      shadowOpacity: 0.4,
+      shadowRadius: 10,
+    },
 
-  input: {
-    flex: 1,
-    paddingVertical: 12,
-    color: colors.textPrimary,
-    fontSize: 14,
-  },
+    input: {
+      flex: 1,
+      paddingVertical: 12,
+      color: theme.textPrimary,
+      fontSize: 14,
+    },
 
-  icon: {
-    marginLeft: 8,
-  },
-});
+    icon: {
+      marginLeft: 8,
+    },
+  });
+}

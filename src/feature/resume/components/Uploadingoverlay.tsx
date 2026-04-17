@@ -8,7 +8,7 @@ import Reanimated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 
 type Props = {
   visible: boolean;
@@ -16,6 +16,9 @@ type Props = {
 };
 
 export function UploadingOverlay({ visible, progress }: Props) {
+  const theme = useAppTheme();
+  const styles = createStyles(theme);
+
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.92);
   const progressWidth = useSharedValue(0);
@@ -55,13 +58,11 @@ export function UploadingOverlay({ visible, progress }: Props) {
   const pct = Math.round(progress * 100);
 
   return (
-    <Reanimated.View
-      style={[StyleSheet.absoluteFillObject, styles.backdrop, overlayStyle]}
-    >
+    <Reanimated.View style={[StyleSheet.absoluteFillObject, styles.backdrop, overlayStyle]}>
       <Reanimated.View style={[styles.card, cardStyle]}>
         <View style={styles.iconWrap}>
           <LinearGradient
-            colors={[colors.secondary, colors.secondaryDark]}
+            colors={[theme.secondary, theme.secondaryDark]}
             style={styles.iconGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -78,7 +79,7 @@ export function UploadingOverlay({ visible, progress }: Props) {
         <View style={styles.barTrack}>
           <Reanimated.View style={[styles.barFill, barStyle]}>
             <LinearGradient
-              colors={[colors.primary, colors.accent]}
+              colors={[theme.primary, theme.accent]}
               style={StyleSheet.absoluteFillObject}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -92,66 +93,68 @@ export function UploadingOverlay({ visible, progress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    backgroundColor: "rgba(8,8,16,0.82)",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 999,
-  },
-  card: {
-    width: 280,
-    backgroundColor: colors.surface,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 28,
-    alignItems: "center",
-    gap: 12,
-  },
-  iconWrap: {
-    marginBottom: 4,
-  },
-  iconGradient: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconEmoji: {
-    fontSize: 28,
-  },
-  title: {
-    color: colors.textPrimary,
-    fontSize: 17,
-    fontWeight: "700",
-    letterSpacing: -0.3,
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    textAlign: "center",
-    lineHeight: 18,
-  },
-  barTrack: {
-    width: "100%",
-    height: 6,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: 6,
-    overflow: "hidden",
-    marginTop: 4,
-  },
-  barFill: {
-    height: 6,
-    borderRadius: 6,
-    overflow: "hidden",
-    minWidth: 6,
-  },
-  pct: {
-    color: colors.primary,
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-});
+function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  return StyleSheet.create({
+    backdrop: {
+      backgroundColor: "rgba(8,8,16,0.82)",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 999,
+    },
+    card: {
+      width: 280,
+      backgroundColor: theme.surface,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: 28,
+      alignItems: "center",
+      gap: 12,
+    },
+    iconWrap: {
+      marginBottom: 4,
+    },
+    iconGradient: {
+      width: 60,
+      height: 60,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    iconEmoji: {
+      fontSize: 28,
+    },
+    title: {
+      color: theme.textPrimary,
+      fontSize: 17,
+      fontWeight: "700",
+      letterSpacing: -0.3,
+    },
+    subtitle: {
+      color: theme.textSecondary,
+      fontSize: 12,
+      textAlign: "center",
+      lineHeight: 18,
+    },
+    barTrack: {
+      width: "100%",
+      height: 6,
+      backgroundColor: theme.surfaceAlt,
+      borderRadius: 6,
+      overflow: "hidden",
+      marginTop: 4,
+    },
+    barFill: {
+      height: 6,
+      borderRadius: 6,
+      overflow: "hidden",
+      minWidth: 6,
+    },
+    pct: {
+      color: theme.primary,
+      fontSize: 13,
+      fontWeight: "700",
+      letterSpacing: 0.5,
+    },
+  });
+}

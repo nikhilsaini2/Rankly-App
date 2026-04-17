@@ -6,17 +6,20 @@ import { Text, View } from "react-native";
 import { PressableScale } from "../../../components/atoms/PressableScale";
 import { ScoreRing } from "../../../components/atoms/ScoreRing";
 import { Skeleton } from "../../../components/atoms/Skeleton";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import { LatestScoreCardProps } from "../../../types";
 import { scoreTierColor, scoreTierLabel } from "../../../utils/score";
-import { styles } from "../styles";
+import { createHomeStyles } from "../styles";
 
 export function LatestScoreCard({
   loading,
   latestScore,
   rootNav,
 }: LatestScoreCardProps) {
+  const theme = useAppTheme();
+  const styles = createHomeStyles(theme);
   const navigation = useNavigation<any>();
+
   if (loading) {
     return <Skeleton style={styles.scoreCardSk} />;
   }
@@ -24,14 +27,14 @@ export function LatestScoreCard({
   if (!latestScore || !latestScore.resume_id) {
     return (
       <View style={styles.emptyScoreCard}>
-        <Ionicons name="analytics-outline" size={40} color={colors.textMuted} />
+        <Ionicons name="analytics-outline" size={40} color={theme.textMuted} />
         <Text style={styles.emptyScoreTitle}>No ATS score yet</Text>
         <Text style={styles.emptyScoreSub}>
           Upload your resume to get your ATS score
         </Text>
         <PressableScale onPress={() => navigation.navigate("Resume")}>
           <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
+            colors={[theme.primary, theme.primaryDark]}
             style={styles.getStartedBtn}
           >
             <Text style={styles.getStartedTxt}>Get started</Text>
@@ -68,7 +71,7 @@ export function LatestScoreCard({
           }
         >
           <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
+            colors={[theme.primary, theme.primaryDark]}
             style={styles.reportBtn}
           >
             <Text style={styles.reportBtnText}>View Full Report</Text>

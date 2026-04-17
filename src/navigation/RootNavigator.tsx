@@ -3,11 +3,12 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { supabase } from "../services/supabase/supabase";
 import { ensureUserProfileExists } from "../services/supabase/auth.supabase";
-import { colors } from "../theme/color";
+import { useAppTheme } from "../theme/useAppTheme";
 import { AppNavigator } from "./AppNavigator";
 import { AuthNavigator } from "./AuthNavigator";
 
 const RootNavigator = () => {
+  const theme = useAppTheme();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -44,12 +45,12 @@ const RootNavigator = () => {
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.background,
+          backgroundColor: theme.background,
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }

@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { memo, useMemo } from "react";
 import { Text, View } from "react-native";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import { scoreTierColor } from "../../../utils/score";
-import { interviewStyles as s } from "../Interview.styles";
+import { createInterviewStyles } from "../Interview.styles";
 import type { Answer } from "../types/interview.types";
 
 interface FeedbackCardProps {
@@ -11,6 +11,8 @@ interface FeedbackCardProps {
 }
 
 function FeedbackCardComponent({ answer }: FeedbackCardProps) {
+  const theme = useAppTheme();
+  const s = createInterviewStyles(theme);
   const scoreColor = useMemo(() => scoreTierColor(answer.score), [answer.score]);
 
   return (
@@ -45,7 +47,7 @@ function FeedbackCardComponent({ answer }: FeedbackCardProps) {
 
         {answer.tip && (
           <View style={s.feedbackTipBox}>
-            <Ionicons name="bulb-outline" size={16} color={colors.primary} />
+            <Ionicons name="bulb-outline" size={16} color={theme.primary} />
             <Text style={s.feedbackTipText}>{answer.tip}</Text>
           </View>
         )}

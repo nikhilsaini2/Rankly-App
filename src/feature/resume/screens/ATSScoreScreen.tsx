@@ -21,14 +21,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScoreBar } from "../../../components/atoms/ScoreBar";
 import { ScoreRing } from "../../../components/atoms/ScoreRing";
 import { useAtsScore } from "../../../hooks/useAtsScore";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import type { AtsScoreRow } from "../../../types/common.types";
 import type {
   RootStackParamList,
   RootTabParamList,
 } from "../../../types/navigation.types";
 import { scoreTierColor, scoreTierLabel } from "../../../utils/score";
-import { styles } from "../styles";
+import { createResumeScreenStyles } from "../styles";
 
 if (
   Platform.OS === "android" &&
@@ -39,6 +39,8 @@ if (
 
 export default function AtsScoreScreen() {
   const insets = useSafeAreaInsets();
+  const theme = useAppTheme();
+  const styles = createResumeScreenStyles(theme);
   const route = useRoute<RouteProp<RootStackParamList, "AtsScore">>();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const tabNav = navigation.getParent() as
@@ -109,7 +111,7 @@ export default function AtsScoreScreen() {
           },
         ]}
       >
-        <Text style={{ color: colors.textSecondary }}>
+        <Text style={{ color: theme.textSecondary }}>
           {loading ? "Loading report…" : "No score for this resume yet."}
         </Text>
         {!loading && (
@@ -117,7 +119,7 @@ export default function AtsScoreScreen() {
             style={{ marginTop: 20 }}
             onPress={() => navigation.goBack()}
           >
-            <Text style={{ color: colors.primary }}>Go back</Text>
+            <Text style={{ color: theme.primary }}>Go back</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -159,7 +161,7 @@ export default function AtsScoreScreen() {
             <Ionicons
               name="chevron-back"
               size={24}
-              color={colors.textPrimary}
+              color={theme.textPrimary}
             />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
@@ -169,7 +171,7 @@ export default function AtsScoreScreen() {
               textAlign: "center",
               fontSize: 24,
               fontWeight: "bold",
-              color: colors.textPrimary,
+              color: theme.textPrimary,
             }}
           >
             ATS Score
@@ -222,7 +224,7 @@ export default function AtsScoreScreen() {
 
         <AccordionSection
           icon="checkmark-circle-outline"
-          iconColor={colors.accent}
+          iconColor={theme.accent}
           title="Strengths"
           open={openS}
           onToggle={() => toggleSection(setOpenS, openS)}
@@ -230,7 +232,7 @@ export default function AtsScoreScreen() {
         />
         <AccordionSection
           icon="alert-circle-outline"
-          iconColor={colors.warning}
+          iconColor={theme.warning}
           title="Areas to Improve"
           open={openI}
           onToggle={() => toggleSection(setOpenI, openI)}
@@ -255,16 +257,16 @@ export default function AtsScoreScreen() {
           paddingHorizontal: 20,
           paddingTop: 12,
           paddingBottom: insets.bottom + 5,
-          backgroundColor: colors.background,
+          backgroundColor: theme.background,
           borderTopWidth: 1,
-          borderTopColor: colors.border,
+          borderTopColor: theme.border,
         }}
       >
         <TouchableOpacity
           style={{
             height: 56,
             borderRadius: 16,
-            backgroundColor: colors.primary,
+            backgroundColor: theme.primary,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
@@ -310,6 +312,8 @@ function AccordionSection({
   onToggle: () => void;
   items: string[];
 }) {
+  const theme = useAppTheme();
+  const styles = createResumeScreenStyles(theme);
   return (
     <>
       <TouchableOpacity onPress={onToggle} style={styles.accHead}>
@@ -318,7 +322,7 @@ function AccordionSection({
         <Ionicons
           name={open ? "chevron-up" : "chevron-down"}
           size={18}
-          color={colors.textMuted}
+          color={theme.textMuted}
         />
       </TouchableOpacity>
       {open && (
@@ -335,6 +339,8 @@ function AccordionSection({
 }
 
 function ChipRow({ items, tone }: { items: string[]; tone: "ok" | "bad" }) {
+  const theme = useAppTheme();
+  const styles = createResumeScreenStyles(theme);
   return (
     <ScrollView
       horizontal
@@ -343,7 +349,7 @@ function ChipRow({ items, tone }: { items: string[]; tone: "ok" | "bad" }) {
     >
       <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
         {items.length === 0 ? (
-          <Text style={{ color: colors.textMuted }}>—</Text>
+          <Text style={{ color: theme.textMuted }}>—</Text>
         ) : (
           items.map((k) => (
             <View

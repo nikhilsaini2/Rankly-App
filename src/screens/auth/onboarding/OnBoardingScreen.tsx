@@ -16,11 +16,13 @@ import {
 import AppName from "../../../components/atoms/AppName";
 import ProgressRing from "../../../components/atoms/ProgressRing";
 import { BARS, FEATURES } from "../../../constants/all";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import type { AuthScreenProps } from "../../../types/navigation.types";
-import { styles } from "./styles";
+import { createOnboardingStyles } from "./styles";
 
 const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
+  const theme = useAppTheme();
+  const styles = createOnboardingStyles(theme);
   const insets = useSafeAreaInsets();
   const [getStartedLoading, setGetStartedLoading] = useState(false);
 
@@ -140,7 +142,7 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
               ]}
             >
               <LinearGradient
-                colors={[colors.primary, colors.primaryDark]}
+                colors={[theme.primary, theme.primaryDark]}
                 style={[styles.cta, { paddingVertical: 14 }]}
               >
                 {getStartedLoading ? (

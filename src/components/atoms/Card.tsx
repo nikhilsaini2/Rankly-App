@@ -1,21 +1,26 @@
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
-import { colors } from "../../theme/color";
+import { useAppTheme } from "../../theme/useAppTheme";
 
 type CardProps = {
   children: ReactNode;
 };
 
 export const Card = ({ children }: CardProps) => {
+  const theme = useAppTheme();
+  const styles = createStyles(theme);
+
   return <View style={styles.card}>{children}</View>;
 };
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.glass,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-});
+function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: theme.glass,
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+  });
+}

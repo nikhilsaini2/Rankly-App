@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
-import { colors } from "../../theme/color";
+import { useAppTheme } from "../../theme/useAppTheme";
 import { truncateFilename } from "../../utils/format";
 
 type Props = {
@@ -19,6 +19,7 @@ type Props = {
 
 export default function PdfViewerScreen({ route, navigation }: Props) {
   const { url, fileName } = route.params;
+  const theme = useAppTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const insets = useSafeAreaInsets();
@@ -43,14 +44,14 @@ export default function PdfViewerScreen({ route, navigation }: Props) {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: colors.background,
+        backgroundColor: theme.background,
       }}
     >
-      <ActivityIndicator size="large" color={colors.primary} />
+      <ActivityIndicator size="large" color={theme.primary} />
       <Text
         style={{
           marginTop: 16,
-          color: colors.textSecondary,
+          color: theme.textSecondary,
           fontSize: 16,
           textAlign: "center",
         }}
@@ -66,19 +67,19 @@ export default function PdfViewerScreen({ route, navigation }: Props) {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: colors.background,
+        backgroundColor: theme.background,
         padding: 32,
       }}
     >
       <Ionicons
         name="document-text-outline"
         size={64}
-        color={colors.textMuted}
+        color={theme.textMuted}
         style={{ marginBottom: 16 }}
       />
       <Text
         style={{
-          color: colors.textPrimary,
+          color: theme.textPrimary,
           fontSize: 18,
           fontWeight: "600",
           textAlign: "center",
@@ -89,7 +90,7 @@ export default function PdfViewerScreen({ route, navigation }: Props) {
       </Text>
       <Text
         style={{
-          color: colors.textSecondary,
+          color: theme.textSecondary,
           fontSize: 14,
           textAlign: "center",
           marginBottom: 24,
@@ -102,7 +103,7 @@ export default function PdfViewerScreen({ route, navigation }: Props) {
       <TouchableOpacity
         onPress={handleGoBack}
         style={{
-          backgroundColor: colors.primary,
+          backgroundColor: theme.primary,
           paddingHorizontal: 24,
           paddingVertical: 12,
           borderRadius: 8,
@@ -110,7 +111,7 @@ export default function PdfViewerScreen({ route, navigation }: Props) {
       >
         <Text
           style={{
-            color: colors.textPrimary,
+            color: theme.textPrimary,
             fontSize: 16,
             fontWeight: "600",
           }}
@@ -126,13 +127,13 @@ export default function PdfViewerScreen({ route, navigation }: Props) {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Custom Header */}
       <View
         style={{
-          backgroundColor: colors.surface,
+          backgroundColor: theme.surface,
           borderBottomWidth: 1,
-          borderBottomColor: colors.border,
+          borderBottomColor: theme.border,
           paddingTop: insets.top,
           paddingHorizontal: 16,
           paddingVertical: 12,
@@ -147,12 +148,12 @@ export default function PdfViewerScreen({ route, navigation }: Props) {
             padding: 4,
           }}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={theme.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text
             style={{
-              color: colors.textPrimary,
+              color: theme.textPrimary,
               fontSize: 16,
               fontWeight: "600",
               flex: 1,

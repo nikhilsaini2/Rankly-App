@@ -1,16 +1,18 @@
 import React from "react";
 import { Text, View } from "react-native";
-import { colors } from "../../theme/color";
+import { useAppTheme } from "../../theme/useAppTheme";
 
 function StatItem({ label, value }: { label: string; value: string }) {
+  const theme = useAppTheme();
+
   return (
     <View style={{ alignItems: "center" }}>
       <Text
-        style={{ color: colors.textPrimary, fontSize: 18, fontWeight: "700" }}
+        style={{ color: theme.textPrimary, fontSize: 18, fontWeight: "700" }}
       >
         {value}
       </Text>
-      <Text style={{ color: colors.textMuted, fontSize: 12 }}>{label}</Text>
+      <Text style={{ color: theme.textMuted, fontSize: 12 }}>{label}</Text>
     </View>
   );
 }
@@ -24,6 +26,8 @@ export default function ProfileStats({
   bestAts: number;
   interviewsDone: number;
 }) {
+  const theme = useAppTheme();
+
   return (
     <View
       style={{
@@ -32,7 +36,7 @@ export default function ProfileStats({
         marginBottom: 25,
         paddingVertical: 16,
         borderRadius: 20,
-        backgroundColor: colors.glass,
+        backgroundColor: theme.glass,
       }}
     >
       <StatItem label="Resumes" value={`${resumeCount}`} />

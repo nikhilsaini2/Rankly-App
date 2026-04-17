@@ -1,218 +1,242 @@
 import { StyleSheet } from "react-native";
-import { colors } from "../../../theme/color";
+import type { AppTheme } from "../../../theme";
 
-export const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bgPrimary,
-  },
+export function createLoginStyles(theme: AppTheme) {
+  // Detect light mode by checking background token
+  const isLight = theme.background === "#F3F4F8";
 
-  bgGlow: {
-    position: "absolute",
-    top: -60,
-    left: -40,
-    width: 220,
-    height: 220,
-    borderRadius: 220,
-    opacity: 0.12,
-  },
+  return StyleSheet.create({
+    // ── Screen ──────────────────────────────────────────────────────────────
+    container: {
+      flex: 1,
+      // FIX 6: Neutral base — no gradient noise in light mode
+      backgroundColor: isLight ? "#F5F6FA" : theme.bgPrimary,
+    },
 
-  header: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
+    bgGlow: {
+      position: "absolute",
+      top: -60,
+      left: -40,
+      width: 220,
+      height: 220,
+      borderRadius: 220,
+      // FIX 6: Suppress glow in light mode — it washes out the UI
+      opacity: isLight ? 0 : 0.12,
+    },
 
-  backBtn: {
-    padding: 8,
-  },
+    header: {
+      marginTop: 20,
+      paddingHorizontal: 20,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
 
-  scroll: {
-    padding: 20,
-    paddingTop: 20,
-    paddingBottom: 40,
-    marginTop: "25%",
-  },
+    backBtn: {
+      padding: 8,
+    },
 
-  titleWrap: {
-    marginBottom: 15,
-    alignItems: "center",
-  },
+    scroll: {
+      padding: 20,
+      paddingTop: 20,
+      paddingBottom: 40,
+      marginTop: "25%",
+    },
 
-  title: {
-    color: colors.textPrimary,
-    fontSize: 27,
-    fontWeight: "800",
-  },
+    titleWrap: {
+      marginBottom: 15,
+      alignItems: "center",
+    },
 
-  subtitle: {
-    color: colors.textMuted,
-    marginTop: 4,
-    fontSize: 12,
-  },
+    title: {
+      color: theme.textPrimary,
+      fontSize: 27,
+      fontWeight: "800",
+    },
 
-  card: {
-    backgroundColor: colors.glass,
-    borderRadius: 22,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
+    subtitle: {
+      color: theme.textMuted,
+      marginTop: 4,
+      fontSize: 12,
+    },
 
-  row: {
-    flexDirection: "row",
-    gap: 10,
-  },
+    // FIX 1: Auth card must pop — solid white, visible border, elevation
+    card: {
+      backgroundColor: isLight ? "#FFFFFF" : theme.glass,
+      borderRadius: 20,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: isLight ? "#E5E7EB" : theme.borderStrong,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: isLight ? 4 : 10 },
+      shadowOpacity: isLight ? 0.06 : 0.4,
+      shadowRadius: isLight ? 20 : 30,
+      elevation: isLight ? 6 : 25,
+    },
 
-  label: {
-    color: colors.inputLabel,
-    fontSize: 10,
-    marginBottom: 6,
-    marginTop: 10,
-    letterSpacing: 0.5,
-  },
+    row: {
+      flexDirection: "row",
+      gap: 10,
+    },
 
-  input: {
-    backgroundColor: colors.bgSecondary,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    color: colors.textPrimary,
-    borderWidth: 1,
-    borderColor: colors.border,
-    fontSize: 14,
-  },
+    // FIX 3: Label contrast
+    label: {
+      color: isLight ? "#374151" : theme.inputLabel,
+      fontSize: isLight ? 11 : 10,
+      fontWeight: isLight ? "600" : "400",
+      marginBottom: 6,
+      marginTop: isLight ? 16 : 10,
+      letterSpacing: 0.5,
+    },
 
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+    // FIX 2: Input field visibility — clearly distinct from background
+    input: {
+      backgroundColor: isLight ? "#F9FAFB" : theme.bgSecondary,
+      borderRadius: 12,
+      paddingHorizontal: isLight ? 14 : 12,
+      paddingVertical: 12,
+      height: isLight ? 48 : undefined,
+      color: isLight ? "#111111" : theme.textPrimary,
+      borderWidth: isLight ? 1.5 : 1,
+      borderColor: isLight ? "#D1D5DB" : theme.border,
+      fontSize: 14,
+    },
 
-  dropdown: {
-    position: "absolute",
-    right: 12,
-    color: colors.textSecondary,
-    fontSize: 14,
-  },
+    inputRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
 
-  roles: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 6,
-  },
+    dropdown: {
+      position: "absolute",
+      right: 12,
+      color: theme.textSecondary,
+      fontSize: 14,
+    },
 
-  roleChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 12,
-    backgroundColor: colors.bgSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
+    roles: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      marginTop: 6,
+    },
 
-  roleChipActive: {
-    backgroundColor: colors.primary + "20",
-    borderColor: colors.secondary,
-  },
+    roleChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 12,
+      backgroundColor: isLight ? "#F9FAFB" : theme.bgSecondary,
+      borderWidth: 1,
+      borderColor: isLight ? "#D1D5DB" : theme.border,
+    },
 
-  roleText: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontWeight: "600",
-  },
+    roleChipActive: {
+      backgroundColor: theme.primary + "20",
+      borderColor: theme.secondary,
+    },
 
-  roleTextActive: {
-    color: colors.primaryLight,
-  },
+    roleText: {
+      color: theme.textSecondary,
+      fontSize: 11,
+      fontWeight: "600",
+    },
 
-  cta: {
-    marginTop: 18,
-    padding: 16,
-    borderRadius: 18,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-  },
+    roleTextActive: {
+      color: isLight ? theme.primary : theme.primaryLight,
+    },
 
-  ctaText: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: "700",
-  },
+    // FIX 4: CTA must be the strongest visual element
+    cta: {
+      marginTop: 18,
+      height: isLight ? 52 : undefined,
+      padding: isLight ? 0 : 16,
+      borderRadius: isLight ? 14 : 18,
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+    },
 
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 18,
-  },
+    // FIX 4: White text on gradient — always readable
+    ctaText: {
+      color: "#FFFFFF",
+      fontSize: isLight ? 16 : 14,
+      fontWeight: "700",
+    },
 
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
+    // FIX 7: Divider visibility
+    divider: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginVertical: 18,
+    },
 
-  dividerText: {
-    marginHorizontal: 10,
-    color: colors.textMuted,
-    fontSize: 10,
-  },
+    line: {
+      flex: 1,
+      height: 1,
+      backgroundColor: isLight ? "#E5E7EB" : theme.border,
+    },
 
-  googleBtn: {
-    flexDirection: "row",
-    justifyContent: "center",
-    padding: 14,
-    borderRadius: 16,
-    backgroundColor: colors.bgSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-  },
+    dividerText: {
+      marginHorizontal: 10,
+      color: theme.textMuted,
+      fontSize: 10,
+    },
 
-  googleText: {
-    color: colors.textPrimary,
-    fontSize: 13,
-    fontWeight: "600",
-  },
+    // FIX 5: Secondary button — solid white, visible border
+    googleBtn: {
+      flexDirection: "row",
+      justifyContent: "center",
+      padding: 14,
+      borderRadius: 16,
+      backgroundColor: isLight ? "#FFFFFF" : theme.bgSecondary,
+      borderWidth: 1,
+      borderColor: isLight ? "#D1D5DB" : theme.border,
+      alignItems: "center",
+    },
 
-  googleIcon: {
-    marginRight: 10,
-    width: 20,
-    height: 20,
-  },
+    googleText: {
+      color: isLight ? "#374151" : theme.textPrimary,
+      fontSize: 13,
+      fontWeight: "600",
+    },
 
-  error: {
-    color: colors.error,
-    fontSize: 10,
-    paddingTop: 2,
-  },
+    googleIcon: {
+      marginRight: 10,
+      width: 20,
+      height: 20,
+    },
 
-  errorBanner: {
-    backgroundColor: colors.error + "20",
-    borderColor: colors.error,
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
+    // FIX 8: Error text — readable size and color
+    error: {
+      color: isLight ? "#DC2626" : theme.error,
+      fontSize: 12,
+      paddingTop: 2,
+    },
 
-  errorBannerText: {
-    color: colors.error,
-    fontSize: 12,
-    fontWeight: "500",
-    textAlign: "center",
-  },
+    errorBanner: {
+      backgroundColor: isLight ? "#FEF2F2" : theme.error + "20",
+      borderColor: isLight ? "#DC2626" : theme.error,
+      borderWidth: 1,
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 16,
+    },
 
-  inputError: {
-    borderColor: colors.error,
-  },
+    errorBannerText: {
+      color: isLight ? "#DC2626" : theme.error,
+      fontSize: 12,
+      fontWeight: "500",
+      textAlign: "center",
+    },
 
-  passwordToggle: {
-    position: "absolute",
-    right: 12,
-    padding: 8,
-  },
-});
+    inputError: {
+      borderColor: isLight ? "#DC2626" : theme.error,
+    },
+
+    passwordToggle: {
+      position: "absolute",
+      right: 12,
+      padding: 8,
+    },
+  });
+}

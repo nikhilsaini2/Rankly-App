@@ -7,8 +7,8 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { colors } from "../../../theme/color";
-import { styles } from "../styles";
+import { useAppTheme } from "../../../theme/useAppTheme";
+import { createAIStyles } from "../styles";
 
 type Props = {
   active: "chat" | "interview";
@@ -16,6 +16,8 @@ type Props = {
 };
 
 export function PremiumTabSwitcher({ active, onChange }: Props) {
+  const theme = useAppTheme();
+  const styles = createAIStyles(theme);
   const indicatorX = useSharedValue(active === "chat" ? 0 : 1);
   const [tabWidth, setTabWidth] = useState(0);
 
@@ -46,7 +48,7 @@ export function PremiumTabSwitcher({ active, onChange }: Props) {
           <Ionicons
             name="chatbubble-ellipses-outline"
             size={16}
-            color={colors.primary}
+            color={theme.primary}
             style={{ marginBottom: 2 }}
           />
         )}
@@ -69,7 +71,7 @@ export function PremiumTabSwitcher({ active, onChange }: Props) {
           <Ionicons
             name="mic-outline"
             size={16}
-            color={colors.primary}
+            color={theme.primary}
             style={{ marginBottom: 2 }}
           />
         )}
@@ -89,7 +91,7 @@ export function PremiumTabSwitcher({ active, onChange }: Props) {
             style={[styles.tabUnderline, underlineStyle, { width: half }]}
           >
             <LinearGradient
-              colors={[colors.primary, colors.secondary]}
+              colors={[theme.primary, theme.secondary]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={StyleSheet.absoluteFillObject}

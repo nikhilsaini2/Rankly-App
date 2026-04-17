@@ -10,9 +10,9 @@ import {
   View,
 } from "react-native";
 import { experienceLevels, roles } from "../../../constants/all";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import type { ExperienceLevel } from "../../../types/common.types";
-import { styles } from "../styles";
+import { createProfileStyles } from "../styles";
 
 const PREDEFINED_ROLES = roles.filter((r) => r !== "Other");
 
@@ -31,6 +31,8 @@ export function EditProfileForm({
   setDraft,
   email,
 }: EditProfileFormProps) {
+  const theme = useAppTheme();
+  const styles = createProfileStyles(theme);
   const isCustomRole = draft.role && !PREDEFINED_ROLES.includes(draft.role);
   const [showCustomInput, setShowCustomInput] = useState(isCustomRole);
 
@@ -41,18 +43,22 @@ export function EditProfileForm({
         value={draft.firstName ?? ""}
         onChange={(t) => setDraft((d: any) => ({ ...d, firstName: t }))}
         maxLength={30}
+        theme={theme}
+        styles={styles}
       />
       <Field
         label="Last name"
         value={draft.lastName ?? ""}
         onChange={(t) => setDraft((d: any) => ({ ...d, lastName: t }))}
         maxLength={30}
+        theme={theme}
+        styles={styles}
       />
       {email ? (
         <View>
           <Text style={styles.labelsRole}>Email</Text>
           <View style={[styles.inputBase, { opacity: 0.55 }]}>
-            <Text style={{ color: colors.textPrimary, fontSize: 14 }} numberOfLines={1}>
+            <Text style={{ color: theme.textPrimary, fontSize: 14 }} numberOfLines={1}>
               {email}
             </Text>
           </View>
@@ -65,7 +71,7 @@ export function EditProfileForm({
         activeOpacity={0.8}
         accessibilityRole="button"
       >
-        <Text style={{ color: colors.textPrimary, fontSize: 16 }}>
+        <Text style={{ color: theme.textPrimary, fontSize: 16 }}>
           {showCustomInput ? "Other" : (draft.role ?? "Select role")}
         </Text>
       </TouchableOpacity>
@@ -73,7 +79,7 @@ export function EditProfileForm({
         <TextInput
           style={styles.inputBase}
           placeholder="Enter your target role"
-          placeholderTextColor={colors.placeholder}
+          placeholderTextColor={theme.placeholder}
           value={isCustomRole ? draft.role : ""}
           onChangeText={(t) => setDraft((d: any) => ({ ...d, role: t }))}
           autoCapitalize="words"
@@ -88,10 +94,7 @@ export function EditProfileForm({
         onRequestClose={() => setRoleModal(false)}
       >
         <View style={styles.modalScrim}>
-          <Pressable
-            style={styles.modalScrimFill}
-            onPress={() => setRoleModal(false)}
-          />
+          <Pressable style={styles.modalScrimFill} onPress={() => setRoleModal(false)} />
           <View style={styles.modalSheetWrap}>
             <Text style={styles.modalTitle}>Target role</Text>
             <FlatList
@@ -117,21 +120,11 @@ export function EditProfileForm({
                       setRoleModal(false);
                     }}
                   >
-                    <Text
-                      style={{
-                        color: colors.textPrimary,
-                        fontSize: 16,
-                        flex: 1,
-                      }}
-                    >
+                    <Text style={{ color: theme.textPrimary, fontSize: 16, flex: 1 }}>
                       {item}
                     </Text>
                     {selected ? (
-                      <Ionicons
-                        name="checkmark"
-                        size={22}
-                        color={colors.accent}
-                      />
+                      <Ionicons name="checkmark" size={22} color={theme.accent} />
                     ) : null}
                   </TouchableOpacity>
                 );
@@ -147,17 +140,10 @@ export function EditProfileForm({
           return (
             <TouchableOpacity
               key={r.value}
-              onPress={() =>
-                setDraft((d: any) => ({
-                  ...d,
-                  experienceLevel: r.value as ExperienceLevel,
-                }))
-              }
+              onPress={() => setDraft((d: any) => ({ ...d, experienceLevel: r.value as ExperienceLevel }))}
               style={[styles.chipsBase, on && styles.chipsActive]}
             >
-              <Text style={[styles.chipsText, on && styles.chipsTextActive]}>
-                {r.label}
-              </Text>
+              <Text style={[styles.chipsText, on && styles.chipsTextActive]}>{r.label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -166,18 +152,22 @@ export function EditProfileForm({
         label="Industry"
         value={draft.industry ?? ""}
         onChange={(t) => setDraft((d: any) => ({ ...d, industry: t }))}
+        theme={theme}
+        styles={styles}
       />
       <Field
         label="LinkedIn URL"
         value={draft.linkedinUrl ?? ""}
         onChange={(t) => setDraft((d: any) => ({ ...d, linkedinUrl: t }))}
         autoCapitalize="none"
+        theme={theme}
+        styles={styles}
       />
       <Text style={styles.labelsRole}>Bio</Text>
       <TextInput
         style={styles.inputArea}
         placeholder="Tell recruiters about you"
-        placeholderTextColor={colors.placeholder}
+        placeholderTextColor={theme.placeholder}
         value={draft.bio ?? ""}
         onChangeText={(t) => setDraft((d: any) => ({ ...d, bio: t }))}
         multiline
@@ -192,12 +182,16 @@ function Field({
   onChange,
   autoCapitalize = "sentences",
   maxLength,
+  theme,
+  styles,
 }: {
   label: string;
   value: string;
   onChange: (t: string) => void;
   autoCapitalize?: "none" | "sentences";
   maxLength?: number;
+  theme: ReturnType<typeof useAppTheme>;
+  styles: ReturnType<typeof createProfileStyles>;
 }) {
   return (
     <View>
@@ -206,7 +200,7 @@ function Field({
         style={styles.inputBase}
         value={value}
         onChangeText={onChange}
-        placeholderTextColor={colors.placeholder}
+        placeholderTextColor={theme.placeholder}
         autoCapitalize={autoCapitalize}
         maxLength={maxLength}
       />

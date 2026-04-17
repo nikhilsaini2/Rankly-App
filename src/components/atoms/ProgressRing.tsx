@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
-import { colors } from "../../theme/color";
+import { useAppTheme } from "../../theme/useAppTheme";
 import { ProgressProps } from "../../types/common.types";
 
 const ProgressRing = ({
@@ -10,6 +10,7 @@ const ProgressRing = ({
   progress = 82,
   showGradient = true,
 }: ProgressProps) => {
+  const theme = useAppTheme();
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
@@ -21,14 +22,14 @@ const ProgressRing = ({
         {showGradient && (
           <Defs>
             <LinearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <Stop offset="0%" stopColor={colors.successDark} />
-              <Stop offset="100%" stopColor={colors.success} />
+              <Stop offset="0%" stopColor={theme.successDark} />
+              <Stop offset="100%" stopColor={theme.success} />
             </LinearGradient>
           </Defs>
         )}
 
         <Circle
-          stroke={colors.border}
+          stroke={theme.border}
           fill="none"
           cx={size / 2}
           cy={size / 2}
@@ -38,7 +39,7 @@ const ProgressRing = ({
         />
 
         <Circle
-          stroke={showGradient ? "url(#grad)" : colors.secondary}
+          stroke={showGradient ? "url(#grad)" : theme.secondary}
           fill="none"
           cx={size / 2}
           cy={size / 2}
@@ -56,7 +57,7 @@ const ProgressRing = ({
         <Text
           style={[
             styles.score,
-            { fontSize: size * 0.28, color: colors.textPrimary },
+            { fontSize: size * 0.28, color: theme.textPrimary },
           ]}
         >
           {progress}
@@ -64,7 +65,7 @@ const ProgressRing = ({
         <Text
           style={[
             styles.ats,
-            { fontSize: size * 0.12, color: colors.textSecondary },
+            { fontSize: size * 0.12, color: theme.textSecondary },
           ]}
         >
           ATS

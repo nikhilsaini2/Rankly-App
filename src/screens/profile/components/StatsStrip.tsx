@@ -1,9 +1,9 @@
 import React from "react";
 import { Text, View } from "react-native";
 import Animated from "react-native-reanimated";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import { scoreTierColor } from "../../../utils/score";
-import { styles } from "../styles";
+import { createProfileStyles } from "../styles";
 
 interface StatsStripProps {
   statsDisplay: {
@@ -14,47 +14,36 @@ interface StatsStripProps {
 }
 
 export function StatsStrip({ statsDisplay }: StatsStripProps) {
+  const theme = useAppTheme();
+  const styles = createProfileStyles(theme);
+
   const atsColor = statsDisplay.bestAts > 0
     ? scoreTierColor(statsDisplay.bestAts)
-    : colors.textSecondary;
+    : theme.textSecondary;
 
   return (
     <Animated.View style={[styles.statsStrip]}>
       <View style={styles.statCell}>
-        <Text
-          style={[
-            styles.statValue,
-            statsDisplay.resumes === 0 && styles.statValueMuted,
-          ]}
-        >
+        <Text style={[styles.statValue, statsDisplay.resumes === 0 && styles.statValueMuted]}>
           {statsDisplay.resumes === 0 ? "—" : String(statsDisplay.resumes)}
         </Text>
         <Text style={styles.statLabel}>Resumes</Text>
       </View>
       <View style={styles.statDivider} />
       <View style={styles.statCell}>
-        <Text
-          style={[
-            styles.statValue,
-            statsDisplay.bestAts === 0 && styles.statValueMuted,
-            statsDisplay.bestAts > 0 && { color: atsColor },
-          ]}
-        >
+        <Text style={[
+          styles.statValue,
+          statsDisplay.bestAts === 0 && styles.statValueMuted,
+          statsDisplay.bestAts > 0 && { color: atsColor },
+        ]}>
           {statsDisplay.bestAts === 0 ? "—" : String(statsDisplay.bestAts)}
         </Text>
         <Text style={styles.statLabel}>Best ATS</Text>
       </View>
       <View style={styles.statDivider} />
       <View style={styles.statCell}>
-        <Text
-          style={[
-            styles.statValue,
-            statsDisplay.interviews === 0 && styles.statValueMuted,
-          ]}
-        >
-          {statsDisplay.interviews === 0
-            ? "—"
-            : String(statsDisplay.interviews)}
+        <Text style={[styles.statValue, statsDisplay.interviews === 0 && styles.statValueMuted]}>
+          {statsDisplay.interviews === 0 ? "—" : String(statsDisplay.interviews)}
         </Text>
         <Text style={styles.statLabel}>Interviews</Text>
       </View>

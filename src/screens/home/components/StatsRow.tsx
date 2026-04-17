@@ -3,10 +3,10 @@ import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback } from "react";
 import { Text, View } from "react-native";
 import { Skeleton } from "../../../components/atoms/Skeleton";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import { StatsRowProps } from "../../../types";
 import { scoreTierColor } from "../../../utils/score";
-import { styles } from "../styles";
+import { createHomeStyles } from "../styles";
 
 export function StatsRow({
   loading,
@@ -15,6 +15,9 @@ export function StatsRow({
   sessionCount,
   onRefresh,
 }: StatsRowProps & { onRefresh: () => void }) {
+  const theme = useAppTheme();
+  const styles = createHomeStyles(theme);
+
   useFocusEffect(
     useCallback(() => {
       onRefresh();
@@ -38,7 +41,7 @@ export function StatsRow({
           <Ionicons
             name="speedometer-outline"
             size={18}
-            color={colors.primaryLight}
+            color={theme.primary}
           />
           <Text
             style={[
@@ -59,7 +62,7 @@ export function StatsRow({
           <Ionicons
             name="document-text-outline"
             size={18}
-            color={colors.primaryLight}
+            color={theme.primary}
           />
           <Text style={styles.statVal}>{`${resumeCount}`}</Text>
           <Text style={styles.statLab}>Resumes</Text>
@@ -68,7 +71,7 @@ export function StatsRow({
 
       <View style={styles.statPress}>
         <View style={styles.statCard}>
-          <Ionicons name="mic-outline" size={18} color={colors.primaryLight} />
+          <Ionicons name="mic-outline" size={18} color={theme.primary} />
           <Text style={styles.statVal}>{`${sessionCount}`}</Text>
           <Text style={styles.statLab}>Sessions</Text>
         </View>

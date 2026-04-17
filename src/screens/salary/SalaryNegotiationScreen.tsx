@@ -27,7 +27,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useProfile } from "../../hooks/index";
 import { generateGeminiText } from "../../services/gemini";
 import { supabase } from "../../services/supabase";
-import { colors } from "../../theme/color";
+import { useAppTheme } from "../../theme/useAppTheme";
 import { handleGeminiError, parseGeminiJson } from "../../utils/gemini";
 interface SalaryAnalysis {
   verdict: "Below Market" | "Fair Offer" | "Above Market";
@@ -111,6 +111,8 @@ const loadingMessages = [
 
 export default function SalaryNegotiationScreen() {
   const insets = useSafeAreaInsets();
+  const theme = useAppTheme();
+  const styles = createStyles(theme);
   const navigation = useNavigation();
   const { user } = useProfile();
   const [phase, setPhase] = useState<Phase>("input");
@@ -435,12 +437,12 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               <Ionicons
                 name="arrow-back"
                 size={24}
-                color={colors.textPrimary}
+                color={theme.textPrimary}
               />
             </TouchableOpacity>
           </View>
           <Animated.View style={[styles.loadingIcon, pulseStyle]}>
-            <Ionicons name="cash-outline" size={80} color={colors.accent} />
+            <Ionicons name="cash-outline" size={80} color={theme.accent} />
           </Animated.View>
           <Text style={styles.loadingTitle}>Analyzing your offer...</Text>
           <Text style={styles.loadingSubtitle}>
@@ -461,7 +463,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
             onPress={() => navigation.goBack()}
             style={{ padding: 4, zIndex: 1000 }}
           >
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+            <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Salary Coach</Text>
           <View style={{ width: 24 }} />
@@ -485,7 +487,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               <Ionicons
                 name="arrow-back"
                 size={20}
-                color={colors.textSecondary}
+                color={theme.textSecondary}
               />
               <Text style={styles.backToHistoryText}>Back to History</Text>
             </TouchableOpacity>
@@ -612,7 +614,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               <Ionicons
                 name="copy-outline"
                 size={16}
-                color={colors.textPrimary}
+                color={theme.textPrimary}
               />
               <Text style={styles.copyButtonText}>
                 {copiedScript ? "Copied ✓" : "Copy Script"}
@@ -637,7 +639,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               <Ionicons
                 name="copy-outline"
                 size={16}
-                color={colors.textPrimary}
+                color={theme.textPrimary}
               />
               <Text style={styles.copyButtonText}>
                 {copiedEmail ? "Copied ✓" : "Copy Email"}
@@ -709,7 +711,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
           onPress={() => navigation.goBack()}
           style={{ padding: 4, zIndex: 1 }}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Salary Coach</Text>
       </View>
@@ -765,7 +767,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
                 <Ionicons
                   name="alert-circle-outline"
                   size={20}
-                  color={colors.danger}
+                  color={theme.danger}
                 />
                 <Text style={styles.errorText}>{error}</Text>
               </View>
@@ -777,7 +779,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Senior Product Manager"
-                placeholderTextColor={colors.placeholder}
+                placeholderTextColor={theme.placeholder}
                 value={jobTitle}
                 onChangeText={setJobTitle}
               />
@@ -789,7 +791,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Google, startup, agency..."
-                placeholderTextColor={colors.placeholder}
+                placeholderTextColor={theme.placeholder}
                 value={company}
                 onChangeText={setCompany}
               />
@@ -801,7 +803,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               <TextInput
                 style={styles.input}
                 placeholder="e.g. 80000"
-                placeholderTextColor={colors.placeholder}
+                placeholderTextColor={theme.placeholder}
                 value={offeredSalary}
                 onChangeText={setOfferedSalary}
                 keyboardType="numeric"
@@ -863,7 +865,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               <TextInput
                 style={styles.input}
                 placeholder="e.g. San Francisco, Remote"
-                placeholderTextColor={colors.placeholder}
+                placeholderTextColor={theme.placeholder}
                 value={location}
                 onChangeText={setLocation}
               />
@@ -917,7 +919,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
           <>
             {historyLoading ? (
               <View style={styles.historyLoadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
+                <ActivityIndicator size="large" color={theme.primary} />
                 <Text style={styles.loadingText}>Loading history...</Text>
               </View>
             ) : history.length === 0 ? (
@@ -925,7 +927,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
                 <Ionicons
                   name="briefcase-outline"
                   size={48}
-                  color={colors.textSecondary}
+                  color={theme.textSecondary}
                 />
                 <Text style={styles.emptyTitle}>No history yet</Text>
                 <Text style={styles.emptySubtitle}>
@@ -1012,10 +1014,11 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: "row",
@@ -1027,7 +1030,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     position: "absolute",
     left: 0,
     right: 0,
@@ -1043,12 +1046,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "800",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 32,
   },
   errorCard: {
@@ -1065,31 +1068,31 @@ const styles = StyleSheet.create({
   errorText: {
     flex: 1,
     fontSize: 14,
-    color: colors.danger,
+    color: theme.danger,
   },
   inputCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     padding: 16,
     marginBottom: 16,
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     marginBottom: 12,
   },
   input: {
-    backgroundColor: colors.bgSecondary,
+    backgroundColor: theme.bgSecondary,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
   },
   currencyRow: {
     flexDirection: "row",
@@ -1107,21 +1110,21 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     backgroundColor: "transparent",
   },
   pillSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   pillAccent: {
-    backgroundColor: colors.primary,
-    borderColor: colors.border,
+    backgroundColor: theme.primary,
+    borderColor: theme.border,
   },
   pillText: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   pillTextSelected: {
     color: "#fff",
@@ -1130,7 +1133,7 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   submitButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     height: 56,
     borderRadius: 16,
     alignItems: "center",
@@ -1163,13 +1166,13 @@ const styles = StyleSheet.create({
   loadingTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     marginBottom: 16,
     textAlign: "center",
   },
   loadingSubtitle: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textAlign: "center",
   },
   resultsScroll: {
@@ -1180,7 +1183,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   resultCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.06)",
@@ -1199,17 +1202,17 @@ const styles = StyleSheet.create({
   },
   verdictRange: {
     fontSize: 16,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     marginBottom: 4,
   },
   verdictDiff: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     marginBottom: 16,
   },
   statRow: {
@@ -1220,19 +1223,19 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   statValue: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
   },
   highlight: {
-    color: colors.primary,
+    color: theme.primary,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
     marginHorizontal: -16,
   },
   bulletRow: {
@@ -1245,13 +1248,13 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.accent,
+    backgroundColor: theme.accent,
     marginTop: 6,
   },
   bulletText: {
     flex: 1,
     fontSize: 14,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     lineHeight: 20,
   },
   codeBlock: {
@@ -1262,7 +1265,7 @@ const styles = StyleSheet.create({
   },
   codeText: {
     fontSize: 14,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     lineHeight: 20,
   },
   copyButton: {
@@ -1270,7 +1273,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: theme.surfaceAlt,
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -1278,7 +1281,7 @@ const styles = StyleSheet.create({
   copyButtonText: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
   },
   tacticCard: {
     flexDirection: "row",
@@ -1291,7 +1294,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: colors.accent,
+    backgroundColor: theme.accent,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1303,11 +1306,11 @@ const styles = StyleSheet.create({
   tacticText: {
     flex: 1,
     fontSize: 14,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     lineHeight: 20,
   },
   primaryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     height: 56,
     borderRadius: 16,
     alignItems: "center",
@@ -1323,18 +1326,18 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 12,
   },
   ghostButtonText: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   tabBar: {
     flexDirection: "row",
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderRadius: 10,
     padding: 4,
     marginBottom: 24,
@@ -1346,13 +1349,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tabActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   tabText: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   tabTextActive: {
     color: "#fff",
@@ -1370,7 +1373,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 16,
   },
   emptyState: {
@@ -1381,17 +1384,17 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textAlign: "center",
   },
   historyCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.06)",
@@ -1416,7 +1419,7 @@ const styles = StyleSheet.create({
   historyJobTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     flex: 1,
   },
   verdictBadge: {
@@ -1430,25 +1433,25 @@ const styles = StyleSheet.create({
   },
   historyCompany: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 4,
   },
   historySalary: {
     fontSize: 14,
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     marginBottom: 4,
   },
   historyAsk: {
-    color: colors.accent,
+    color: theme.accent,
     fontWeight: "600",
   },
   historyMeta: {
     fontSize: 11,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   historyDate: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
   },
   deleteButton: {
@@ -1457,14 +1460,14 @@ const styles = StyleSheet.create({
   backToHistoryBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
   },
   backToHistoryText: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginLeft: 8,
   },
   warningCard: {
@@ -1483,4 +1486,5 @@ const styles = StyleSheet.create({
     color: "#FFD166",
     flex: 1,
   },
-});
+  });
+}

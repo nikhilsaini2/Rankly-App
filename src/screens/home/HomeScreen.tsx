@@ -10,6 +10,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { HeroHeader } from "../../components/layouts/HeroHeader";
 import { useHome, useProfile } from "../../hooks";
+import { useAppTheme } from "../../theme/useAppTheme";
 import type {
   RootStackParamList,
   RootTabParamList,
@@ -19,9 +20,11 @@ import { CareerTips } from "./components/CareerTips";
 import { LatestScoreCard } from "./components/LatestScoreCard";
 import { QuickActions } from "./components/QuickActions";
 import { StatsRow } from "./components/StatsRow";
-import { styles } from "./styles";
+import { createHomeStyles } from "./styles";
 
 export default function HomeScreen() {
+  const theme = useAppTheme();
+  const styles = createHomeStyles(theme);
   const navigation = useNavigation<NavigationProp<RootTabParamList>>();
   const rootNav = navigation.getParent() as
     | NavigationProp<RootStackParamList>

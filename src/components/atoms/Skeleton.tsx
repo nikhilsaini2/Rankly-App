@@ -7,7 +7,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { colors } from "../../theme/color";
+import { useAppTheme } from "../../theme/useAppTheme";
 
 export function Skeleton({
   style,
@@ -16,6 +16,7 @@ export function Skeleton({
   style?: StyleProp<ViewStyle>;
   radius?: number;
 }) {
+  const theme = useAppTheme();
   const o = useSharedValue(0.45);
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export function Skeleton({
     <Animated.View
       style={[
         {
-          backgroundColor: colors.surfaceAlt,
+          backgroundColor: theme.surfaceAlt,
           borderRadius: radius,
         },
         style,

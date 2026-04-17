@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import { colors, shadows } from "../../theme/color";
+import { useAppTheme } from "../../theme/useAppTheme";
 import { User } from "../../types/common.types";
 
 const ProfileHeader = ({
@@ -22,14 +22,20 @@ const ProfileHeader = ({
   onSaveEdit?: () => void;
   saving?: boolean;
 }) => {
+  const theme = useAppTheme();
+
   return (
     <View style={{ alignItems: "center", marginBottom: 30 }}>
       <LinearGradient
-        colors={[colors.primary, colors.primaryDark]}
+        colors={[theme.primary, theme.primaryDark]}
         style={{
           padding: 3,
           borderRadius: 999,
-          ...shadows.glow,
+          shadowColor: theme.glow,
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.5,
+          shadowRadius: 24,
+          elevation: 24,
         }}
       >
         {onAvatarPress ? (
@@ -65,7 +71,7 @@ const ProfileHeader = ({
 
       <Text
         style={{
-          color: colors.textPrimary,
+          color: theme.textPrimary,
           fontSize: 22,
           fontWeight: "700",
           marginTop: 14,
@@ -74,11 +80,11 @@ const ProfileHeader = ({
         {user.firstName} {user.lastName}
       </Text>
 
-      <Text style={{ color: colors.textMuted, marginTop: 4 }}>{user.role}</Text>
+      <Text style={{ color: theme.textMuted, marginTop: 4 }}>{user.role}</Text>
 
       <Text
         style={{
-          color: colors.accent,
+          color: theme.accent,
           fontSize: 12,
           marginTop: 6,
           fontWeight: "600",
@@ -91,7 +97,7 @@ const ProfileHeader = ({
 
       {(user.experienceLevel || user.industry) && (
         <Text
-          style={{ color: colors.textSecondary, marginTop: 6, fontSize: 13 }}
+          style={{ color: theme.textSecondary, marginTop: 6, fontSize: 13 }}
         >
           {[user.experienceLevel, user.industry].filter(Boolean).join(" · ")}
         </Text>
@@ -100,7 +106,7 @@ const ProfileHeader = ({
       <Text
         numberOfLines={2}
         style={{
-          color: colors.textSecondary,
+          color: theme.textSecondary,
           textAlign: "center",
           marginTop: 8,
           paddingHorizontal: 20,
@@ -118,7 +124,7 @@ const ProfileHeader = ({
           onPress={onEditPress}
         >
           <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
+            colors={[theme.primary, theme.primaryDark]}
             style={{
               paddingHorizontal: 22,
               paddingVertical: 10,
@@ -131,9 +137,9 @@ const ProfileHeader = ({
             <Ionicons
               name="create-outline"
               size={16}
-              color={colors.textPrimary}
+              color={theme.textPrimary}
             />
-            <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>
+            <Text style={{ color: theme.textPrimary, fontWeight: "600" }}>
               Edit Profile
             </Text>
           </LinearGradient>
@@ -157,11 +163,11 @@ const ProfileHeader = ({
               paddingVertical: 12,
               borderRadius: 14,
               borderWidth: 1,
-              borderColor: colors.border,
+              borderColor: theme.border,
               alignItems: "center",
             }}
           >
-            <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>
+            <Text style={{ color: theme.textPrimary, fontWeight: "600" }}>
               Cancel
             </Text>
           </TouchableOpacity>
@@ -172,7 +178,7 @@ const ProfileHeader = ({
             style={{ flex: 1, opacity: saving ? 0.6 : 1 }}
           >
             <LinearGradient
-              colors={[colors.primary, colors.secondaryDark]}
+              colors={[theme.primary, theme.secondaryDark]}
               style={{
                 paddingVertical: 12,
                 borderRadius: 14,
@@ -180,11 +186,11 @@ const ProfileHeader = ({
               }}
             >
               {saving ? (
-                <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>
+                <Text style={{ color: theme.textPrimary, fontWeight: "600" }}>
                   Saving…
                 </Text>
               ) : (
-                <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>
+                <Text style={{ color: theme.textPrimary, fontWeight: "700" }}>
                   Save
                 </Text>
               )}

@@ -10,9 +10,9 @@ import {
   View,
 } from "react-native";
 import Animated from "react-native-reanimated";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import type { User } from "../../../types/common.types";
-import { styles } from "../styles";
+import { createProfileStyles } from "../styles";
 
 interface ProfileHeroProps {
   user: User;
@@ -41,6 +41,9 @@ export function ProfileHero({
   editing,
   onEditPress,
 }: ProfileHeroProps) {
+  const theme = useAppTheme();
+  const styles = createProfileStyles(theme);
+
   return (
     <Animated.View style={[styles.heroWrap, badgeStyle]}>
       <LinearGradient
@@ -55,7 +58,7 @@ export function ProfileHero({
         <View style={styles.avatarOuter}>
           <Animated.View style={[styles.avatarRing, avatarRingStyle]}>
             <LinearGradient
-              colors={[colors.primary, colors.secondary]}
+              colors={[theme.primary, theme.secondary]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFillObject}
@@ -64,10 +67,7 @@ export function ProfileHero({
 
           <View style={styles.avatarSeparator}>
             {user.avatarUrl ? (
-              <Image
-                source={{ uri: user.avatarUrl }}
-                style={styles.avatarImg}
-              />
+              <Image source={{ uri: user.avatarUrl }} style={styles.avatarImg} />
             ) : (
               <View style={styles.avatarFallback}>
                 <Text style={styles.avatarInitials}>{initials}</Text>
@@ -81,34 +81,35 @@ export function ProfileHero({
             style={styles.avatarEditBtn}
             accessibilityRole="button"
           >
-            <Feather name="edit-2" size={13} color={colors.textPrimary} />
+            <Feather name="edit-2" size={13} color={theme.textPrimary} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.heroNameContainer}>
-          <Text style={styles.heroName} numberOfLines={1} ellipsizeMode="tail">{fullName || "—"}</Text>
+          <Text style={styles.heroName} numberOfLines={1} ellipsizeMode="tail">
+            {fullName || "—"}
+          </Text>
         </View>
         <Text style={styles.heroRole}>{user.role || "—"}</Text>
 
         <Animated.View style={[styles.badgeRow, badgeStyle]}>
           <View style={styles.planBadge}>
-            <Feather name="star" size={11} color={colors.primary} />
+            <Feather name="star" size={11} color={theme.primary} />
             <Text style={styles.planBadgeText}>{planLabel}</Text>
           </View>
           <View style={styles.creditsBadge}>
-            <Feather name="zap" size={11} color={colors.accent} />
+            <Feather name="zap" size={11} color={theme.accent} />
             <Text style={styles.creditsBadgeText}>{creditsLabel}</Text>
           </View>
         </Animated.View>
 
         {savingAvatar ? (
           <View style={styles.avatarBusyRow}>
-            <ActivityIndicator size="small" color={colors.textSecondary} />
+            <ActivityIndicator size="small" color={theme.textSecondary} />
             <Text style={styles.avatarBusyText}>Updating avatar…</Text>
           </View>
         ) : null}
 
-        {/* Edit Profile CTA — hidden while in edit mode */}
         {!editing && (
           <TouchableOpacity
             onPress={onEditPress}
@@ -116,7 +117,7 @@ export function ProfileHero({
             activeOpacity={0.8}
             accessibilityRole="button"
           >
-            <Feather name="edit-3" size={14} color={colors.primary} />
+            <Feather name="edit-3" size={14} color={theme.primary} />
             <Text style={styles.heroEditProfileText}>Edit Profile</Text>
           </TouchableOpacity>
         )}

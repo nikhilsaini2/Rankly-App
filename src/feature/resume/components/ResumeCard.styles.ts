@@ -1,12 +1,13 @@
 import { StyleSheet } from "react-native";
-import { colors } from "../../../theme/color";
+import type { AppTheme } from "../../../theme";
 
-export const cardStyles = StyleSheet.create({
+export function createCardStyles(theme: AppTheme) {
+  return StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: theme.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     padding: 10,
     flexDirection: "row",
     gap: 14,
@@ -26,7 +27,7 @@ export const cardStyles = StyleSheet.create({
     borderColor: "rgba(108,99,255,0.2)",
   },
   pdfLabel: {
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     fontSize: 9,
     fontWeight: "800",
     letterSpacing: 1,
@@ -50,7 +51,7 @@ export const cardStyles = StyleSheet.create({
     gap: 6,
   },
   title: {
-    color: colors.textPrimary,
+    color: theme.textPrimary,
     fontSize: 15,
     fontWeight: "700",
     letterSpacing: -0.3,
@@ -63,14 +64,14 @@ export const cardStyles = StyleSheet.create({
     gap: 4,
   },
   metaText: {
-    color: colors.textMuted,
+    color: theme.textMuted,
     fontSize: 11,
   },
   metaDot: {
     width: 3,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: colors.textMuted,
+    backgroundColor: theme.textMuted,
     opacity: 0.4,
     marginHorizontal: 2,
   },
@@ -99,12 +100,12 @@ export const cardStyles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     backgroundColor: "rgba(0,0,0,0.2)",
   },
   unscoredText: {
     fontSize: 11,
-    color: colors.textMuted,
+    color: theme.textMuted,
     fontWeight: "500",
   },
   statusPill: {
@@ -131,7 +132,7 @@ export const cardStyles = StyleSheet.create({
     backgroundColor: "rgba(0,212,170,0.07)",
   },
   viewBtnText: {
-    color: colors.accent,
+    color: theme.accent,
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.1,
@@ -157,7 +158,7 @@ export const cardStyles = StyleSheet.create({
     paddingVertical: 8,
   },
   primaryBtnText: {
-    color: colors.primary,
+    color: theme.primary,
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.1,
@@ -174,7 +175,7 @@ export const cardStyles = StyleSheet.create({
     backgroundColor: "rgba(0,212,170,0.07)",
   },
   secondaryBtnText: {
-    color: colors.accent,
+    color: theme.accent,
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.1,
@@ -190,4 +191,5 @@ export const cardStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-});
+  });
+}

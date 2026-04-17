@@ -30,12 +30,13 @@ import Svg, {
 } from "react-native-svg";
 import { PressableScale } from "../../../components/atoms/PressableScale";
 import { AI_STARTER_PROMPTS } from "../../../constants/content";
-import { colors } from "../../../theme/color";
+import { useAppTheme } from "../../../theme/useAppTheme";
 import type { ChatMessage } from "../../../types/common.types";
 import { formatTime } from "../../../utils/date";
-import { styles } from "../styles";
+import { createAIStyles } from "../styles";
 
 function AICoachAvatarIllustration() {
+  const theme = useAppTheme();
   return (
     <Svg width={80} height={80} viewBox="0 0 80 80">
       <Defs>
@@ -48,7 +49,7 @@ function AICoachAvatarIllustration() {
         cy={72}
         rx={22}
         ry={6}
-        fill={colors.primary}
+        fill={theme.primary}
         opacity={0.2}
         filter="url(#docBlur)"
       />
@@ -56,8 +57,8 @@ function AICoachAvatarIllustration() {
         cx={40}
         cy={40}
         r={40}
-        fill={colors.surface}
-        stroke={colors.border}
+        fill={theme.surface}
+        stroke={theme.border}
         strokeWidth={1}
       />
       <Circle
@@ -65,21 +66,21 @@ function AICoachAvatarIllustration() {
         cy={40}
         r={26}
         fill="none"
-        stroke={colors.border}
+        stroke={theme.border}
         strokeWidth={1}
         opacity={0.7}
       />
       <Path
         d="M40 22 L44 34 L56 38 L44 42 L40 56 L36 42 L24 38 L36 34 Z"
-        fill={colors.primary}
+        fill={theme.primary}
         opacity={0.78}
       />
       <Path
         d="M40 26 L43 35 L52 38 L43 41 L40 50 L37 41 L28 38 L37 35 Z"
-        fill={colors.secondary}
+        fill={theme.secondary}
         opacity={0.35}
       />
-      <Circle cx={58} cy={24} r={3} fill={colors.accent} />
+      <Circle cx={58} cy={24} r={3} fill={theme.accent} />
     </Svg>
   );
 }
@@ -95,6 +96,8 @@ function SuggestionChip({
   onSend: () => void;
   disabled: boolean;
 }) {
+  const theme = useAppTheme();
+  const styles = createAIStyles(theme);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(8);
 
@@ -123,7 +126,7 @@ function SuggestionChip({
           <Ionicons
             name="arrow-forward"
             size={14}
-            color={colors.textSecondary}
+            color={theme.textSecondary}
           />
         </View>
       </PressableScale>
@@ -138,6 +141,8 @@ function MessageBubble({
   item: ChatMessage;
   showRanklyLabel: boolean;
 }) {
+  const theme = useAppTheme();
+  const styles = createAIStyles(theme);
   const isUser = item.role === "user";
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(12);
@@ -172,7 +177,7 @@ function MessageBubble({
       )}
       {isUser ? (
         <LinearGradient
-          colors={[colors.primary, colors.primaryDark]}
+          colors={[theme.primary, theme.primaryDark]}
           style={styles.userBubbleGrad}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -192,6 +197,8 @@ function MessageBubble({
 }
 
 function TypingIndicator() {
+  const theme = useAppTheme();
+  const styles = createAIStyles(theme);
   const y1 = useSharedValue(0);
   const y2 = useSharedValue(0);
   const y3 = useSharedValue(0);
@@ -242,6 +249,8 @@ function InputBar({
   disabled: boolean;
   insetsBottom: number;
 }) {
+  const theme = useAppTheme();
+  const styles = createAIStyles(theme);
   const canSend = input.trim().length > 0 && !disabled;
   const [focused, setFocused] = useState(false);
   const pressScale = useSharedValue(1);
@@ -260,7 +269,7 @@ function InputBar({
       <TextInput
         style={[styles.input, focused && styles.inputFocused]}
         placeholder="Ask your career coach..."
-        placeholderTextColor={colors.placeholder}
+        placeholderTextColor={theme.placeholder}
         value={input}
         onChangeText={setInput}
         onFocus={() => setFocused(true)}
@@ -286,7 +295,7 @@ function InputBar({
       >
         {canSend && (
           <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
+            colors={[theme.primary, theme.primaryDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFillObject}
@@ -295,7 +304,7 @@ function InputBar({
         <Ionicons
           name="arrow-forward"
           size={20}
-          color={canSend ? colors.textPrimary : colors.textSecondary}
+          color={canSend ? theme.textPrimary : theme.textSecondary}
           style={{ transform: [{ rotate: "-90deg" }] }}
         />
       </AnimatedTouchable>
@@ -324,6 +333,8 @@ export function ChatTab({
   onSendPrompt,
   insetsBottom,
 }: ChatTabProps) {
+  const theme = useAppTheme();
+  const styles = createAIStyles(theme);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const prevMessageCountRef = useRef(messages.length);
   const reversed = [...messages].reverse();
@@ -343,7 +354,7 @@ export function ChatTab({
   if (!ready) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={colors.primary} />
+        <ActivityIndicator color={theme.primary} />
       </View>
     );
   }
