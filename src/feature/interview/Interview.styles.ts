@@ -72,7 +72,7 @@ export function createInterviewStyles(theme: AppTheme) {
     },
     startBtnDisabled: { opacity: 0.4 },
     startBtnRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-    startBtnText: { color: theme.textPrimary, fontWeight: "700", fontSize: 16 },
+    startBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 16 },
 
     progressHeader: {
       flexDirection: "row",
@@ -141,7 +141,7 @@ export function createInterviewStyles(theme: AppTheme) {
       justifyContent: "center",
     },
     questionBadgeText: {
-      color: theme.textPrimary,
+      color: "#FFFFFF",
       fontSize: 13,
       fontWeight: "700",
     },
@@ -259,7 +259,7 @@ export function createInterviewStyles(theme: AppTheme) {
       justifyContent: "center",
       borderRadius: 14,
     },
-    submitText: { color: theme.textPrimary, fontWeight: "700", fontSize: 15 },
+    submitText: { color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
 
     recordingIndicator: {
       flexDirection: "row",
@@ -307,7 +307,7 @@ export function createInterviewStyles(theme: AppTheme) {
       borderRadius: 12,
     },
     scoreBadgeText: {
-      color: theme.textPrimary,
+      color: "#FFFFFF",
       fontSize: 14,
       fontWeight: "700",
     },
@@ -365,7 +365,7 @@ export function createInterviewStyles(theme: AppTheme) {
       borderRadius: 14,
     },
     nextBtnText: {
-      color: theme.textPrimary,
+      color: "#FFFFFF",
       fontSize: 15,
       fontWeight: "600",
     },
@@ -438,7 +438,7 @@ export function createInterviewStyles(theme: AppTheme) {
       alignItems: "center",
     },
     primaryButtonText: {
-      color: theme.textPrimary,
+      color: "#FFFFFF",
       fontWeight: "700",
       fontSize: 16,
     },
@@ -492,7 +492,7 @@ export function createInterviewStyles(theme: AppTheme) {
       borderRadius: 12,
     },
     errorBtnText: {
-      color: theme.textPrimary,
+      color: "#FFFFFF",
       fontSize: 16,
       fontWeight: "600",
     },

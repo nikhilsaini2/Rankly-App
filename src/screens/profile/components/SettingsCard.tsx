@@ -1,7 +1,7 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Switch, Text, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../store/store";
@@ -69,9 +69,14 @@ export function SettingsCard({
       <View style={styles.settingsDivider} />
 
       {/* Light Mode toggle — off = dark (default), on = light */}
-      {/* <TouchableOpacity activeOpacity={0.85} onPress={onThemeToggle}>
+      <TouchableOpacity activeOpacity={0.85} onPress={onThemeToggle}>
         <View style={styles.settingsRow}>
-          <View style={[styles.settingsIconBox, { backgroundColor: "rgba(251,191,36,0.12)" }]}>
+          <View
+            style={[
+              styles.settingsIconBox,
+              { backgroundColor: "rgba(251,191,36,0.12)" },
+            ]}
+          >
             <Ionicons name="sunny-outline" size={16} color="#F59E0B" />
           </View>
           <Text style={styles.settingsLabel}>Light Mode</Text>
@@ -83,7 +88,7 @@ export function SettingsCard({
             ios_backgroundColor={theme.border}
           />
         </View>
-      </TouchableOpacity> */}
+      </TouchableOpacity>
 
       <View style={styles.settingsDivider} />
 

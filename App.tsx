@@ -1,5 +1,6 @@
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { NavigationContainer } from "@react-navigation/native";
+import * as NavigationBar from "expo-navigation-bar";
 import { useEffect } from "react";
 import { Platform } from "react-native";
 import { Provider } from "react-redux";
@@ -29,19 +30,10 @@ const AppProviders = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function App() {
-  // Android nav bar initial style is now handled by SystemBarsManager.
-  // This effect is kept only as a fallback for the very first frame on Android
-  // before the Redux store hydrates (avoids a brief white nav bar flash).
+  // Set initial nav bar icon style for dark theme (default) before Redux hydrates
   useEffect(() => {
     if (Platform.OS === "android") {
-      try {
-        // Default to dark style (white icons) matching the default dark theme.
-        // SystemBarsManager will override this once the store is ready.
-        const { NavigationBar } = require("expo-navigation-bar");
-        NavigationBar.setStyle("light");
-      } catch {
-        // Safe to ignore
-      }
+      NavigationBar.setStyle("light");
     }
   }, []);
 

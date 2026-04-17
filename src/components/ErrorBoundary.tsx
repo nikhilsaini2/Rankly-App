@@ -66,6 +66,6 @@ function createStyles(theme: AppTheme) {
       paddingHorizontal: 20,
       borderRadius: 12,
     },
-    btnText: { color: theme.textPrimary, fontWeight: "700" },
+    btnText: { color: "#FFFFFF", fontWeight: "700" },
   });
 }

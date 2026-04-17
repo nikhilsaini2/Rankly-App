@@ -5,8 +5,8 @@
  * - Status bar style (time, battery, signal icons)
  * - Android navigation bar style (back/home/recents icons)
  *
- * Light theme → dark icons on light background (style: "dark")
- * Dark theme  → light icons on dark background (style: "light")
+ * Light theme → dark icons on light background
+ * Dark theme  → light icons on dark background
  *
  * Must be rendered inside the Redux <Provider>.
  */
@@ -21,22 +21,21 @@ export function SystemBarsManager() {
   const mode = useSelector((state: RootState) => state.theme.mode);
   const isLight = mode === "light";
 
-  // Update Android navigation bar icon style whenever theme changes
   React.useEffect(() => {
     if (Platform.OS !== "android") return;
-    try {
-      // "dark"  → dark icons (for light nav bar background)
-      // "light" → light icons (for dark nav bar background)
-      NavigationBar.setStyle(isLight ? "dark" : "light");
-      // Also tint the nav bar background to match the theme
-      NavigationBar.setBackgroundColorAsync(isLight ? "#F3F4F8" : "#0A0812").catch(() => {});
-    } catch {
-      // Activity may not be ready — safe to ignore
-    }
+
+    const apply = async () => {
+      try {
+        // "dark"  → dark icons (visible on light background)
+        // "light" → light icons (visible on dark background)
+        await NavigationBar.setStyle(isLight ? "light" : "dark");
+      } catch {
+        // Activity may not be ready on first render — safe to ignore
+      }
+    };
+
+    apply();
   }, [isLight]);
 
-  // expo-status-bar StatusBar component handles iOS + Android status bar.
-  // style="dark"  → dark icons (clock, battery) — use on light backgrounds
-  // style="light" → light icons                 — use on dark backgrounds
   return <StatusBar style={isLight ? "dark" : "light"} />;
 }

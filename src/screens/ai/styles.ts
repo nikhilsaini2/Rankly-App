@@ -371,7 +371,7 @@ export function createAIStyles(theme: AppTheme) {
     justifyContent: "center",
   },
   startBtnDisabledGrad: { opacity: 0.4 },
-  startBtnText: { color: theme.textPrimary, fontWeight: "700", fontSize: 16 },
+  startBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 16 },
 
   // ─── Live session ─────────────────────────────────────────
   liveBody: { flex: 1, paddingHorizontal: 20 },
@@ -481,7 +481,7 @@ export function createAIStyles(theme: AppTheme) {
   submitButton: { flex: 1, borderRadius: 14, overflow: "hidden" },
   submitButtonDisabled: { opacity: 0.45 },
   submitGrad: { paddingVertical: 14, alignItems: "center", borderRadius: 14 },
-  submitText: { color: theme.textPrimary, fontWeight: "700", fontSize: 16 },
+  submitText: { color: "#FFFFFF", fontWeight: "700", fontSize: 16 },
 
   // Voice mode styles
   voiceModeRow: {
@@ -555,7 +555,7 @@ export function createAIStyles(theme: AppTheme) {
   questionResultNumber: { color: theme.textMuted, fontWeight: "700" },
   scoreBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   scoreBadgeText: {
-    color: theme.textPrimary,
+    color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "700",
   },
@@ -592,7 +592,7 @@ export function createAIStyles(theme: AppTheme) {
     alignItems: "center",
   },
   primaryButtonText: {
-    color: theme.textPrimary,
+    color: "#FFFFFF",
     fontWeight: "700",
     fontSize: 16,
   },
@@ -617,7 +617,7 @@ export function createAIStyles(theme: AppTheme) {
     borderColor: theme.border,
   },
   segActive: { borderRadius: 12, paddingVertical: 10, alignItems: "center" },
-  segActiveText: { color: theme.textPrimary, fontWeight: "700" },
+  segActiveText: { color: "#FFFFFF", fontWeight: "700" },
   segInactive: { borderRadius: 12, paddingVertical: 10, alignItems: "center" },
   segInactiveText: { color: theme.textMuted, fontWeight: "600" },
   });

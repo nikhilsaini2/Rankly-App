@@ -27,7 +27,7 @@ export function createCardStyles(theme: AppTheme) {
     borderColor: "rgba(108,99,255,0.2)",
   },
   pdfLabel: {
-    color: theme.textPrimary,
+    color: "#FFFFFF",
     fontSize: 9,
     fontWeight: "800",
     letterSpacing: 1,

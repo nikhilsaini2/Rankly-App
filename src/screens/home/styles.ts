@@ -91,7 +91,7 @@ export function createHomeStyles(theme: AppTheme) {
     paddingHorizontal: 24,
     borderRadius: 14,
   },
-  getStartedTxt: { color: theme.textPrimary, fontWeight: "700" },
+  getStartedTxt: { color: "#FFFFFF", fontWeight: "700" },
   ringWrap: { justifyContent: "center" },
   atsTitle: { color: theme.textPrimary, fontWeight: "700", fontSize: 16 },
   tierPillWide: {
@@ -107,7 +107,7 @@ export function createHomeStyles(theme: AppTheme) {
   },
   tierPillTxt: { color: theme.textSecondary, fontSize: 12, fontWeight: "600" },
   reportBtn: { paddingVertical: 12, borderRadius: 14, alignItems: "center" },
-  reportBtnText: { color: theme.textPrimary, fontWeight: "700" },
+  reportBtnText: { color: "#FFFFFF", fontWeight: "700" },
   sectionTitle: {
     color: theme.textSecondary,
     fontSize: 11,

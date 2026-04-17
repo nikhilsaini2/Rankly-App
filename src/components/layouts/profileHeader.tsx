@@ -137,9 +137,9 @@ const ProfileHeader = ({
             <Ionicons
               name="create-outline"
               size={16}
-              color={theme.textPrimary}
+              color="#FFFFFF"
             />
-            <Text style={{ color: theme.textPrimary, fontWeight: "600" }}>
+            <Text style={{ color: "#FFFFFF", fontWeight: "600" }}>
               Edit Profile
             </Text>
           </LinearGradient>
@@ -186,11 +186,11 @@ const ProfileHeader = ({
               }}
             >
               {saving ? (
-                <Text style={{ color: theme.textPrimary, fontWeight: "600" }}>
+                <Text style={{ color: "#FFFFFF", fontWeight: "600" }}>
                   Saving…
                 </Text>
               ) : (
-                <Text style={{ color: theme.textPrimary, fontWeight: "700" }}>
+                <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>
                   Save
                 </Text>
               )}

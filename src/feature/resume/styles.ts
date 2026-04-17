@@ -74,7 +74,7 @@ export function createResumeScreenStyles(theme: AppTheme) {
     alignItems: "center",
     marginTop: 8,
   },
-  ctaText: { color: theme.textPrimary, fontWeight: "800", fontSize: 16 },
+  ctaText: { color: "#FFFFFF", fontWeight: "800", fontSize: 16 },
   chip: {
     paddingHorizontal: 12,
     paddingVertical: 8,

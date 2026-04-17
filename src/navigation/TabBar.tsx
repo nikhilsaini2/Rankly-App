@@ -39,7 +39,7 @@ export const TabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
                 <Ionicons
                   name={tab.icon}
                   size={20}
-                  color={theme.textPrimary}
+                  color="#FFFFFF"
                   style={styles.glow}
                 />
                 <Text style={styles.activeText}>{tab.name}</Text>
@@ -83,7 +83,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       alignItems: "center",
     },
     activeText: {
-      color: theme.textPrimary,
+      color: "#FFFFFF",
       marginLeft: 6,
       fontSize: 12,
     },
