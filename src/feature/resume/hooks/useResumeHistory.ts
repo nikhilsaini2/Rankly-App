@@ -1,43 +1,43 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState } from "react";
 import {
-  deleteResume,
-  getAllResumes,
-  type ResumeHistoryEntry,
-} from '../../../services/resume/resumeHistoryStorage';
+  deleteResumeHistoryRecord,
+  getResumeHistory,
+  type ResumeHistoryRecord,
+} from "../../../services/resume/resumeHistoryService";
 
 export interface UseResumeHistoryReturn {
-  history: ResumeHistoryEntry[];
+  history: ResumeHistoryRecord[];
   loading: boolean;
   fetchHistory: () => Promise<void>;
-  removeResume: (id: string) => Promise<void>;
+  removeResume: (entry: ResumeHistoryRecord) => Promise<void>;
 }
 
 export function useResumeHistory(): UseResumeHistoryReturn {
-  const [history, setHistory] = useState<ResumeHistoryEntry[]>([]);
+  const [history, setHistory] = useState<ResumeHistoryRecord[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchHistory = useCallback(async () => {
     setLoading(true);
     try {
-      const all = await getAllResumes();
+      const all = await getResumeHistory();
       setHistory(all);
     } catch (err) {
-      console.warn('[useResumeHistory] Failed to load history', err);
+      console.warn("[useResumeHistory] Failed to load history", err);
       setHistory([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const removeResume = useCallback(async (id: string) => {
+  const removeResume = useCallback(async (entry: ResumeHistoryRecord) => {
     // Optimistic update
-    setHistory(prev => prev.filter(e => e.id !== id));
+    setHistory((prev) => prev.filter((record) => record.id !== entry.id));
     try {
-      await deleteResume(id);
+      await deleteResumeHistoryRecord(entry);
     } catch (err) {
-      console.warn('[useResumeHistory] Failed to delete', err);
+      console.warn("[useResumeHistory] Failed to delete", err);
       // Re-fetch to restore correct state on failure
-      const all = await getAllResumes();
+      const all = await getResumeHistory();
       setHistory(all);
     }
   }, []);

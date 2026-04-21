@@ -26,6 +26,10 @@ import { useToast } from "../../../components/atoms/Toast";
 import { useAtsScore } from "../../../hooks/useAtsScore";
 import { useProfile } from "../../../hooks/useProfile";
 import { useResumeUpload } from "../../../hooks/useResumeUpload";
+import {
+  canUploadResume,
+  getResumeLimit,
+} from "../../../services/premium/premiumService";
 import { fetchResumeScreenData } from "../../../services/resume/resumeService";
 import { useAppTheme } from "../../../theme/useAppTheme";
 import type { ResumeRow } from "../../../types/common.types";
@@ -130,10 +134,14 @@ export default function ResumeScreen() {
   }
 
   async function onUpload() {
-    if (user?.plan === "free" && resumes.length >= 3) {
+    const plan = user?.plan === "pro" ? "pro" : "free";
+    const limit = getResumeLimit(plan);
+    if (!canUploadResume(plan, resumes.length)) {
       Alert.alert(
         "Resume limit reached",
-        "Free plan allows up to 3 resumes. Delete one to upload another.",
+        limit === null
+          ? "You have reached the current upload limit."
+          : `Free plan allows up to ${limit} resumes. Delete one to upload another.`,
         [{ text: "Got it", style: "default" }],
       );
       return;

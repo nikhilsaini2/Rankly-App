@@ -314,6 +314,10 @@ export default function ProfileScreen() {
     () => navigation.navigate("ResumeHistory"),
     [navigation],
   );
+  const handleManagePlanPress = useCallback(
+    () => navigation.navigate("Premium"),
+    [navigation],
+  );
   const handleThemeToggle = useCallback(
     () => dispatch(toggleTheme()),
     [dispatch],
@@ -390,6 +394,7 @@ export default function ProfileScreen() {
             savingAvatar={savingAvatar}
             editing={editing}
             onEditPress={() => openEdit(user)}
+            onManagePlanPress={handleManagePlanPress}
           />
 
           {editing ? (
@@ -410,6 +415,7 @@ export default function ProfileScreen() {
                 onToggleNotif={onToggleNotif}
                 onInterviewHistoryPress={handleInterviewHistoryPress}
                 onResumeHistoryPress={handleResumeHistoryPress}
+                onManagePlanPress={handleManagePlanPress}
                 onThemeToggle={handleThemeToggle}
               />
               <DangerZone

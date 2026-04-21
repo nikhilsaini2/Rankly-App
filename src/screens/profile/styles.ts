@@ -132,6 +132,12 @@ export function createProfileStyles(theme: AppTheme) {
     marginTop: 10,
   },
   avatarBusyText: { color: theme.textSecondary, fontSize: 12 },
+  heroActionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 16,
+  },
 
   statsStrip: {
     backgroundColor: theme.surface,
@@ -388,6 +394,23 @@ export function createProfileStyles(theme: AppTheme) {
   },
   heroEditProfileText: {
     color: theme.primary,
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+  heroManagePlanBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(245,158,11,0.32)",
+    backgroundColor: "rgba(245,158,11,0.10)",
+  },
+  heroManagePlanText: {
+    color: theme.warning,
     fontSize: 13,
     fontWeight: "600",
     letterSpacing: 0.2,

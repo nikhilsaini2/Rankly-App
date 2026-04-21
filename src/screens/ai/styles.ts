@@ -185,7 +185,7 @@ export function createAIStyles(theme: AppTheme) {
     justifyContent: "center",
   },
   aiBubbleMarkSpark: {
-    color: theme.textPrimary,
+    color: theme.onPrimary,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -213,7 +213,7 @@ export function createAIStyles(theme: AppTheme) {
     borderColor: theme.border,
   },
   userBubbleText: {
-    color: theme.textPrimary,
+    color: theme.onPrimary,
     fontSize: 14,
     lineHeight: 22,
     fontWeight: "400",
@@ -438,7 +438,7 @@ export function createAIStyles(theme: AppTheme) {
     justifyContent: "center",
   },
   questionNumberText: {
-    color: theme.textPrimary,
+    color: theme.onPrimary,
     fontSize: 13,
     fontWeight: "700",
   },
@@ -592,7 +592,7 @@ export function createAIStyles(theme: AppTheme) {
     alignItems: "center",
   },
   primaryButtonText: {
-    color: "#FFFFFF",
+    color: theme.onPrimary,
     fontWeight: "700",
     fontSize: 16,
   },
@@ -617,7 +617,7 @@ export function createAIStyles(theme: AppTheme) {
     borderColor: theme.border,
   },
   segActive: { borderRadius: 12, paddingVertical: 10, alignItems: "center" },
-  segActiveText: { color: "#FFFFFF", fontWeight: "700" },
+  segActiveText: { color: theme.onPrimary, fontWeight: "700" },
   segInactive: { borderRadius: 12, paddingVertical: 10, alignItems: "center" },
   segInactiveText: { color: theme.textMuted, fontWeight: "600" },
   });

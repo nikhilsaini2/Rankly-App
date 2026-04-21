@@ -7,6 +7,7 @@ import ImprovedResumePreviewScreen from "../feature/resume/screens/ImprovedResum
 import ResumeBuilderScreen from "../feature/resume/screens/ResumeBuilderScreen";
 import ResumeHistoryScreen from "../feature/resume/screens/ResumeHistoryScreen";
 import PdfViewerScreen from "../screens/PdfViewer";
+import PremiumScreen from "../screens/premium/PremiumScreen";
 import SalaryNegotiationScreen from "../screens/salary/SalaryNegotiationScreen";
 import type { RootStackParamList } from "../types/navigation.types";
 import { BottomTabs } from "./BottomTabs";
@@ -78,6 +79,14 @@ export const AppNavigator = () => {
       <Stack.Screen
         name="ResumeHistory"
         component={ResumeHistoryScreen}
+        options={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
+      />
+      <Stack.Screen
+        name="Premium"
+        component={PremiumScreen}
         options={{
           headerShown: false,
           animation: "slide_from_right",

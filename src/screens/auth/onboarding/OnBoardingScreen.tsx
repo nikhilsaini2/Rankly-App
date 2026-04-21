@@ -24,6 +24,7 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
   const theme = useAppTheme();
   const styles = createOnboardingStyles(theme);
   const insets = useSafeAreaInsets();
+  const isLight = theme.background === "#F3F4F8";
   const [getStartedLoading, setGetStartedLoading] = useState(false);
 
   const handleGetStarted = useCallback(() => {
@@ -41,7 +42,7 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={["bottom", "left", "right"]}>
-      <StatusBar style="light" />
+      <StatusBar style={isLight ? "dark" : "light"} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -64,7 +65,11 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
 
           <View style={styles.cardWrapper}>
             <LinearGradient
-              colors={["rgba(20,15,40,0.95)", "rgba(10,10,30,0.95)"]}
+              colors={
+                isLight
+                  ? ["#FFFFFF", "#F8FAFC"]
+                  : ["rgba(20,15,40,0.95)", "rgba(10,10,30,0.95)"]
+              }
               style={[
                 styles.card,
                 { paddingVertical: 12, paddingHorizontal: 14 },

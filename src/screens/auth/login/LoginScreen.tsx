@@ -35,6 +35,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
   const theme = useAppTheme();
   const styles = createLoginStyles(theme);
   const insets = useSafeAreaInsets();
+  const isLight = theme.background === "#F3F4F8";
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
 
@@ -107,7 +108,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={["bottom", "left", "right"]}>
-      <StatusBar style="light" />
+      <StatusBar style={isLight ? "dark" : "light"} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}

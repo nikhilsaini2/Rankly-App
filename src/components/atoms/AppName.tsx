@@ -45,6 +45,8 @@ const AppName = ({ size = 28, style }: Props) => {
 export default AppName;
 
 function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  const isLight = theme.background === "#F3F4F8";
+
   return StyleSheet.create({
     container: {
       flexDirection: "row",
@@ -52,7 +54,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     },
 
     rank: {
-      color: "#EDEDED",
+      color: isLight ? theme.textPrimary : "#EDEDED",
       fontWeight: "700",
       letterSpacing: -0.2,
 
@@ -67,9 +69,11 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       letterSpacing: -0.3,
 
       fontFamily: typography.fontFamily,
-      textShadowColor: "rgba(118,56,227,0.6)",
+      textShadowColor: isLight
+        ? "rgba(139,92,246,0.18)"
+        : "rgba(118,56,227,0.6)",
       textShadowOffset: { width: 0, height: 0 },
-      textShadowRadius: 10,
+      textShadowRadius: isLight ? 4 : 10,
     },
   });
 }

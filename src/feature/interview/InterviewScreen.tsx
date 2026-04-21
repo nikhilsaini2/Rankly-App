@@ -206,7 +206,7 @@ function SetupPhase({
       <View style={s.setupHeaderWrap}>
         <View style={s.setupHeaderRow}>
           <View style={s.setupIconCircle}>
-            <Ionicons name="chatbubbles" size={18} color={theme.textPrimary} />
+            <Ionicons name="chatbubbles" size={18} color={theme.onPrimary} />
           </View>
           <Text style={s.setupTitle}>Mock Interview</Text>
         </View>
@@ -288,15 +288,15 @@ function SetupPhase({
           ]}
         >
           {isLoading ? (
-            <ActivityIndicator color={theme.textPrimary} />
+            <ActivityIndicator color={theme.onPrimary} />
           ) : (
             <View style={s.startBtnRow}>
-              <Ionicons name="play" size={18} color={theme.textPrimary} />
+              <Ionicons name="play" size={18} color={theme.onPrimary} />
               <Text style={s.startBtnText}>Start Session</Text>
               <Ionicons
                 name="arrow-forward"
                 size={16}
-                color={theme.textPrimary}
+                color={theme.onPrimary}
               />
             </View>
           )}

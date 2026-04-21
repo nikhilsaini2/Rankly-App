@@ -22,6 +22,7 @@ export const colors = {
   textPrimary: "#FAF9FF",
   textSecondary: "#A09ABA",
   textMuted: "#6B6480",
+  onPrimary: "#FFFFFF",
   inputLabel: "#bbb9c4",
   placeholder: "#99969c",
 

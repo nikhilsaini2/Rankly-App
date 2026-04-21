@@ -15,11 +15,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useToast } from "../../../components/atoms/Toast";
-import type { ResumeHistoryEntry } from "../../../services/resume/resumeHistoryStorage";
+import type { ResumeHistoryRecord } from "../../../services/resume/resumeHistoryService";
 import { useAppTheme } from "../../../theme/useAppTheme";
 import type { RootStackParamList } from "../../../types/navigation.types";
 import { ResumeRenderer } from "../components/ResumeRenderer";
 import { useResumeHistory } from "../hooks/useResumeHistory";
+import type { ResumeFormData } from "../types/resume.types";
+import { generateResumeHTML } from "../utils/resumeHTML";
 
 // ─── Relative time helper ─────────────────────────────────────────────────────
 function relativeTime(ts: number): string {
@@ -40,9 +42,9 @@ function relativeTime(ts: number): string {
 
 // ─── History card ─────────────────────────────────────────────────────────────
 interface CardProps {
-  entry: ResumeHistoryEntry;
-  onPress: (entry: ResumeHistoryEntry) => void;
-  onDelete: (id: string) => void;
+  entry: ResumeHistoryRecord;
+  onPress: (entry: ResumeHistoryRecord) => void;
+  onDelete: (entry: ResumeHistoryRecord) => void;
 }
 
 const ResumeHistoryCard = memo(({ entry, onPress, onDelete }: CardProps) => {
@@ -53,7 +55,7 @@ const ResumeHistoryCard = memo(({ entry, onPress, onDelete }: CardProps) => {
       {
         text: "Delete",
         style: "destructive",
-        onPress: () => onDelete(entry.id),
+        onPress: () => onDelete(entry),
       },
     ]);
   };
@@ -139,15 +141,42 @@ const ResumeHistoryCard = memo(({ entry, onPress, onDelete }: CardProps) => {
                 ? theme.accent + "35"
                 : theme.primary + "35",
             }}
+            >
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: isImproved ? theme.accent : theme.primary,
+                  fontWeight: "600",
+                }}
+              >
+                {isImproved ? "AI Optimized" : "Generated"}
+              </Text>
+            </View>
+          <View
+            style={{
+              backgroundColor:
+                entry.source === "cloud"
+                  ? theme.warning + "16"
+                  : theme.surfaceAlt,
+              borderRadius: 6,
+              paddingHorizontal: 7,
+              paddingVertical: 2,
+              borderWidth: 1,
+              borderColor:
+                entry.source === "cloud"
+                  ? theme.warning + "40"
+                  : theme.border,
+            }}
           >
             <Text
               style={{
                 fontSize: 11,
-                color: isImproved ? theme.accent : theme.primary,
+                color:
+                  entry.source === "cloud" ? theme.warning : theme.textSecondary,
                 fontWeight: "600",
               }}
             >
-              {isImproved ? "AI Optimized" : "Generated"}
+              {entry.source === "cloud" ? "Cloud" : "Local"}
             </Text>
           </View>
           <Text style={{ fontSize: 12, color: theme.textMuted }}>
@@ -180,7 +209,7 @@ export default function ResumeHistoryScreen() {
     Platform.OS === "android" ? Math.max(insets.bottom, 48) : insets.bottom;
 
   const { history, loading, fetchHistory, removeResume } = useResumeHistory();
-  const [selectedEntry, setSelectedEntry] = useState<ResumeHistoryEntry | null>(
+  const [selectedEntry, setSelectedEntry] = useState<ResumeHistoryRecord | null>(
     null,
   );
   const [processing, setProcessing] = useState(false);
@@ -201,7 +230,7 @@ export default function ResumeHistoryScreen() {
     }
   }, [selectedEntry, navigation]);
 
-  const handleSelect = useCallback((entry: ResumeHistoryEntry) => {
+  const handleSelect = useCallback((entry: ResumeHistoryRecord) => {
     setSelectedEntry(entry);
     // Reset export state for each new entry
     setPdfUri(null);
@@ -209,9 +238,32 @@ export default function ResumeHistoryScreen() {
     isProcessingRef.current = false;
   }, []);
 
+  const toFullFormData = useCallback((formData?: Partial<ResumeFormData>): ResumeFormData => ({
+    fullName: formData?.fullName ?? "",
+    email: formData?.email ?? "",
+    phone: formData?.phone ?? "",
+    linkedin: formData?.linkedin ?? "",
+    city: formData?.city ?? "",
+    targetRole: formData?.targetRole ?? "",
+    experienceLevel: formData?.experienceLevel ?? "",
+    industry: formData?.industry ?? "",
+    skills: formData?.skills ?? "",
+    experiences: formData?.experiences ?? [],
+    degree: formData?.degree ?? "",
+    institution: formData?.institution ?? "",
+    graduationYear: formData?.graduationYear ?? "",
+    grade: formData?.grade ?? "",
+    certifications: formData?.certifications ?? "",
+    languages: formData?.languages ?? "",
+    tone: formData?.tone ?? "",
+    topAchievement: formData?.topAchievement ?? "",
+    targetCompanies: formData?.targetCompanies ?? "",
+    specialInstructions: formData?.specialInstructions ?? "",
+  }), []);
+
   // ── Export + share handler (cached, locked, one-time toast) ────
   const handleExportAndShare = useCallback(async () => {
-    if (isProcessingRef.current || !selectedEntry?.html) return;
+    if (isProcessingRef.current || !selectedEntry) return;
     isProcessingRef.current = true;
     setProcessing(true);
 
@@ -219,8 +271,14 @@ export default function ResumeHistoryScreen() {
       let uri = pdfUri;
 
       if (!uri) {
+        const html =
+          selectedEntry.html ??
+          generateResumeHTML(
+            toFullFormData(selectedEntry.formData),
+            selectedEntry.rawData,
+          );
         const { uri: newUri } = await Print.printToFileAsync({
-          html: selectedEntry.html,
+          html,
           base64: false,
         });
         uri = newUri;
@@ -242,7 +300,7 @@ export default function ResumeHistoryScreen() {
       isProcessingRef.current = false;
       setProcessing(false);
     }
-  }, [selectedEntry, pdfUri, toast]);
+  }, [selectedEntry, pdfUri, toast, toFullFormData]);
 
   // ── Preview view ────────────────────────────────────────────────
   if (selectedEntry) {
@@ -280,7 +338,8 @@ export default function ResumeHistoryScreen() {
             {selectedEntry.meta.role ? (
               <Text style={{ fontSize: 12, color: theme.textMuted }}>
                 {selectedEntry.meta.role} ·{" "}
-                {relativeTime(selectedEntry.createdAt)}
+                {relativeTime(selectedEntry.createdAt)} ·{" "}
+                {selectedEntry.source === "cloud" ? "Cloud" : "This device"}
               </Text>
             ) : null}
           </View>

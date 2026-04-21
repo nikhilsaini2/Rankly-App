@@ -25,6 +25,7 @@ export type RootStackParamList = {
   };
   InterviewHistory: undefined;
   ResumeHistory: undefined;
+  Premium: undefined;
 };
 
 export type RootTabParamList = {

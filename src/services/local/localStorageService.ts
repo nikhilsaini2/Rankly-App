@@ -5,6 +5,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const USER_DATA_KEYS = [
   "rankly_resume_history_v1",
   "rankly_interview_history_v1",
+  "rankly_interview_session_persistent_v1",
+  "@resume_builder_draft_v1",
 ];
 
 /**

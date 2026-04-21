@@ -37,6 +37,7 @@ export const lightColors = {
   textPrimary:   "#111827",   // gray-900 — headings, primary text
   textSecondary: "#374151",   // gray-700 — body text, labels (STRONGER than before)
   textMuted:     "#6B7280",   // gray-500 — subtle metadata
+  onPrimary:     "#FFFFFF",   // text/icons that sit on brand fills
   inputLabel:    "#374151",   // gray-700 — form labels
   placeholder:   "#9CA3AF",   // gray-400 — placeholder text
 

@@ -16,6 +16,18 @@ export interface Answer {
   tip: string;
 }
 
+export interface InterviewHistoryEntry {
+  id: string;
+  source: "cloud" | "local";
+  role: string;
+  difficulty: "easy" | "medium" | "hard";
+  sessionType: "behavioral" | "technical" | "mixed";
+  questionsCount: number;
+  answers: Answer[];
+  averageScore: number;
+  createdAt: number;
+}
+
 export interface SessionConfig {
   role: string;
   difficulty: "easy" | "medium" | "hard";

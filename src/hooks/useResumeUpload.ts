@@ -2,8 +2,11 @@ import { decode } from "base64-arraybuffer";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { useState } from "react";
-import { MAX_FREE_RESUMES } from "../constants/options";
 import { generateGeminiText } from "../services/gemini";
+import {
+  canUploadResume,
+  getResumeLimit,
+} from "../services/premium/premiumService";
 import { supabase } from "../services/supabase";
 import type { AtsScoreSummary, ResumeRow } from "../types";
 import { handleGeminiError } from "../utils/gemini";
@@ -98,10 +101,12 @@ Return extracted text content only.
       ]);
 
       const plan = (urow?.plan as string) ?? "free";
-      const max = plan === "pro" ? 999 : MAX_FREE_RESUMES;
-      if ((count ?? 0) >= max) {
+      const max = getResumeLimit(plan === "pro" ? "pro" : "free");
+      if (!canUploadResume(plan === "pro" ? "pro" : "free", count ?? 0)) {
         throw new Error(
-          "Free plan allows 3 resumes. Delete one to upload another.",
+          max === null
+            ? "Resume upload limit reached."
+            : `Free plan allows ${max} resumes. Delete one to upload another.`,
         );
       }
 

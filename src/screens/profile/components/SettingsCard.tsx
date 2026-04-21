@@ -13,6 +13,7 @@ interface SettingsCardProps {
   onToggleNotif: (value: boolean) => void;
   onInterviewHistoryPress: () => void;
   onResumeHistoryPress: () => void;
+  onManagePlanPress: () => void;
   onThemeToggle: () => void;
 }
 
@@ -21,6 +22,7 @@ export function SettingsCard({
   onToggleNotif,
   onInterviewHistoryPress,
   onResumeHistoryPress,
+  onManagePlanPress,
   onThemeToggle,
 }: SettingsCardProps) {
   const theme = useAppTheme();
@@ -45,6 +47,23 @@ export function SettingsCard({
             />
           </View>
           <Text style={styles.settingsLabel}>Resume History</Text>
+          <Feather name="chevron-right" size={16} color={theme.textSecondary} />
+        </View>
+      </TouchableOpacity>
+
+      <View style={styles.settingsDivider} />
+
+      <TouchableOpacity activeOpacity={0.9} onPress={onManagePlanPress}>
+        <View style={styles.settingsRow}>
+          <View
+            style={[
+              styles.settingsIconBox,
+              { backgroundColor: "rgba(245,158,11,0.14)" },
+            ]}
+          >
+            <Feather name="star" size={16} color="#F59E0B" />
+          </View>
+          <Text style={styles.settingsLabel}>Plan & Usage</Text>
           <Feather name="chevron-right" size={16} color={theme.textSecondary} />
         </View>
       </TouchableOpacity>

@@ -3,7 +3,7 @@ import React, { memo } from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import { useAppTheme } from '../../../theme/useAppTheme';
 import { scoreTierColor } from '../../../utils/score';
-import type { InterviewReport } from '../services/interviewStorage';
+import type { InterviewHistoryEntry } from '../types/interview.types';
 
 function relativeTime(ts: number): string {
   const diff = Date.now() - ts;
@@ -19,9 +19,9 @@ function relativeTime(ts: number): string {
 }
 
 interface Props {
-  report: InterviewReport;
-  onPress: (report: InterviewReport) => void;
-  onDelete: (id: string) => void;
+  report: InterviewHistoryEntry;
+  onPress: (report: InterviewHistoryEntry) => void;
+  onDelete: (report: InterviewHistoryEntry) => void;
 }
 
 export const InterviewHistoryCard = memo(({ report, onPress, onDelete }: Props) => {
@@ -42,7 +42,7 @@ export const InterviewHistoryCard = memo(({ report, onPress, onDelete }: Props) 
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => onDelete(report.id),
+          onPress: () => onDelete(report),
         },
       ],
     );

@@ -304,7 +304,7 @@ function InputBar({
         <Ionicons
           name="arrow-forward"
           size={20}
-          color={canSend ? theme.textPrimary : theme.textSecondary}
+          color={canSend ? theme.onPrimary : theme.textSecondary}
           style={{ transform: [{ rotate: "-90deg" }] }}
         />
       </AnimatedTouchable>

@@ -26,6 +26,7 @@ interface ProfileHeroProps {
   savingAvatar: boolean;
   editing: boolean;
   onEditPress: () => void;
+  onManagePlanPress: () => void;
 }
 
 export function ProfileHero({
@@ -40,6 +41,7 @@ export function ProfileHero({
   savingAvatar,
   editing,
   onEditPress,
+  onManagePlanPress,
 }: ProfileHeroProps) {
   const theme = useAppTheme();
   const styles = createProfileStyles(theme);
@@ -81,7 +83,7 @@ export function ProfileHero({
             style={styles.avatarEditBtn}
             accessibilityRole="button"
           >
-            <Feather name="edit-2" size={13} color={theme.textPrimary} />
+            <Feather name="edit-2" size={13} color={theme.onPrimary} />
           </TouchableOpacity>
         </View>
 
@@ -111,15 +113,27 @@ export function ProfileHero({
         ) : null}
 
         {!editing && (
-          <TouchableOpacity
-            onPress={onEditPress}
-            style={styles.heroEditProfileBtn}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-          >
-            <Feather name="edit-3" size={14} color={theme.primary} />
-            <Text style={styles.heroEditProfileText}>Edit Profile</Text>
-          </TouchableOpacity>
+          <View style={styles.heroActionRow}>
+            <TouchableOpacity
+              onPress={onEditPress}
+              style={styles.heroEditProfileBtn}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+            >
+              <Feather name="edit-3" size={14} color={theme.primary} />
+              <Text style={styles.heroEditProfileText}>Edit Profile</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={onManagePlanPress}
+              style={styles.heroManagePlanBtn}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+            >
+              <Feather name="star" size={14} color={theme.warning} />
+              <Text style={styles.heroManagePlanText}>Plan & Usage</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     </Animated.View>

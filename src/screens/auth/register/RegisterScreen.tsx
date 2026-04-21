@@ -38,6 +38,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
   const theme = useAppTheme();
   const styles = createRegisterStyles(theme);
   const insets = useSafeAreaInsets();
+  const isLight = theme.background === "#F3F4F8";
   const firstNameRef = useRef<TextInput>(null);
   const lastNameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
@@ -96,7 +97,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={["bottom", "left", "right"]}>
-      <StatusBar style="light" />
+      <StatusBar style={isLight ? "dark" : "light"} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}

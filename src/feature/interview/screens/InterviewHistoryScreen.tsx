@@ -17,15 +17,14 @@ import type { RootStackParamList } from "../../../types/navigation.types";
 import { scoreTierColor } from "../../../utils/score";
 import { InterviewHistoryCard } from "../components/InterviewHistoryCard";
 import { useInterviewHistory } from "../hooks/useInterviewHistory";
-import type { InterviewReport } from "../services/interviewStorage";
-import type { Answer } from "../types/interview.types";
+import type { Answer, InterviewHistoryEntry } from "../types/interview.types";
 
 // ─── Report detail view ───────────────────────────────────────────────────────
 function ReportDetail({
   report,
   bottomInset,
 }: {
-  report: InterviewReport;
+  report: InterviewHistoryEntry;
   bottomInset: number;
 }) {
   const theme = useAppTheme();
@@ -200,7 +199,7 @@ export default function InterviewHistoryScreen() {
 
   const { history, loading, fetchHistory, removeInterview } =
     useInterviewHistory();
-  const [selectedReport, setSelectedReport] = useState<InterviewReport | null>(
+  const [selectedReport, setSelectedReport] = useState<InterviewHistoryEntry | null>(
     null,
   );
 
