@@ -1,4 +1,5 @@
 export {
+  clearResponseCache,
   extractJsonPayload,
   generateGeminiText,
   generateGeminiTextWithRetry,

@@ -54,6 +54,10 @@ export function clearApiKeyCache() {
   cachedApiKey = "";
 }
 
+export function clearResponseCache() {
+  responseCache.clear();
+}
+
 export { extractJsonPayload, parseGeminiJson } from "../../utils/gemini";
 
 export type GeminiChatTurn = {
@@ -187,7 +191,11 @@ export async function generateGeminiText(
     }
 
     const trimmed = text.trim();
-    setCached(cacheKey, trimmed);
+    // Only cache if response looks complete (contains closing brace for JSON responses)
+    const looksComplete = !trimmed.endsWith(",") && !trimmed.endsWith("[") && !trimmed.endsWith("{");
+    if (looksComplete) {
+      setCached(cacheKey, trimmed);
+    }
     return trimmed;
   })();
 
@@ -318,7 +326,16 @@ export async function generateGeminiWithContext(
   }
 
   const chat = model.startChat({
-    history: sanitizedHistory,
+    history: [
+      // Inject system instruction as first user+model turn (v1 compatible)
+      ...(params.systemInstruction
+        ? [
+            { role: "user" as const, parts: [{ text: `[SYSTEM INSTRUCTIONS]\n${params.systemInstruction}` }] },
+            { role: "model" as const, parts: [{ text: "Understood. I will follow these instructions for all responses." }] },
+          ]
+        : []),
+      ...sanitizedHistory,
+    ],
     generationConfig: {
       temperature: 0.7,
       topP: 0.95,

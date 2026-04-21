@@ -18,6 +18,11 @@
       "package": "com.nikhil071.Rankly",
       "softwareKeyboardLayoutMode": "pan",
       "predictiveBackGestureEnabled": false,
+      "config": {
+        "googleMaps": {
+          "apiKey": "EXPO_PUBLIC_GOOGLE_PLACES_API_KEY"
+        }
+      },
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

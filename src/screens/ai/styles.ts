@@ -62,12 +62,14 @@ export function createAIStyles(theme: AppTheme) {
     borderBottomWidth: 1,
     borderBottomColor: theme.border,
     paddingBottom: 2,
+    height: 52,
   },
   tabItem: {
     flex: 1,
-    paddingBottom: 14,
+    height: 52,
     alignItems: "center",
     justifyContent: "center",
+    paddingBottom: 14,
   },
   tabText: { fontSize: 14 },
   tabTextActive: { color: theme.textPrimary, fontWeight: "600" },
@@ -75,6 +77,7 @@ export function createAIStyles(theme: AppTheme) {
   tabUnderlineTrack: {
     position: "absolute",
     left: 0,
+    right: 0,
     bottom: 0,
     height: 2,
     borderRadius: 2,

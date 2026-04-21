@@ -44,14 +44,12 @@ export function PremiumTabSwitcher({ active, onChange }: Props) {
         onPress={() => onChange("chat")}
         accessibilityRole="button"
       >
-        {active === "chat" && (
-          <Ionicons
-            name="chatbubble-ellipses-outline"
-            size={16}
-            color={theme.primary}
-            style={{ marginBottom: 2 }}
-          />
-        )}
+        <Ionicons
+          name="chatbubble-ellipses-outline"
+          size={16}
+          color={active === "chat" ? theme.primary : theme.textSecondary}
+          style={{ marginBottom: 2 }}
+        />
         <Text
           style={[
             styles.tabText,
@@ -67,14 +65,12 @@ export function PremiumTabSwitcher({ active, onChange }: Props) {
         onPress={() => onChange("interview")}
         accessibilityRole="button"
       >
-        {active === "interview" && (
-          <Ionicons
-            name="mic-outline"
-            size={16}
-            color={theme.primary}
-            style={{ marginBottom: 2 }}
-          />
-        )}
+        <Ionicons
+          name="mic-outline"
+          size={16}
+          color={active === "interview" ? theme.primary : theme.textSecondary}
+          style={{ marginBottom: 2 }}
+        />
         <Text
           style={[
             styles.tabText,

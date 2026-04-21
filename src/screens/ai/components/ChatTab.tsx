@@ -5,6 +5,8 @@ import {
   ActivityIndicator,
   FlatList,
   Keyboard,
+  KeyboardEvent,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -338,6 +340,18 @@ export function ChatTab({
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const prevMessageCountRef = useRef(messages.length);
   const reversed = [...messages].reverse();
+
+  // Scroll to bottom (offset 0 on inverted list) when keyboard opens
+  // so the input bar is always visible regardless of scroll position
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const sub = Keyboard.addListener(showEvent, (_e: KeyboardEvent) => {
+      setTimeout(() => {
+        listRef.current?.scrollToOffset({ offset: 0, animated: true });
+      }, 50);
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     const wasNewMessage = messages.length > prevMessageCountRef.current;

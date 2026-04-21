@@ -87,7 +87,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     heroRow: {
       flexDirection: "row",
       justifyContent: "space-between",
-      alignItems: "flex-start",
+      alignItems: "center",
     },
     heroLeft: {
       flex: 1,
@@ -116,7 +116,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       opacity: 0.8,
       lineHeight: 18,
     },
-    heroRight: { alignItems: "flex-end", gap: 6, flexShrink: 0 },
+    heroRight: { alignItems: "center", gap: 6, flexShrink: 0 },
     avatarRing: {
       width: 46,
       height: 46,

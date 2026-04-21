@@ -25,11 +25,12 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useProfile } from "../../hooks/index";
-import { generateGeminiText } from "../../services/gemini";
+import { clearResponseCache, generateGeminiText } from "../../services/gemini";
 import { supabase } from "../../services/supabase";
 import { getElevation } from "../../theme";
 import { useAppTheme } from "../../theme/useAppTheme";
 import { handleGeminiError, parseGeminiJson } from "../../utils/gemini";
+import LocationAutocomplete, { PlaceSelection } from "../../components/molecules/LocationAutocomplete";
 interface SalaryAnalysis {
   verdict: "Below Market" | "Fair Offer" | "Above Market";
   marketMin: number;
@@ -132,9 +133,11 @@ export default function SalaryNegotiationScreen() {
   const [experience, setExperience] = useState("0-1 yrs");
   const [jobType, setJobType] = useState<"Full Time" | "Remote">("Full Time");
   const [location, setLocation] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState<PlaceSelection | null>(null);
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
   const [analysis, setAnalysis] = useState<SalaryAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [jobTitleError, setJobTitleError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [copiedScript, setCopiedScript] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
@@ -268,7 +271,7 @@ export default function SalaryNegotiationScreen() {
           offered_salary: Number(offeredSalary),
           currency,
           experience,
-          location: location || null,
+          location: selectedLocation?.description || location || null,
           industries: selectedIndustries,
           verdict: data.verdict,
           market_min: data.marketMin,
@@ -362,34 +365,35 @@ export default function SalaryNegotiationScreen() {
     setPhase("loading");
     setSaveError(null); // clear save error, not analysis error
 
-    const prompt = `You are an expert salary negotiation coach with deep knowledge of compensation across industries and global markets.
+    // Derive market context from currency when location is not provided
+    const locationName = selectedLocation?.description || location || "";
+    const marketContext = locationName
+      ? locationName
+      : currency === "INR"
+        ? "India (assume Tier-1 city like Bangalore/Mumbai/Delhi)"
+        : currency === "EUR"
+          ? "Europe (assume Western Europe average)"
+          : "United States";
 
-Analyze this job offer and provide negotiation guidance:
-- Job Title: ${jobTitle}
-- Company: ${company || "Not specified"}
-- Offered Salary: ${offeredSalary} ${currency}
-- Years of Experience: ${experience}
-- Job Type: ${jobType}
-- Location: ${location || "Not specified"}
-- Industry: ${selectedIndustries.join(", ") || "Not specified"}
+    const currencyContext =
+      currency === "INR"
+        ? "Indian Rupees (INR). Use Indian salary benchmarks — typical ranges in India are ₹3L–₹50L per annum for most roles. Do NOT convert from USD."
+        : currency === "EUR"
+          ? "Euros (EUR). Use European salary benchmarks."
+          : "US Dollars (USD). Use United States salary benchmarks.";
 
-Return ONLY a JSON object with NO markdown, NO backticks, NO preamble:
-{
-  "verdict": "Below Market" | "Fair Offer" | "Above Market",
-  "marketMin": <number>,
-  "marketMedian": <number>,
-  "marketMax": <number>,
-  "percentageDiff": <number, negative if below market>,
-  "suggestedAsk": <number>,
-  "leveragePoints": ["<point1>", "<point2>", "<point3>"],
-  "negotiationScript": "<2-3 paragraph spoken script for the negotiation call>",
-  "emailTemplate": "<complete professional counter-offer email with subject line>",
-  "tactics": ["<tactic1>", "<tactic2>", "<tactic3>"]
-}
+    const prompt = `Salary negotiation coach. Analyze this offer and return ONLY a JSON object, no markdown, no extra text.
 
-All salary numbers must be in ${currency}. Be specific and realistic for the ${
-      location || "global"
-    } market. The negotiation script must sound natural and confident, not robotic.`;
+Job: ${jobTitle} | Company: ${company || "N/A"} | Offer: ${offeredSalary} ${currency} | Exp: ${experience} | Type: ${jobType} | Location: ${marketContext} | Industry: ${selectedIndustries.join(", ") || "General"}
+
+Rules:
+1. All numbers in ${currency} using ${marketContext} local market data only.
+2. INR benchmarks: ₹3L–₹50L/yr. USD: $50K–$250K/yr. EUR: €30K–€150K/yr.
+3. verdict must match percentageDiff: >5%=Above Market, <-5%=Below Market, else=Fair Offer.
+4. suggestedAsk must be >= offered salary always.
+
+Return JSON:
+{"verdict":"Below Market"|"Fair Offer"|"Above Market","marketMin":<n>,"marketMedian":<n>,"marketMax":<n>,"percentageDiff":<n>,"suggestedAsk":<n>,"leveragePoints":["<p1>","<p2>","<p3>"],"negotiationScript":"<1 short paragraph>","emailTemplate":"<subject + 2 sentence email>","tactics":["<t1>","<t2>","<t3>"]}`;
 
     try {
       setError(null); // clear analysis error right before Gemini call
@@ -397,10 +401,30 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
       const parsed = parseGeminiJson<SalaryAnalysis>(raw);
       if (!parsed) throw new Error("Invalid response");
 
+      // Client-side safety: derive verdict from percentageDiff to prevent contradictions
+      const diff = parsed.percentageDiff;
+      if (diff > 5 && parsed.verdict !== "Above Market") {
+        parsed.verdict = "Above Market";
+      } else if (diff < -5 && parsed.verdict !== "Below Market") {
+        parsed.verdict = "Below Market";
+      } else if (diff >= -5 && diff <= 5 && parsed.verdict !== "Fair Offer") {
+        parsed.verdict = "Fair Offer";
+      }
+
+      // Client-side safety: suggestedAsk must never be lower than the offered salary
+      const offeredNum = Number(offeredSalary);
+      if (parsed.suggestedAsk < offeredNum) {
+        // If above market, hold at offered; otherwise push 10–15% above offered
+        parsed.suggestedAsk = parsed.verdict === "Above Market"
+          ? offeredNum
+          : Math.round(offeredNum * 1.12);
+      }
+
       await saveToHistory(parsed);
       setAnalysis(parsed);
       setPhase("results");
     } catch (err) {
+      clearResponseCache(); // clear any cached bad/truncated responses
       handleGeminiError(err, () => analyzeOffer());
       setError("Could not analyze offer. Please try again.");
       setPhase("input");
@@ -428,7 +452,20 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
     opacity: pulseOpacity.value,
   }));
 
-  const isFormValid = jobTitle.trim() && offeredSalary.trim();
+  const isJobTitleValid = (title: string) => {
+    if (!title.trim()) return "Job title is required.";
+    if (title.trim().length < 2) return "Job title is too short.";
+    if (!/^[a-zA-Z][a-zA-Z0-9\s\-\/&.,()]+$/.test(title.trim()))
+      return "Enter a valid job title (e.g. Software Engineer, Product Manager).";
+    return null;
+  };
+
+  const handleJobTitleChange = (text: string) => {
+    setJobTitle(text);
+    setJobTitleError(isJobTitleValid(text));
+  };
+
+  const isFormValid = jobTitle.trim() && !jobTitleError && offeredSalary.trim();
 
   if (phase === "loading") {
     return (
@@ -665,11 +702,13 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               onPress={() => {
                 setPhase("input");
                 setJobTitle("");
+                setJobTitleError(null);
                 setCompany("");
                 setOfferedSalary("");
                 setExperience("0-1 yrs");
                 setJobType("Full Time");
                 setLocation("");
+                setSelectedLocation(null);
                 setSelectedIndustries([]);
                 setAnalysis(null);
               }}
@@ -760,12 +799,15 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
             <View style={styles.inputCard}>
               <Text style={styles.inputLabel}>Job Title</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, jobTitleError ? styles.inputError : null]}
                 placeholder="e.g. Senior Product Manager"
                 placeholderTextColor={theme.placeholder}
                 value={jobTitle}
-                onChangeText={setJobTitle}
+                onChangeText={handleJobTitleChange}
               />
+              {jobTitleError ? (
+                <Text style={styles.fieldError}>{jobTitleError}</Text>
+              ) : null}
             </View>
 
             {/* Company */}
@@ -869,14 +911,18 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
             </View>
 
             {/* Location */}
-            <View style={styles.inputCard}>
+            <View style={[styles.inputCard, { zIndex: 999 }]}>
               <Text style={styles.inputLabel}>Location (optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g. San Francisco, Remote"
-                placeholderTextColor={theme.placeholder}
+              <LocationAutocomplete
                 value={location}
-                onChangeText={setLocation}
+                onSelect={(place) => {
+                  if (place) {
+                    setLocation(place.description);
+                    setSelectedLocation(place);
+                  } else {
+                    setSelectedLocation(null);
+                  }
+                }}
               />
             </View>
 
@@ -1107,6 +1153,14 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     paddingVertical: 12,
     fontSize: 16,
     color: theme.textPrimary,
+  },
+  inputError: {
+    borderColor: theme.danger,
+  },
+  fieldError: {
+    fontSize: 12,
+    color: theme.danger,
+    marginTop: 6,
   },
   currencyRow: {
     flexDirection: "row",

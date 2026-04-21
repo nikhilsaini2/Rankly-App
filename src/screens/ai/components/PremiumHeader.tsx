@@ -24,7 +24,7 @@ export function PremiumHeader({ onHistoryPress, hasHistory }: PremiumHeaderProps
           <Text style={styles.headerTitle}>AI Coach</Text>
         </View>
 
-        {onHistoryPress && (
+        {onHistoryPress ? (
           <TouchableOpacity
             onPress={onHistoryPress}
             style={styles.historyBtn}
@@ -46,6 +46,9 @@ export function PremiumHeader({ onHistoryPress, hasHistory }: PremiumHeaderProps
               }} />
             )}
           </TouchableOpacity>
+        ) : (
+          // Invisible placeholder — keeps header height consistent across tabs
+          <View style={styles.historyBtn} />
         )}
       </View>
       <Text style={styles.headerSubtitle}>
