@@ -3,6 +3,7 @@ import { getElevation, type AppTheme } from "../../../theme";
 
 export function createCardStyles(theme: AppTheme) {
   const elevation = getElevation(theme);
+  const isLight = theme.background === "#F3F4F8";
 
   return StyleSheet.create({
   card: {
@@ -27,7 +28,7 @@ export function createCardStyles(theme: AppTheme) {
     justifyContent: "center",
     gap: 3,
     borderWidth: 1,
-    borderColor: "rgba(108,99,255,0.2)",
+    borderColor: isLight ? "rgba(108,99,255,0.55)" : "rgba(108,99,255,0.2)",
   },
   pdfLabel: {
     color: theme.onPrimary,
@@ -131,7 +132,7 @@ export function createCardStyles(theme: AppTheme) {
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(0,212,170,0.25)",
+    borderColor: isLight ? "rgba(0,212,170,0.55)" : "rgba(0,212,170,0.25)",
     backgroundColor: "rgba(0,212,170,0.07)",
   },
   viewBtnText: {
@@ -151,7 +152,7 @@ export function createCardStyles(theme: AppTheme) {
     borderRadius: 10,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(108,99,255,0.3)",
+    borderColor: isLight ? "rgba(108,99,255,0.6)" : "rgba(108,99,255,0.3)",
   },
   primaryBtnInner: {
     flexDirection: "row",
@@ -174,7 +175,7 @@ export function createCardStyles(theme: AppTheme) {
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(0,212,170,0.25)",
+    borderColor: isLight ? "rgba(0,212,170,0.55)" : "rgba(0,212,170,0.25)",
     backgroundColor: "rgba(0,212,170,0.07)",
   },
   secondaryBtnText: {
@@ -190,7 +191,7 @@ export function createCardStyles(theme: AppTheme) {
     borderRadius: 10,
     backgroundColor: "rgba(255,92,92,0.08)",
     borderWidth: 1,
-    borderColor: "rgba(255,92,92,0.15)",
+    borderColor: isLight ? "rgba(255,92,92,0.5)" : "rgba(255,92,92,0.15)",
     alignItems: "center",
     justifyContent: "center",
   },

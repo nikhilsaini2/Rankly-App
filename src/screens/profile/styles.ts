@@ -3,6 +3,7 @@ import { getElevation, type AppTheme } from "../../theme";
 
 export function createProfileStyles(theme: AppTheme) {
   const elevation = getElevation(theme);
+  const isLight = theme.background === "#F3F4F8";
 
   return StyleSheet.create({
   root: { flex: 1, backgroundColor: theme.background },
@@ -101,7 +102,7 @@ export function createProfileStyles(theme: AppTheme) {
     borderRadius: 20,
     backgroundColor: "rgba(108,99,255,0.12)",
     borderWidth: 1,
-    borderColor: "rgba(108,99,255,0.3)",
+    borderColor: isLight ? "rgba(108,99,255,0.55)" : "rgba(108,99,255,0.3)",
   },
   planBadgeText: {
     color: theme.primary,
@@ -119,7 +120,7 @@ export function createProfileStyles(theme: AppTheme) {
     borderRadius: 20,
     backgroundColor: "rgba(0,212,170,0.12)",
     borderWidth: 1,
-    borderColor: "rgba(0,212,170,0.3)",
+    borderColor: isLight ? "rgba(0,212,170,0.55)" : "rgba(0,212,170,0.3)",
   },
   creditsBadgeText: {
     color: theme.accent,
@@ -270,7 +271,7 @@ export function createProfileStyles(theme: AppTheme) {
     fontSize: 15,
     fontWeight: "600",
   },
-  deleteRow: { marginTop: 10, borderColor: "rgba(255,92,92,0.2)" },
+  deleteRow: { marginTop: 10, borderColor: isLight ? "rgba(255,92,92,0.5)" : "rgba(255,92,92,0.2)" },
   deleteText: {
     flex: 1,
     color: theme.danger,
@@ -396,7 +397,7 @@ export function createProfileStyles(theme: AppTheme) {
     paddingVertical: 9,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: "rgba(108,99,255,0.35)",
+    borderColor: isLight ? "rgba(108,99,255,0.6)" : "rgba(108,99,255,0.35)",
     backgroundColor: "rgba(108,99,255,0.08)",
   },
   heroEditProfileText: {
@@ -413,7 +414,7 @@ export function createProfileStyles(theme: AppTheme) {
     paddingVertical: 9,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: "rgba(245,158,11,0.32)",
+    borderColor: isLight ? "rgba(245,158,11,0.6)" : "rgba(245,158,11,0.32)",
     backgroundColor: "rgba(245,158,11,0.10)",
   },
   heroManagePlanText: {
@@ -495,7 +496,7 @@ export function createProfileStyles(theme: AppTheme) {
     borderRadius: 10,
     backgroundColor: theme.accent + "15",
     borderWidth: 1,
-    borderColor: theme.accent + "25",
+    borderColor: isLight ? theme.accent + "55" : theme.accent + "25",
     alignItems: "center",
     justifyContent: "center",
   },

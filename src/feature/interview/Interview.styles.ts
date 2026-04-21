@@ -3,6 +3,7 @@ import { getElevation, type AppTheme } from "../../theme";
 
 export function createInterviewStyles(theme: AppTheme) {
   const elevation = getElevation(theme);
+  const isLight = theme.background === "#F3F4F8";
 
   return StyleSheet.create({
     flex: { flex: 1 },
@@ -348,7 +349,7 @@ export function createInterviewStyles(theme: AppTheme) {
       borderRadius: 10,
       padding: 12,
       borderWidth: 1,
-      borderColor: "rgba(139, 92, 246, 0.2)",
+      borderColor: isLight ? "rgba(139, 92, 246, 0.45)" : "rgba(139, 92, 246, 0.2)",
     },
     feedbackTipText: {
       flex: 1,

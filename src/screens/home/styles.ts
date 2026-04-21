@@ -3,6 +3,7 @@ import { getElevation, type AppTheme } from "../../theme";
 
 export function createHomeStyles(theme: AppTheme) {
   const elevation = getElevation(theme);
+  const isLight = theme.background === "#F3F4F8";
 
   return StyleSheet.create({
   scroll: { flex: 1 },
@@ -232,7 +233,7 @@ export function createHomeStyles(theme: AppTheme) {
     gap: 4,
     backgroundColor: "rgba(0,212,170,0.1)",
     borderWidth: 1,
-    borderColor: "rgba(0,212,170,0.2)",
+    borderColor: isLight ? "rgba(0,212,170,0.55)" : "rgba(0,212,170,0.2)",
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 4,

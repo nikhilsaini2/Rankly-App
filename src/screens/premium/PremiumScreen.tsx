@@ -3,13 +3,7 @@ import type { NavigationProp } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import {
-  Alert,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useProfile } from "../../hooks";
 import { useProfileStats } from "../../hooks/useProfileStats";
@@ -83,7 +77,7 @@ export default function PremiumScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingTop: insets.top + 12,
+          paddingTop: 16,
           paddingBottom: insets.bottom + 28,
           paddingHorizontal: 20,
         }}
@@ -112,7 +106,9 @@ export default function PremiumScreen() {
             >
               Plan & Usage
             </Text>
-            <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 2 }}>
+            <Text
+              style={{ color: theme.textSecondary, fontSize: 13, marginTop: 2 }}
+            >
               Premium foundation for your Rankly account
             </Text>
           </View>
@@ -126,11 +122,8 @@ export default function PremiumScreen() {
           ]}
           style={{
             borderRadius: 24,
-            borderWidth: 1,
-            borderColor: "rgba(139,92,246,0.22)",
             padding: 20,
             marginBottom: 16,
-            ...elevation.raised,
           }}
         >
           <View
@@ -170,12 +163,14 @@ export default function PremiumScreen() {
                 paddingHorizontal: 12,
                 paddingVertical: 8,
                 borderRadius: 18,
-                backgroundColor: theme.surface,
+                backgroundColor: "rgba(16,185,129,0.15)",
                 borderWidth: 1,
-                borderColor: theme.border,
+                borderColor: "rgba(16,185,129,0.3)",
               }}
             >
-              <Text style={{ color: theme.accent, fontWeight: "700", fontSize: 12 }}>
+              <Text
+                style={{ color: theme.accent, fontWeight: "700", fontSize: 12 }}
+              >
                 {usage.credits} credits
               </Text>
             </View>
@@ -189,8 +184,9 @@ export default function PremiumScreen() {
               marginBottom: 18,
             }}
           >
-            Your plan now drives resume limits through a shared entitlement layer,
-            while synced history keeps your coaching progress tied to your account.
+            Your plan now drives resume limits through a shared entitlement
+            layer, while synced history keeps your coaching progress tied to
+            your account.
           </Text>
 
           <TouchableOpacity
@@ -217,7 +213,13 @@ export default function PremiumScreen() {
               ...elevation.action,
             }}
           >
-            <Text style={{ color: theme.onPrimary, fontWeight: "800", fontSize: 15 }}>
+            <Text
+              style={{
+                color: "#FFFFFF",
+                fontWeight: "800",
+                fontSize: 15,
+              }}
+            >
               {user.plan === "pro" ? "You are on Pro" : "Upgrade Path Ready"}
             </Text>
           </TouchableOpacity>
@@ -313,14 +315,28 @@ export default function PremiumScreen() {
                 <Feather name={row.icon} size={16} color={row.tint} />
               </View>
               <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={{ color: theme.textPrimary, fontSize: 14, fontWeight: "600" }}>
+                <Text
+                  style={{
+                    color: theme.textPrimary,
+                    fontSize: 14,
+                    fontWeight: "600",
+                  }}
+                >
                   {row.title}
                 </Text>
-                <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
+                <Text
+                  style={{
+                    color: theme.textSecondary,
+                    fontSize: 12,
+                    marginTop: 2,
+                  }}
+                >
                   {row.subtitle}
                 </Text>
               </View>
-              <Text style={{ color: theme.accent, fontSize: 12, fontWeight: "700" }}>
+              <Text
+                style={{ color: theme.accent, fontSize: 12, fontWeight: "700" }}
+              >
                 Active
               </Text>
             </View>
@@ -358,7 +374,13 @@ export default function PremiumScreen() {
                 borderTopColor: theme.border,
               }}
             >
-              <Text style={{ color: theme.textPrimary, fontSize: 14, fontWeight: "600" }}>
+              <Text
+                style={{
+                  color: theme.textPrimary,
+                  fontSize: 14,
+                  fontWeight: "600",
+                }}
+              >
                 {feature.label}
               </Text>
               <View
@@ -368,8 +390,17 @@ export default function PremiumScreen() {
                   marginTop: 10,
                 }}
               >
-                <ComparisonPill theme={theme} label="Free" value={feature.free} />
-                <ComparisonPill theme={theme} label="Pro" value={feature.pro} highlight />
+                <ComparisonPill
+                  theme={theme}
+                  label="Free"
+                  value={feature.free}
+                />
+                <ComparisonPill
+                  theme={theme}
+                  label="Pro"
+                  value={feature.pro}
+                  highlight
+                />
               </View>
             </View>
           ))}
@@ -404,7 +435,9 @@ function UsageCell({
         ...elevation.subtle,
       }}
     >
-      <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700" }}>
+      <Text
+        style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700" }}
+      >
         {label}
       </Text>
       <Text
@@ -435,23 +468,20 @@ function ComparisonPill({
   value: string;
   highlight?: boolean;
 }) {
-  const elevation = getElevation(theme);
-
   return (
     <View
       style={{
         flex: 1,
         borderRadius: 14,
-        borderWidth: 1,
-        borderColor: highlight ? theme.primary + "55" : theme.border,
-        backgroundColor: highlight ? theme.primary + "10" : theme.surfaceAlt,
+        borderWidth: highlight ? 1.5 : 1,
+        borderColor: highlight ? theme.primary : theme.border,
+        backgroundColor: highlight ? theme.surface : theme.surfaceAlt,
         padding: 12,
-        ...elevation.subtle,
       }}
     >
       <Text
         style={{
-          color: highlight ? theme.primary : theme.textSecondary,
+          color: highlight ? theme.primary : theme.textMuted,
           fontSize: 11,
           fontWeight: "700",
           textTransform: "uppercase",

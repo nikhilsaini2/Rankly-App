@@ -195,7 +195,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
-      borderColor: "rgba(108,99,255,0.2)",
+      borderColor: theme.background === "#F3F4F8" ? "rgba(108,99,255,0.5)" : "rgba(108,99,255,0.2)",
       overflow: "hidden",
     },
     title: {
@@ -256,7 +256,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       gap: 6,
       backgroundColor: "rgba(0,212,170,0.06)",
       borderWidth: 1,
-      borderColor: "rgba(0,212,170,0.15)",
+      borderColor: theme.background === "#F3F4F8" ? "rgba(0,212,170,0.45)" : "rgba(0,212,170,0.15)",
       borderRadius: 10,
       paddingHorizontal: 12,
       paddingVertical: 8,

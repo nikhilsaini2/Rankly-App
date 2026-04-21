@@ -155,7 +155,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       gap: 4,
       backgroundColor: "rgba(0,212,170,0.1)",
       borderWidth: 1,
-      borderColor: "rgba(0,212,170,0.2)",
+      borderColor: theme.background === "#F3F4F8" ? "rgba(0,212,170,0.55)" : "rgba(0,212,170,0.2)",
       borderRadius: 10,
       paddingHorizontal: 8,
       paddingVertical: 4,

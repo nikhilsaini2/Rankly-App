@@ -12,7 +12,8 @@ export function useGemini() {
     try {
       return await generateGeminiText(prompt);
     } catch (e) {
-      handleGeminiError(e, () => generateText(prompt));
+      handleGeminiError(e);
+      // Note: no auto-retry to avoid infinite loops on rate limit errors
       const msg = e instanceof Error ? e.message : "AI request failed";
       setError(msg);
       throw e;

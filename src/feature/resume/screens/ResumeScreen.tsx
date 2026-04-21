@@ -364,7 +364,7 @@ export default function ResumeScreen() {
             marginBottom: 12,
             backgroundColor: "rgba(239,68,68,0.10)",
             borderWidth: 1,
-            borderColor: "rgba(239,68,68,0.35)",
+            borderColor: theme.background === "#F3F4F8" ? "rgba(239,68,68,0.6)" : "rgba(239,68,68,0.35)",
             borderRadius: 14,
             padding: 14,
             flexDirection: "row",

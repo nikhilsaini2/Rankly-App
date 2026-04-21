@@ -129,7 +129,8 @@ export default function SalaryNegotiationScreen() {
   const [company, setCompany] = useState("");
   const [offeredSalary, setOfferedSalary] = useState("");
   const [currency, setCurrency] = useState<"USD" | "INR" | "EUR">("USD");
-  const [experience, setExperience] = useState("");
+  const [experience, setExperience] = useState("0-1 yrs");
+  const [jobType, setJobType] = useState<"Full Time" | "Remote">("Full Time");
   const [location, setLocation] = useState("");
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
   const [analysis, setAnalysis] = useState<SalaryAnalysis | null>(null);
@@ -288,11 +289,10 @@ export default function SalaryNegotiationScreen() {
         return;
       }
 
-      // Add to history state regardless of current tab
+      // Add to history state and mark for refresh on next history tab visit
       if (inserted) {
         setHistory((prev) => [inserted as HistoryItem, ...prev]);
-        // Reset the ref so if user switches to history tab, they see the latest data
-        historyLoadedRef.current = true;
+        historyLoadedRef.current = false;
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Unknown error";
@@ -369,6 +369,7 @@ Analyze this job offer and provide negotiation guidance:
 - Company: ${company || "Not specified"}
 - Offered Salary: ${offeredSalary} ${currency}
 - Years of Experience: ${experience}
+- Job Type: ${jobType}
 - Location: ${location || "Not specified"}
 - Industry: ${selectedIndustries.join(", ") || "Not specified"}
 
@@ -457,16 +458,27 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
   if (phase === "results" && (analysis || selectedHistory)) {
     const currentData = (selectedHistory || analysis) as UnifiedSalaryData;
     const isHistoryView = !!selectedHistory;
+    const headerTitle = "job_title" in currentData
+      ? currentData.job_title
+      : jobTitle || "Salary Analysis";
     return (
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              if (isHistoryView) {
+                setSelectedHistory(null);
+                setPhase("input");
+                setInputTab("history");
+              } else {
+                navigation.goBack();
+              }
+            }}
             style={{ padding: 4, zIndex: 1000 }}
           >
             <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Salary Coach</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>{headerTitle}</Text>
           <View style={{ width: 24 }} />
         </View>
 
@@ -475,30 +487,15 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
           contentContainerStyle={styles.resultsContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Back to History Banner */}
-          {isHistoryView && (
-            <TouchableOpacity
-              style={styles.backToHistoryBanner}
-              onPress={() => {
-                setSelectedHistory(null);
-                setPhase("input");
-                setInputTab("history");
-              }}
-            >
-              <Ionicons
-                name="arrow-back"
-                size={20}
-                color={theme.textSecondary}
-              />
-              <Text style={styles.backToHistoryText}>Back to History</Text>
-            </TouchableOpacity>
-          )}
-
           {/* Verdict Banner */}
           <View
             style={[
               styles.resultCard,
-              { backgroundColor: getVerdictColor(currentData.verdict) + "20" },
+              styles.verdictCard,
+              {
+                backgroundColor: getVerdictColor(currentData.verdict) + "1A",
+                borderColor: getVerdictColor(currentData.verdict) + "60",
+              },
             ]}
           >
             <View style={styles.verdictHeader}>
@@ -552,7 +549,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
           )}
 
           {/* Market Intelligence */}
-          <View style={styles.resultCard}>
+          <View style={[styles.resultCard, styles.resultCardSurface, styles.resultCardBorder]}>
             <Text style={styles.cardTitle}>📊 Market Data</Text>
             <View style={styles.statRow}>
               <Text style={styles.statLabel}>Market Minimum</Text>
@@ -586,7 +583,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
           </View>
 
           {/* Leverage Points */}
-          <View style={styles.resultCard}>
+          <View style={[styles.resultCard, styles.resultCardSurface, styles.resultCardBorder]}>
             <Text style={styles.cardTitle}>💪 Your Leverage</Text>
             {getLeveragePoints(currentData).map(
               (point: string, index: number) => (
@@ -599,7 +596,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
           </View>
 
           {/* Negotiation Script */}
-          <View style={styles.resultCard}>
+          <View style={[styles.resultCard, styles.resultCardSurface, styles.resultCardBorder]}>
             <Text style={styles.cardTitle}>🗣️ What to Say</Text>
             <View style={styles.codeBlock}>
               <Text style={styles.codeText}>
@@ -624,7 +621,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
           </View>
 
           {/* Email Template */}
-          <View style={styles.resultCard}>
+          <View style={[styles.resultCard, styles.resultCardSurface, styles.resultCardBorder]}>
             <Text style={styles.cardTitle}>📧 Counter-Offer Email</Text>
             <View style={styles.codeBlock}>
               <Text style={styles.codeText}>
@@ -649,7 +646,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
           </View>
 
           {/* Quick Tactics */}
-          <View style={styles.resultCard}>
+          <View style={[styles.resultCard, styles.resultCardSurface, styles.resultCardBorder]}>
             <Text style={styles.cardTitle}>⚡ Key Tactics</Text>
             {getTactics(currentData).map((tactic: string, index: number) => (
               <View key={index} style={styles.tacticCard}>
@@ -670,7 +667,8 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
                 setJobTitle("");
                 setCompany("");
                 setOfferedSalary("");
-                setExperience("");
+                setExperience("0-1 yrs");
+                setJobType("Full Time");
                 setLocation("");
                 setSelectedIndustries([]);
                 setAnalysis(null);
@@ -680,22 +678,6 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity
-            style={styles.ghostButton}
-            onPress={() => {
-              if (isHistoryView) {
-                setSelectedHistory(null);
-                setPhase("input");
-                setInputTab("history");
-              } else {
-                navigation.goBack();
-              }
-            }}
-          >
-            <Text style={styles.ghostButtonText}>
-              {isHistoryView ? "Back to History" : "Back to Home"}
-            </Text>
-          </TouchableOpacity>
         </ScrollView>
       </View>
     );
@@ -860,6 +842,32 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
               </View>
             </View>
 
+            {/* Job Type */}
+            <View style={styles.inputCard}>
+              <Text style={styles.inputLabel}>Job Type</Text>
+              <View style={styles.pillRow}>
+                {(["Full Time", "Remote"] as const).map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.pill,
+                      jobType === type && styles.pillSelected,
+                    ]}
+                    onPress={() => setJobType(type)}
+                  >
+                    <Text
+                      style={[
+                        styles.pillText,
+                        jobType === type && styles.pillTextSelected,
+                      ]}
+                    >
+                      {type}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
             {/* Location */}
             <View style={styles.inputCard}>
               <Text style={styles.inputLabel}>Location (optional)</Text>
@@ -947,29 +955,9 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
                 >
                   <View style={styles.historyCardContent}>
                     <View style={styles.historyLeft}>
-                      <View style={styles.historyHeader}>
-                        <Text style={styles.historyJobTitle}>
-                          {item.job_title}
-                        </Text>
-                        <View
-                          style={[
-                            styles.verdictBadge,
-                            {
-                              backgroundColor:
-                                getVerdictColor(item.verdict) + "20",
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.verdictBadgeText,
-                              { color: getVerdictColor(item.verdict) },
-                            ]}
-                          >
-                            {item.verdict}
-                          </Text>
-                        </View>
-                      </View>
+                      <Text style={styles.historyJobTitle}>
+                        {item.job_title}
+                      </Text>
                       {item.company && (
                         <Text style={styles.historyCompany}>
                           {item.company}
@@ -983,16 +971,36 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
                         </Text>
                       </Text>
                       <Text style={styles.historyMeta}>
-                        {item.experience} • {item.location || "Remote"}
+                        {item.experience}{item.location ? ` • ${item.location}` : ""}
                       </Text>
                     </View>
                     <View style={styles.historyRight}>
-                      <Text style={styles.historyDate}>
-                        {new Date(item.created_at).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </Text>
+                      <View style={styles.historyTopRight}>
+                        <View
+                          style={[
+                            styles.verdictBadge,
+                            {
+                              backgroundColor: getVerdictColor(item.verdict) + "20",
+                              borderColor: getVerdictColor(item.verdict) + "60",
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.verdictBadgeText,
+                              { color: getVerdictColor(item.verdict) },
+                            ]}
+                          >
+                            {item.verdict}
+                          </Text>
+                        </View>
+                        <Text style={styles.historyDate}>
+                          {new Date(item.created_at).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </Text>
+                      </View>
                       <TouchableOpacity
                         style={styles.deleteButton}
                         onPress={() => deleteHistoryItem(item.id)}
@@ -1017,6 +1025,7 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
 
 function createStyles(theme: ReturnType<typeof useAppTheme>) {
   const elevation = getElevation(theme);
+  const isLight = theme.background === "#F3F4F8";
 
   return StyleSheet.create({
   container: {
@@ -1056,6 +1065,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     fontSize: 16,
     color: theme.textSecondary,
     marginBottom: 32,
+    textAlign: "center",
   },
   errorCard: {
     flexDirection: "row",
@@ -1063,7 +1073,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     gap: 12,
     backgroundColor: "rgba(239, 68, 68, 0.1)",
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.2)",
+    borderColor: isLight ? "rgba(239, 68, 68, 0.55)" : "rgba(239, 68, 68, 0.2)",
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
@@ -1187,13 +1197,24 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     paddingBottom: 40,
   },
   resultCard: {
-    backgroundColor: theme.surface,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: theme.border,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
+  },
+  resultCardSurface: {
+    backgroundColor: theme.surface,
     ...elevation.card,
+  },
+  resultCardBorder: {
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  verdictCard: {
+    borderWidth: 1,
+    shadowColor: "transparent",
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   verdictHeader: {
     flexDirection: "row",
@@ -1420,6 +1441,14 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
   },
   historyRight: {
     alignItems: "flex-end",
+    justifyContent: "space-between",
+    marginLeft: 8,
+  },
+  historyTopRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
   },
   historyHeader: {
     flexDirection: "row",
@@ -1437,6 +1466,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    borderWidth: 1,
   },
   verdictBadgeText: {
     fontSize: 11,
@@ -1463,7 +1493,6 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
   historyDate: {
     fontSize: 12,
     color: theme.textSecondary,
-    marginBottom: 8,
   },
   deleteButton: {
     padding: 4,
@@ -1491,7 +1520,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     backgroundColor: "rgba(255,209,102,0.1)",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,209,102,0.2)",
+    borderColor: isLight ? "rgba(255,209,102,0.55)" : "rgba(255,209,102,0.2)",
     padding: 12,
     marginBottom: 12,
   },

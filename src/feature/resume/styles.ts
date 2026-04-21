@@ -3,6 +3,7 @@ import { getElevation, type AppTheme } from "../../theme";
 
 export function createResumeScreenStyles(theme: AppTheme) {
   const elevation = getElevation(theme);
+  const isLight = theme.background === "#F3F4F8";
 
   return StyleSheet.create({
   // ─── shared ────────────────────────────────────────────────
@@ -164,7 +165,7 @@ export function createResumeScreenStyles(theme: AppTheme) {
     alignSelf: "center",
     backgroundColor: "rgba(108,99,255,0.10)",
     borderWidth: 1,
-    borderColor: "rgba(108,99,255,0.22)",
+    borderColor: isLight ? "rgba(108,99,255,0.5)" : "rgba(108,99,255,0.22)",
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 5,

@@ -559,7 +559,7 @@ export function InterviewScreen({
                 borderRadius: 14,
                 backgroundColor: "rgba(139,92,246,0.1)",
                 borderWidth: 1,
-                borderColor: "rgba(139,92,246,0.2)",
+                borderColor: theme.background === "#F3F4F8" ? "rgba(139,92,246,0.45)" : "rgba(139,92,246,0.2)",
                 justifyContent: "center",
                 alignItems: "center",
                 marginBottom: 16,
