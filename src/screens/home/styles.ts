@@ -7,7 +7,7 @@ export function createHomeStyles(theme: AppTheme) {
 
   return StyleSheet.create({
   scroll: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingBottom: 100 },
+  content: { paddingHorizontal: 20, paddingBottom: 40 },
   screenTitle: {
     fontSize: 28,
     fontWeight: "700",

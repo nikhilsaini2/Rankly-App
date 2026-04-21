@@ -244,12 +244,14 @@ function InputBar({
   onSend,
   disabled,
   insetsBottom,
+  onFocus,
 }: {
   input: string;
   setInput: (v: string) => void;
   onSend: () => void;
   disabled: boolean;
   insetsBottom: number;
+  onFocus?: () => void;
 }) {
   const theme = useAppTheme();
   const styles = createAIStyles(theme);
@@ -274,7 +276,10 @@ function InputBar({
         placeholderTextColor={theme.placeholder}
         value={input}
         onChangeText={setInput}
-        onFocus={() => setFocused(true)}
+        onFocus={() => {
+          setFocused(true);
+          onFocus?.();
+        }}
         onBlur={() => setFocused(false)}
         multiline
       />
@@ -341,6 +346,11 @@ export function ChatTab({
   const prevMessageCountRef = useRef(messages.length);
   const reversed = [...messages].reverse();
 
+  // Handler to scroll to bottom when TextInput is focused
+  const handleInputFocus = () => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
+
   // Scroll to bottom (offset 0 on inverted list) when keyboard opens
   // so the input bar is always visible regardless of scroll position
   useEffect(() => {
@@ -348,7 +358,7 @@ export function ChatTab({
     const sub = Keyboard.addListener(showEvent, (_e: KeyboardEvent) => {
       setTimeout(() => {
         listRef.current?.scrollToOffset({ offset: 0, animated: true });
-      }, 50);
+      }, 100);
     });
     return () => sub.remove();
   }, []);
@@ -407,6 +417,7 @@ export function ChatTab({
             onSend={onSend}
             disabled={loading}
             insetsBottom={insetsBottom}
+            onFocus={handleInputFocus}
           />
         </View>
       ) : (
@@ -437,6 +448,7 @@ export function ChatTab({
             onSend={onSend}
             disabled={loading}
             insetsBottom={0}
+            onFocus={handleInputFocus}
           />
         </View>
       )}

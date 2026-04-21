@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert } from "react-native";
 import { generateGeminiWithContext } from "../services/gemini/gemini";
 import { buildCareerCoachSystemPrompt } from "../services/gemini/prompts";
 import { supabase } from "../services/supabase/supabase";
 import type { ChatMessage, User } from "../types/common.types";
 import { isGreeting, RANKLY_GREETING } from "../utils/greetingDetection";
+import { useToast } from "../components/atoms/Toast";
 
 function makeErrorMessage(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err);
@@ -14,25 +14,26 @@ function makeErrorMessage(err: unknown): string {
     lower.includes("high demand") ||
     lower.includes("overloaded")
   ) {
-    return "⚠️ Gemini is experiencing high demand right now. Please try again in a moment.";
+    return "AI is busy right now. Please try again in a moment.";
   }
   if (
     lower.includes("429") ||
     lower.includes("quota") ||
     lower.includes("rate limit")
   ) {
-    return "⚠️ AI request limit reached. Please wait a minute and try again.";
+    return "AI request limit reached. Please wait a minute.";
   }
   if (lower.includes("network") || lower.includes("fetch failed")) {
-    return "⚠️ Network error. Please check your connection and try again.";
+    return "Network error. Please check your connection.";
   }
-  return "⚠️ Something went wrong. Please try again.";
+  return "Something went wrong. Please try again.";
 }
 
 export function useAIChat(profile: User | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     let alive = true;
@@ -186,18 +187,14 @@ export function useAIChat(profile: User | null) {
         );
       } catch (err) {
         setMessages((prev) => prev.filter((m) => m.id !== tempUserMsgId));
-        setLoading(false); // must set before Alert so UI unfreezes
-        Alert.alert("Gemini 503 Error", makeErrorMessage(err), [
-          { text: "OK", style: "cancel" },
-          { text: "Retry", onPress: () => send(userText) },
-        ]);
+        const errorMsg = makeErrorMessage(err);
+        toast(errorMsg, "error");
         console.error("[useAIChat] send error:", err);
-        return; // prevent finally from running setLoading again
       } finally {
         setLoading(false);
       }
     },
-    [profile],
+    [profile, toast],
   );
 
   const clearChat = useCallback(async () => {

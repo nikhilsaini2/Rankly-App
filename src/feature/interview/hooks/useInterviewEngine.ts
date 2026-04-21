@@ -407,7 +407,7 @@ export function useInterviewEngine(): InterviewEngine {
       dispatch({
         type: "SET_ERROR",
         error: isQuota
-          ? "AI quota reached. Your answers were recorded but couldn't be evaluated. Please try again tomorrow or upgrade your API plan."
+          ? "AI request limit reached. Your answers were recorded. Please try again later."
           : "Evaluation failed. Please try again.",
       });
     } finally {

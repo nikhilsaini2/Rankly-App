@@ -384,7 +384,7 @@ export default function ProfileScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             profileStyles.scrollContent,
-            { paddingBottom: insets.bottom + 150 },
+            { paddingBottom: editing ? insets.bottom + 100 : insets.bottom + 40 },
           ]}
         >
           <ProfileHero

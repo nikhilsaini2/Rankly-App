@@ -511,7 +511,7 @@ Return JSON:
                 navigation.goBack();
               }
             }}
-            style={{ padding: 4, zIndex: 1000 }}
+            style={styles.headerBackButton}
           >
             <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
           </TouchableOpacity>
@@ -1009,13 +1009,16 @@ Return JSON:
                           {item.company}
                         </Text>
                       )}
-                      <Text style={styles.historySalary}>
-                        Offer:{" "}
-                        {formatSalary(item.offered_salary, item.currency)} →{" "}
+                      <View style={styles.historySalaryRow}>
+                        <Text style={styles.historySalary}>
+                          Offer:{" "}
+                          {formatSalary(item.offered_salary, item.currency)}
+                        </Text>
+                        <Text style={styles.historySalaryArrow}>→</Text>
                         <Text style={styles.historyAsk}>
                           Ask: {formatSalary(item.suggested_ask, item.currency)}
                         </Text>
-                      </Text>
+                      </View>
                       <Text style={styles.historyMeta}>
                         {item.experience}{item.location ? ` • ${item.location}` : ""}
                       </Text>
@@ -1084,6 +1087,11 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
+  },
+  headerBackButton: {
+    padding: 4,
+    zIndex: 1000,
+    alignSelf: "center",
   },
   headerTitle: {
     fontSize: 22,
@@ -1531,14 +1539,28 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     color: theme.textSecondary,
     marginBottom: 4,
   },
+  historySalaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+    gap: 6,
+  },
   historySalary: {
     fontSize: 14,
     color: theme.textPrimary,
-    marginBottom: 4,
+    lineHeight: 20,
+  },
+  historySalaryArrow: {
+    fontSize: 14,
+    color: theme.textPrimary,
+    lineHeight: 20,
+    marginTop: -2,
   },
   historyAsk: {
+    fontSize: 14,
     color: theme.accent,
     fontWeight: "600",
+    lineHeight: 20,
   },
   historyMeta: {
     fontSize: 11,
