@@ -150,7 +150,7 @@ export function createRegisterStyles(theme: AppTheme) {
     },
 
     ctaText: {
-      color: "#FFFFFF",
+      color: theme.onPrimary,
       fontSize: 15,
       fontWeight: "700",
     },

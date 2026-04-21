@@ -131,7 +131,7 @@ function ReportDetail({
                 paddingVertical: 3,
               }}
             >
-              <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>
+              <Text style={{ color: theme.onPrimary, fontSize: 12, fontWeight: "700" }}>
                 {item.score}/100
               </Text>
             </View>
@@ -321,7 +321,7 @@ export default function InterviewHistoryScreen() {
             }}
             onPress={() => navigation.goBack()}
           >
-            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
+            <Text style={{ color: theme.onPrimary, fontWeight: "700", fontSize: 15 }}>
               Start Interview
             </Text>
           </TouchableOpacity>

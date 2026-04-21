@@ -5,6 +5,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TABS } from "../constants/tabs";
+import { getElevation } from "../theme";
 import { useAppTheme } from "../theme/useAppTheme";
 
 export const TabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
@@ -39,7 +40,7 @@ export const TabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
                 <Ionicons
                   name={tab.icon}
                   size={20}
-                  color="#FFFFFF"
+                  color={theme.onPrimary}
                   style={styles.glow}
                 />
                 <Text style={styles.activeText}>{tab.name}</Text>
@@ -58,6 +59,8 @@ export const TabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
 };
 
 function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  const elevation = getElevation(theme);
+
   return StyleSheet.create({
     container: {
       flexDirection: "row",
@@ -67,6 +70,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       padding: 8,
       borderWidth: 1,
       borderColor: theme.border,
+      ...elevation.raised,
     },
     tab: {
       flex: 1,
@@ -78,12 +82,13 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       paddingVertical: 8,
       paddingHorizontal: 14,
       borderRadius: 20,
+      ...elevation.action,
     },
     inactiveTab: {
       alignItems: "center",
     },
     activeText: {
-      color: "#FFFFFF",
+      color: theme.onPrimary,
       marginLeft: 6,
       fontSize: 12,
     },

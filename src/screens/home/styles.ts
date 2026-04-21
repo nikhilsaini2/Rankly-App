@@ -1,7 +1,9 @@
 import { StyleSheet } from "react-native";
-import type { AppTheme } from "../../theme";
+import { getElevation, type AppTheme } from "../../theme";
 
 export function createHomeStyles(theme: AppTheme) {
+  const elevation = getElevation(theme);
+
   return StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 20, paddingBottom: 100 },
@@ -40,11 +42,12 @@ export function createHomeStyles(theme: AppTheme) {
   statPress: { flex: 1 },
   statCard: {
     flex: 1,
-    backgroundColor: theme.surfaceAlt,
-    borderRadius: 12,
-    padding: 12,
+    backgroundColor: theme.surface,
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
     borderColor: theme.border,
+    ...elevation.subtle,
   },
   statVal: {
     color: theme.textPrimary,
@@ -56,21 +59,23 @@ export function createHomeStyles(theme: AppTheme) {
   atsCard: {
     flexDirection: "row",
     backgroundColor: theme.surface,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
+    padding: 18,
     marginBottom: 24,
     borderWidth: 1,
     borderColor: theme.border,
     gap: 16,
+    ...elevation.card,
   },
   emptyScoreCard: {
     backgroundColor: theme.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 24,
     marginBottom: 24,
     borderWidth: 1,
     borderColor: theme.border,
     alignItems: "center",
+    ...elevation.card,
   },
   emptyScoreTitle: {
     color: theme.textPrimary,
@@ -91,7 +96,7 @@ export function createHomeStyles(theme: AppTheme) {
     paddingHorizontal: 24,
     borderRadius: 14,
   },
-  getStartedTxt: { color: "#FFFFFF", fontWeight: "700" },
+  getStartedTxt: { color: theme.onPrimary, fontWeight: "700" },
   ringWrap: { justifyContent: "center" },
   atsTitle: { color: theme.textPrimary, fontWeight: "700", fontSize: 16 },
   tierPillWide: {
@@ -107,7 +112,7 @@ export function createHomeStyles(theme: AppTheme) {
   },
   tierPillTxt: { color: theme.textSecondary, fontSize: 12, fontWeight: "600" },
   reportBtn: { paddingVertical: 12, borderRadius: 14, alignItems: "center" },
-  reportBtnText: { color: "#FFFFFF", fontWeight: "700" },
+  reportBtnText: { color: theme.onPrimary, fontWeight: "700" },
   sectionTitle: {
     color: theme.textSecondary,
     fontSize: 11,
@@ -118,22 +123,25 @@ export function createHomeStyles(theme: AppTheme) {
   },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 24 },
   actionCard: {
-    borderRadius: 16,
+    backgroundColor: theme.surface,
+    borderRadius: 18,
     padding: 16,
     borderWidth: 1,
     borderColor: theme.border,
     minHeight: 100,
     gap: 8,
+    ...elevation.subtle,
   },
   actionLab: { color: theme.textPrimary, fontWeight: "600", fontSize: 14 },
   tipCard: {
     width: 260,
-    backgroundColor: theme.surfaceAlt,
-    borderRadius: 16,
+    backgroundColor: theme.surface,
+    borderRadius: 18,
     padding: 16,
     marginRight: 12,
     borderWidth: 1,
     borderColor: theme.border,
+    ...elevation.subtle,
   },
   tipEmoji: { fontSize: 28, marginBottom: 8 },
   tipTitle: {
@@ -195,7 +203,7 @@ export function createHomeStyles(theme: AppTheme) {
     overflow: "hidden",
     padding: 2,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: theme.border,
   },
   avatarImage: {
     width: 42,
@@ -211,7 +219,7 @@ export function createHomeStyles(theme: AppTheme) {
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.04)",
+    borderColor: theme.border,
   },
   avatarInitials: {
     fontSize: 15,

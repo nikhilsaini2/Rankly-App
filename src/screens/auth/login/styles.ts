@@ -157,7 +157,7 @@ export function createLoginStyles(theme: AppTheme) {
 
     // FIX 4: White text on gradient — always readable
     ctaText: {
-      color: "#FFFFFF",
+      color: theme.onPrimary,
       fontSize: isLight ? 16 : 14,
       fontWeight: "700",
     },

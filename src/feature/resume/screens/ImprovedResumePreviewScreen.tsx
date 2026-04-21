@@ -29,6 +29,7 @@ import {
 } from "../../../services/resume/improveResumeService";
 import { saveResume } from "../../../services/resume/resumeHistoryStorage";
 import { supabase } from "../../../services/supabase";
+import { getElevation } from "../../../theme";
 import { useAppTheme } from "../../../theme/useAppTheme";
 import type { RootStackParamList } from "../../../types/navigation.types";
 import type { ResumeFormData } from "../types/resume.types";
@@ -47,6 +48,7 @@ const LOADING_MESSAGES = [
 export default function ImprovedResumePreviewScreen() {
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
+  const elevation = getElevation(theme);
   const bottomInset =
     Platform.OS === "android" ? Math.max(insets.bottom, 48) : insets.bottom;
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -366,7 +368,7 @@ export default function ImprovedResumePreviewScreen() {
           }}
           onPress={() => navigation.goBack()}
         >
-          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
+          <Text style={{ color: theme.onPrimary, fontWeight: "700", fontSize: 15 }}>
             Go Back
           </Text>
         </TouchableOpacity>
@@ -380,11 +382,12 @@ export default function ImprovedResumePreviewScreen() {
 
   const cardStyle = {
     backgroundColor: theme.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)" as const,
+    borderColor: theme.border,
     padding: 16,
     marginBottom: 12,
+    ...elevation.card,
   };
 
   return (
@@ -662,11 +665,11 @@ export default function ImprovedResumePreviewScreen() {
           disabled={exporting}
         >
           {exporting ? (
-            <ActivityIndicator color="#fff" size="small" />
+            <ActivityIndicator color={theme.onPrimary} size="small" />
           ) : (
-            <Ionicons name="share-outline" size={18} color="#fff" />
+            <Ionicons name="share-outline" size={18} color={theme.onPrimary} />
           )}
-          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
+          <Text style={{ color: theme.onPrimary, fontWeight: "700", fontSize: 15 }}>
             {exporting ? "Processing..." : "Download & Share PDF"}
           </Text>
         </TouchableOpacity>
@@ -707,13 +710,15 @@ function SectionCard({
   children: React.ReactNode;
   theme: ReturnType<typeof useAppTheme>;
 }) {
+  const elevation = getElevation(theme);
   const cardStyle = {
     backgroundColor: theme.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)" as const,
+    borderColor: theme.border,
     padding: 16,
     marginBottom: 12,
+    ...elevation.card,
   };
 
   return (

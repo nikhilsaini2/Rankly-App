@@ -188,7 +188,7 @@ export function createOnboardingStyles(theme: AppTheme) {
     },
 
     ctaText: {
-      color: "#FFFFFF",
+      color: theme.onPrimary,
       fontWeight: "700",
       fontSize: 16,
     },

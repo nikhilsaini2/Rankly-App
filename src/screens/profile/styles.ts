@@ -1,7 +1,9 @@
 import { StyleSheet } from "react-native";
-import type { AppTheme } from "../../theme";
+import { getElevation, type AppTheme } from "../../theme";
 
 export function createProfileStyles(theme: AppTheme) {
+  const elevation = getElevation(theme);
+
   return StyleSheet.create({
   root: { flex: 1, backgroundColor: theme.background },
   scrollContent: { paddingHorizontal: 20, paddingTop: 0 },
@@ -150,6 +152,7 @@ export function createProfileStyles(theme: AppTheme) {
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 8,
+    ...elevation.card,
   },
   statCell: { flex: 1, alignItems: "center" },
   statDivider: { width: 1, height: 32, backgroundColor: theme.border },
@@ -181,10 +184,11 @@ export function createProfileStyles(theme: AppTheme) {
   bioCard: {
     marginTop: 16,
     backgroundColor: theme.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: theme.border,
     padding: 20,
+    ...elevation.card,
   },
   bioHeaderRow: {
     flexDirection: "row",
@@ -203,10 +207,11 @@ export function createProfileStyles(theme: AppTheme) {
   settingsCard: {
     marginTop: 16,
     backgroundColor: theme.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: theme.border,
     overflow: "hidden",
+    ...elevation.card,
   },
   settingsRow: {
     paddingHorizontal: 20,
@@ -240,7 +245,7 @@ export function createProfileStyles(theme: AppTheme) {
   dangerWrap: { marginTop: 16 },
   dangerRow: {
     backgroundColor: theme.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: theme.border,
     marginHorizontal: 0,
@@ -248,6 +253,7 @@ export function createProfileStyles(theme: AppTheme) {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
+    ...elevation.subtle,
   },
   dangerIconCircle: {
     width: 34,
@@ -318,12 +324,12 @@ export function createProfileStyles(theme: AppTheme) {
     borderRadius: 20,
     borderWidth: 1,
     borderColor: theme.border,
-    backgroundColor: theme.surface,
+    backgroundColor: theme.surfaceAlt,
   },
 
   chipsActive: {
     borderColor: theme.primary,
-    backgroundColor: theme.surfaceAlt,
+    backgroundColor: "rgba(108,99,255,0.12)",
   },
 
   chipsText: {
@@ -332,7 +338,7 @@ export function createProfileStyles(theme: AppTheme) {
   },
 
   chipsTextActive: {
-    color: theme.textPrimary,
+    color: theme.primary,
     fontWeight: "700" as const,
   },
 
@@ -356,6 +362,7 @@ export function createProfileStyles(theme: AppTheme) {
     paddingBottom: 32,
     borderTopWidth: 1,
     borderColor: theme.border,
+    ...elevation.raised,
   },
 
   modalTitle: {
@@ -454,19 +461,20 @@ export function createProfileStyles(theme: AppTheme) {
     backgroundColor: theme.primary,
   },
   editSaveText: {
-    color: "#fff",
+    color: theme.onPrimary,
     fontSize: 15,
     fontWeight: "700",
     letterSpacing: 0.2,
   },
   // Profile section styles
   sectionContainer: {
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: theme.surface,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: theme.border,
     marginBottom: 8,
     overflow: "hidden",
+    ...elevation.card,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -474,7 +482,7 @@ export function createProfileStyles(theme: AppTheme) {
     justifyContent: "space-between",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.05)",
+    borderBottomColor: theme.border,
   },
   sectionHeaderLeft: {
     flexDirection: "row",
@@ -513,7 +521,7 @@ export function createProfileStyles(theme: AppTheme) {
     paddingVertical: 14,
     paddingRight: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.04)",
+    borderBottomColor: theme.border,
   },
   resumeMiniCardLast: {
     borderBottomWidth: 0,
@@ -588,7 +596,7 @@ export function createProfileStyles(theme: AppTheme) {
     gap: 6,
     padding: 14,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.05)",
+    borderTopColor: theme.border,
   },
   buildNewBtnText: {
     fontSize: 13,

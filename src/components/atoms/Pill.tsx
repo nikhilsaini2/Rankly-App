@@ -4,6 +4,7 @@ import {
   Text,
   TouchableOpacity,
 } from "react-native";
+import { getElevation } from "../../theme";
 import { useAppTheme } from "../../theme/useAppTheme";
 
 interface PillProps {
@@ -15,6 +16,7 @@ interface PillProps {
 
 export function Pill({ label, selected, tone, onPress }: PillProps) {
   const theme = useAppTheme();
+  const elevation = getElevation(theme);
 
   const getBackgroundColor = () => {
     if (selected) {
@@ -38,15 +40,15 @@ export function Pill({ label, selected, tone, onPress }: PillProps) {
     if (selected) {
       switch (tone) {
         case "primary":
-          return theme.textPrimary;
+          return theme.onPrimary;
         case "easy":
-          return "#000000";
+          return theme.onPrimary;
         case "medium":
-          return theme.textPrimary;
+          return theme.onPrimary;
         case "hard":
-          return theme.textPrimary;
+          return theme.onPrimary;
         default:
-          return theme.textPrimary;
+          return theme.onPrimary;
       }
     }
     return theme.textSecondary;
@@ -77,6 +79,7 @@ export function Pill({ label, selected, tone, onPress }: PillProps) {
         {
           backgroundColor: getBackgroundColor(),
           borderColor: getBorderColor(),
+          ...(selected ? elevation.subtle : {}),
         },
       ]}
       onPress={onPress}

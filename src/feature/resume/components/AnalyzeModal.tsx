@@ -146,7 +146,7 @@ export function AnalyzeModal({
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Ionicons name="flash" size={16} color="#fff" />
+                <Ionicons name="flash" size={16} color={theme.onPrimary} />
                 <Text style={modalStyles.ctaText}>Run ATS Analysis</Text>
               </LinearGradient>
             </PressableScale>
@@ -279,7 +279,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       gap: 8,
     },
     ctaText: {
-      color: "#fff",
+      color: theme.onPrimary,
       fontSize: 15,
       fontWeight: "800",
       letterSpacing: 0.2,

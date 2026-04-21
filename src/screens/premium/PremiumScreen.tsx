@@ -18,6 +18,7 @@ import {
   PLAN_LABELS,
   getPlanUsageSummary,
 } from "../../services/premium/premiumService";
+import { getElevation } from "../../theme";
 import { useAppTheme } from "../../theme/useAppTheme";
 import type { RootStackParamList } from "../../types/navigation.types";
 
@@ -47,6 +48,7 @@ const SYNC_ROWS = [
 
 export default function PremiumScreen() {
   const theme = useAppTheme();
+  const elevation = getElevation(theme);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { user, loading } = useProfile();
@@ -118,9 +120,9 @@ export default function PremiumScreen() {
 
         <LinearGradient
           colors={[
-            "rgba(139,92,246,0.22)",
+            "rgba(139,92,246,0.24)",
             "rgba(16,185,129,0.12)",
-            "rgba(19,15,31,0.96)",
+            theme.surface,
           ]}
           style={{
             borderRadius: 24,
@@ -128,6 +130,7 @@ export default function PremiumScreen() {
             borderColor: "rgba(139,92,246,0.22)",
             padding: 20,
             marginBottom: 16,
+            ...elevation.raised,
           }}
         >
           <View
@@ -167,9 +170,9 @@ export default function PremiumScreen() {
                 paddingHorizontal: 12,
                 paddingVertical: 8,
                 borderRadius: 18,
-                backgroundColor: "rgba(250,249,255,0.06)",
+                backgroundColor: theme.surface,
                 borderWidth: 1,
-                borderColor: "rgba(250,249,255,0.12)",
+                borderColor: theme.border,
               }}
             >
               <Text style={{ color: theme.accent, fontWeight: "700", fontSize: 12 }}>
@@ -211,9 +214,10 @@ export default function PremiumScreen() {
               borderRadius: 16,
               paddingVertical: 14,
               alignItems: "center",
+              ...elevation.action,
             }}
           >
-            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>
+            <Text style={{ color: theme.onPrimary, fontWeight: "800", fontSize: 15 }}>
               {user.plan === "pro" ? "You are on Pro" : "Upgrade Path Ready"}
             </Text>
           </TouchableOpacity>
@@ -227,6 +231,7 @@ export default function PremiumScreen() {
             borderColor: theme.border,
             padding: 18,
             marginBottom: 16,
+            ...elevation.card,
           }}
         >
           <Text
@@ -270,6 +275,7 @@ export default function PremiumScreen() {
             borderColor: theme.border,
             padding: 18,
             marginBottom: 16,
+            ...elevation.card,
           }}
         >
           <Text
@@ -328,6 +334,7 @@ export default function PremiumScreen() {
             borderWidth: 1,
             borderColor: theme.border,
             padding: 18,
+            ...elevation.card,
           }}
         >
           <Text
@@ -383,6 +390,8 @@ function UsageCell({
   value: string;
   subtitle: string;
 }) {
+  const elevation = getElevation(theme);
+
   return (
     <View
       style={{
@@ -392,6 +401,7 @@ function UsageCell({
         borderWidth: 1,
         borderColor: theme.border,
         padding: 14,
+        ...elevation.subtle,
       }}
     >
       <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700" }}>
@@ -425,6 +435,8 @@ function ComparisonPill({
   value: string;
   highlight?: boolean;
 }) {
+  const elevation = getElevation(theme);
+
   return (
     <View
       style={{
@@ -434,6 +446,7 @@ function ComparisonPill({
         borderColor: highlight ? theme.primary + "55" : theme.border,
         backgroundColor: highlight ? theme.primary + "10" : theme.surfaceAlt,
         padding: 12,
+        ...elevation.subtle,
       }}
     >
       <Text

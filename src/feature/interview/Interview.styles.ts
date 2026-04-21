@@ -1,7 +1,9 @@
 import { StyleSheet } from "react-native";
-import type { AppTheme } from "../../theme";
+import { getElevation, type AppTheme } from "../../theme";
 
 export function createInterviewStyles(theme: AppTheme) {
+  const elevation = getElevation(theme);
+
   return StyleSheet.create({
     flex: { flex: 1 },
     container: { flex: 1, backgroundColor: theme.background },
@@ -36,11 +38,12 @@ export function createInterviewStyles(theme: AppTheme) {
 
     card: {
       backgroundColor: theme.surface,
-      borderRadius: 16,
+      borderRadius: 20,
       borderWidth: 1,
       borderColor: theme.border,
       padding: 16,
       marginBottom: 12,
+      ...elevation.card,
     },
     fieldLabel: {
       fontSize: 10,
@@ -72,7 +75,7 @@ export function createInterviewStyles(theme: AppTheme) {
     },
     startBtnDisabled: { opacity: 0.4 },
     startBtnRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-    startBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 16 },
+    startBtnText: { color: theme.onPrimary, fontWeight: "700", fontSize: 16 },
 
     progressHeader: {
       flexDirection: "row",
@@ -108,7 +111,7 @@ export function createInterviewStyles(theme: AppTheme) {
     questionCard: {
       backgroundColor: theme.surface,
       padding: 18,
-      borderRadius: 16,
+      borderRadius: 20,
       borderWidth: 1,
       borderColor: theme.border,
       marginHorizontal: 20,
@@ -116,6 +119,7 @@ export function createInterviewStyles(theme: AppTheme) {
       paddingLeft: 22,
       overflow: "hidden",
       position: "relative",
+      ...elevation.card,
     },
     questionAccentBar: {
       position: "absolute",
@@ -141,7 +145,7 @@ export function createInterviewStyles(theme: AppTheme) {
       justifyContent: "center",
     },
     questionBadgeText: {
-      color: "#FFFFFF",
+      color: theme.onPrimary,
       fontSize: 13,
       fontWeight: "700",
     },
@@ -259,7 +263,7 @@ export function createInterviewStyles(theme: AppTheme) {
       justifyContent: "center",
       borderRadius: 14,
     },
-    submitText: { color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
+    submitText: { color: theme.onPrimary, fontWeight: "700", fontSize: 15 },
 
     recordingIndicator: {
       flexDirection: "row",
@@ -285,11 +289,12 @@ export function createInterviewStyles(theme: AppTheme) {
     },
     feedbackCard: {
       backgroundColor: theme.surface,
-      borderRadius: 16,
+      borderRadius: 20,
       borderWidth: 1,
       borderColor: theme.border,
       padding: 18,
       gap: 14,
+      ...elevation.card,
     },
     feedbackHeaderRow: {
       flexDirection: "row",
@@ -307,7 +312,7 @@ export function createInterviewStyles(theme: AppTheme) {
       borderRadius: 12,
     },
     scoreBadgeText: {
-      color: "#FFFFFF",
+      color: theme.onPrimary,
       fontSize: 14,
       fontWeight: "700",
     },
@@ -365,7 +370,7 @@ export function createInterviewStyles(theme: AppTheme) {
       borderRadius: 14,
     },
     nextBtnText: {
-      color: "#FFFFFF",
+      color: theme.onPrimary,
       fontSize: 15,
       fontWeight: "600",
     },
@@ -393,10 +398,11 @@ export function createInterviewStyles(theme: AppTheme) {
     resultCard: {
       backgroundColor: theme.surface,
       padding: 14,
-      borderRadius: 14,
+      borderRadius: 18,
       borderWidth: 1,
       borderColor: theme.border,
       marginBottom: 12,
+      ...elevation.subtle,
     },
     resultCardHeader: {
       flexDirection: "row",
@@ -438,7 +444,7 @@ export function createInterviewStyles(theme: AppTheme) {
       alignItems: "center",
     },
     primaryButtonText: {
-      color: "#FFFFFF",
+      color: theme.onPrimary,
       fontWeight: "700",
       fontSize: 16,
     },
@@ -464,11 +470,12 @@ export function createInterviewStyles(theme: AppTheme) {
     },
     errorCard: {
       backgroundColor: theme.surface,
-      borderRadius: 16,
+      borderRadius: 20,
       padding: 24,
       alignItems: "center",
       width: "100%",
       maxWidth: 340,
+      ...elevation.raised,
     },
     errorTitle: {
       color: theme.textPrimary,
@@ -492,7 +499,7 @@ export function createInterviewStyles(theme: AppTheme) {
       borderRadius: 12,
     },
     errorBtnText: {
-      color: "#FFFFFF",
+      color: theme.onPrimary,
       fontSize: 16,
       fontWeight: "600",
     },

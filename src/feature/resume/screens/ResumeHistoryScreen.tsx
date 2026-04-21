@@ -467,7 +467,7 @@ export default function ResumeHistoryScreen() {
               navigation.navigate("ResumeBuilder");
             }}
           >
-            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
+            <Text style={{ color: theme.onPrimary, fontWeight: "700", fontSize: 15 }}>
               Build Resume
             </Text>
           </TouchableOpacity>

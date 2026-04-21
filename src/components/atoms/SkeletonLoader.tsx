@@ -1,13 +1,17 @@
 import { StyleSheet, View } from "react-native";
+import { useAppTheme } from "../../theme/useAppTheme";
 
 export const Skeleton = () => {
+  const theme = useAppTheme();
+  const styles = createStyles(theme);
   return <View style={styles.skeleton} />;
 };
 
-const styles = StyleSheet.create({
-  skeleton: {
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.05)",
-  },
-});
+const createStyles = (theme: ReturnType<typeof useAppTheme>) =>
+  StyleSheet.create({
+    skeleton: {
+      height: 16,
+      borderRadius: 8,
+      backgroundColor: theme.surfaceAlt,
+    },
+  });

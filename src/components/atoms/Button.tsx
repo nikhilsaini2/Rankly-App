@@ -1,6 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { getElevation } from "../../theme";
 import { useAppTheme } from "../../theme/useAppTheme";
 import { ButtonProps } from "../../types/common.types";
 
@@ -33,17 +34,14 @@ export const Button = ({
 };
 
 function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  const elevation = getElevation(theme);
+
   return StyleSheet.create({
     button: {
       padding: 18,
       borderRadius: 24,
       alignItems: "center",
-
-      // glow
-      shadowColor: "#9B5CFF",
-      shadowOpacity: 0.8,
-      shadowRadius: 25,
-      elevation: 20,
+      ...elevation.action,
     },
 
     content: {
@@ -53,7 +51,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     },
 
     text: {
-      color: theme.textPrimary,
+      color: theme.onPrimary,
       fontSize: 15,
       fontWeight: "700",
     },

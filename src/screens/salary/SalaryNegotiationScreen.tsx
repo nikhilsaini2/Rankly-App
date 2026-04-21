@@ -27,6 +27,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useProfile } from "../../hooks/index";
 import { generateGeminiText } from "../../services/gemini";
 import { supabase } from "../../services/supabase";
+import { getElevation } from "../../theme";
 import { useAppTheme } from "../../theme/useAppTheme";
 import { handleGeminiError, parseGeminiJson } from "../../utils/gemini";
 interface SalaryAnalysis {
@@ -1015,6 +1016,8 @@ All salary numbers must be in ${currency}. Be specific and realistic for the ${
 }
 
 function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  const elevation = getElevation(theme);
+
   return StyleSheet.create({
   container: {
     flex: 1,
@@ -1072,11 +1075,12 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
   },
   inputCard: {
     backgroundColor: theme.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: theme.border,
     padding: 16,
     marginBottom: 16,
+    ...elevation.card,
   },
   inputLabel: {
     fontSize: 14,
@@ -1127,10 +1131,10 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     color: theme.textSecondary,
   },
   pillTextSelected: {
-    color: "#fff",
+    color: theme.onPrimary,
   },
   pillAccentText: {
-    color: "#fff",
+    color: theme.onPrimary,
   },
   submitButton: {
     backgroundColor: theme.primary,
@@ -1146,7 +1150,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
   submitButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#fff",
+    color: theme.onPrimary,
   },
   loadingContainer: {
     flex: 1,
@@ -1184,11 +1188,12 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
   },
   resultCard: {
     backgroundColor: theme.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: theme.border,
     padding: 16,
     marginBottom: 12,
+    ...elevation.card,
   },
   verdictHeader: {
     flexDirection: "row",
@@ -1258,8 +1263,10 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     lineHeight: 20,
   },
   codeBlock: {
-    backgroundColor: "#0D0D1A",
+    backgroundColor: theme.surfaceAlt,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.border,
     padding: 16,
     marginBottom: 12,
   },
@@ -1301,7 +1308,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
   tacticNumberText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#fff",
+    color: theme.onPrimary,
   },
   tacticText: {
     flex: 1,
@@ -1320,7 +1327,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
   primaryButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#fff",
+    color: theme.onPrimary,
   },
   ghostButton: {
     height: 56,
@@ -1338,9 +1345,12 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
   tabBar: {
     flexDirection: "row",
     backgroundColor: theme.surface,
-    borderRadius: 10,
+    borderRadius: 14,
     padding: 4,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: theme.border,
+    ...elevation.subtle,
   },
   tab: {
     flex: 1,
@@ -1358,7 +1368,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     color: theme.textSecondary,
   },
   tabTextActive: {
-    color: "#fff",
+    color: theme.onPrimary,
     fontWeight: "700",
   },
   refreshButton: {
@@ -1395,11 +1405,12 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
   },
   historyCard: {
     backgroundColor: theme.surface,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: theme.border,
     padding: 14,
     marginBottom: 10,
+    ...elevation.subtle,
   },
   historyCardContent: {
     flexDirection: "row",
@@ -1461,9 +1472,12 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: theme.surface,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 12,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: theme.border,
+    ...elevation.subtle,
   },
   backToHistoryText: {
     fontSize: 14,

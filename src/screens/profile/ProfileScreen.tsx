@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { NavigationProp } from "@react-navigation/native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -56,6 +56,7 @@ export default function ProfileScreen() {
   const dispatch = useDispatch();
   const { user, loading, error, refetch: refetchProfile } = useProfile();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const scrollRef = useRef<ScrollView>(null);
 
   const { stats, refetch: refetchStats } = useProfileStats(user?.id);
 
@@ -64,6 +65,9 @@ export default function ProfileScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+      });
       refetchProfile();
       refetchStats();
       return () => {
@@ -375,6 +379,7 @@ export default function ProfileScreen() {
     >
       <View style={[profileStyles.root]}>
         <ScrollView
+          ref={scrollRef}
           bounces={false}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
@@ -451,7 +456,7 @@ export default function ProfileScreen() {
               activeOpacity={0.85}
             >
               {saving ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={theme.onPrimary} />
               ) : (
                 <Text style={profileStyles.editSaveText}>Save Changes</Text>
               )}

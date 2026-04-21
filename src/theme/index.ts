@@ -1,4 +1,5 @@
 export { colors, gradients, shadows } from "./color";
+export { darkElevation, elevation, getElevation, lightElevation } from "./elevation";
 export { lightColors, lightGradients, lightShadows } from "./lightTheme";
 export { radius } from "./radius";
 export { spacing } from "./spacing";

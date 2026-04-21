@@ -299,13 +299,13 @@ export default function ResumeScreen() {
               end={{ x: 1, y: 0 }}
             >
               {uploading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={theme.onPrimary} />
               ) : (
                 <>
                   <Ionicons
                     name="cloud-upload-outline"
                     size={20}
-                    color="#fff"
+                    color={theme.onPrimary}
                   />
                   <Text style={styles.emptyUploadTxt}>Upload resume</Text>
                 </>
@@ -348,9 +348,9 @@ export default function ResumeScreen() {
               end={{ x: 1, y: 1 }}
             >
               {uploading ? (
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color={theme.onPrimary} size="small" />
               ) : (
-                <Ionicons name="add" size={22} color="#fff" />
+                <Ionicons name="add" size={22} color={theme.onPrimary} />
               )}
             </LinearGradient>
           </PressableScale>
@@ -389,7 +389,7 @@ export default function ResumeScreen() {
                 borderRadius: 8,
               }}
             >
-              <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>Retry</Text>
+              <Text style={{ color: theme.onPrimary, fontSize: 12, fontWeight: "700" }}>Retry</Text>
             </TouchableOpacity>
           </View>
         )}

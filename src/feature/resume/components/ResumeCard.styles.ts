@@ -1,16 +1,19 @@
 import { StyleSheet } from "react-native";
-import type { AppTheme } from "../../../theme";
+import { getElevation, type AppTheme } from "../../../theme";
 
 export function createCardStyles(theme: AppTheme) {
+  const elevation = getElevation(theme);
+
   return StyleSheet.create({
   card: {
     backgroundColor: theme.surface,
-    borderRadius: 18,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: theme.border,
-    padding: 10,
+    padding: 12,
     flexDirection: "row",
     gap: 14,
+    ...elevation.card,
   },
   leftCol: {
     alignItems: "center",
@@ -27,7 +30,7 @@ export function createCardStyles(theme: AppTheme) {
     borderColor: "rgba(108,99,255,0.2)",
   },
   pdfLabel: {
-    color: "#FFFFFF",
+    color: theme.onPrimary,
     fontSize: 9,
     fontWeight: "800",
     letterSpacing: 1,
@@ -39,7 +42,7 @@ export function createCardStyles(theme: AppTheme) {
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: theme.surfaceAlt,
   },
   scoreDotText: {
     fontSize: 13,
@@ -83,7 +86,7 @@ export function createCardStyles(theme: AppTheme) {
     paddingVertical: 3,
     borderRadius: 20,
     borderWidth: 1,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: theme.surfaceAlt,
   },
   scorePillDot: {
     width: 5,
@@ -101,7 +104,7 @@ export function createCardStyles(theme: AppTheme) {
     borderRadius: 20,
     borderWidth: 1,
     borderColor: theme.border,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: theme.surfaceAlt,
   },
   unscoredText: {
     fontSize: 11,
@@ -113,7 +116,7 @@ export function createCardStyles(theme: AppTheme) {
     paddingVertical: 3,
     borderRadius: 20,
     borderWidth: 1,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: theme.surfaceAlt,
   },
   statusText: {
     fontSize: 11,

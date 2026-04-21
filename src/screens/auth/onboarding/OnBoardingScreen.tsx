@@ -158,7 +158,7 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
                   <>
                     <Text style={styles.ctaText}>Get Started - </Text>
                     <Text style={styles.ctaText}>it's free </Text>
-                    <Ionicons name="arrow-forward" size={18} color="#fff" />
+                    <Ionicons name="arrow-forward" size={18} color={theme.onPrimary} />
                   </>
                 )}
               </LinearGradient>

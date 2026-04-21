@@ -1,7 +1,9 @@
 import { StyleSheet } from "react-native";
-import type { AppTheme } from "../../../theme";
+import { getElevation, type AppTheme } from "../../../theme";
 
 export function createResumeStyles(theme: AppTheme) {
+  const elevation = getElevation(theme);
+
   return StyleSheet.create({
   container: {
     flex: 1,
@@ -63,7 +65,7 @@ export function createResumeStyles(theme: AppTheme) {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: theme.border,
   },
   loadingDotActive: {
     backgroundColor: theme.accent,
@@ -72,7 +74,7 @@ export function createResumeStyles(theme: AppTheme) {
   progressBarContainer: {
     width: "100%",
     height: 3,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: theme.surfaceAlt,
     borderRadius: 2,
     marginBottom: 6,
     marginTop: 8,
@@ -103,9 +105,10 @@ export function createResumeStyles(theme: AppTheme) {
     backgroundColor: theme.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: theme.border,
     padding: 14,
     marginBottom: 16,
+    ...elevation.subtle,
   },
   stepIconCircle: {
     width: 44,
@@ -133,9 +136,10 @@ export function createResumeStyles(theme: AppTheme) {
     backgroundColor: theme.surface,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: theme.border,
     padding: 16,
     marginBottom: 16,
+    ...elevation.card,
   },
   fieldGroup: {
     marginBottom: 12,
@@ -237,16 +241,17 @@ export function createResumeStyles(theme: AppTheme) {
     color: theme.textSecondary,
   },
   pillTextSelected: {
-    color: "#fff",
+    color: theme.onPrimary,
     fontWeight: "700",
   },
   expCard: {
     backgroundColor: theme.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: theme.border,
     padding: 16,
     marginBottom: 12,
+    ...elevation.subtle,
   },
   expCardHeader: {
     flexDirection: "row",
@@ -255,7 +260,7 @@ export function createResumeStyles(theme: AppTheme) {
     marginBottom: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomColor: theme.border,
   },
   expCardNumber: {
     width: 28,
@@ -339,7 +344,7 @@ export function createResumeStyles(theme: AppTheme) {
   nextButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#fff",
+    color: theme.onPrimary,
   },
   scrollContent: {
     flex: 1,
@@ -357,11 +362,12 @@ export function createResumeStyles(theme: AppTheme) {
   },
   resultCard: {
     backgroundColor: theme.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: theme.border,
     padding: 20,
     marginBottom: 16,
+    ...elevation.card,
   },
   resultTitle: {
     fontSize: 18,
@@ -467,7 +473,7 @@ export function createResumeStyles(theme: AppTheme) {
   primaryButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#fff",
+    color: theme.onPrimary,
   },
   ghostButton: {
     backgroundColor: "transparent",
@@ -507,12 +513,12 @@ export function createResumeStyles(theme: AppTheme) {
   // Tab styles
   tabBar: {
     flexDirection: "row",
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: theme.surfaceAlt,
     borderRadius: 12,
     padding: 4,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: theme.border,
   },
   tab: {
     flex: 1,
@@ -532,7 +538,7 @@ export function createResumeStyles(theme: AppTheme) {
     color: theme.textSecondary,
   },
   tabTextActive: {
-    color: "#fff",
+    color: theme.onPrimary,
   },
   // History styles
   historyLoadingContainer: {
@@ -553,9 +559,9 @@ export function createResumeStyles(theme: AppTheme) {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: theme.surfaceAlt,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: theme.border,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
@@ -582,14 +588,15 @@ export function createResumeStyles(theme: AppTheme) {
   emptyActionText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#fff",
+    color: theme.onPrimary,
   },
   historyCard: {
     marginBottom: 10,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: theme.border,
+    ...elevation.card,
   },
   historyCardInner: {
     flexDirection: "row",
@@ -631,12 +638,12 @@ export function createResumeStyles(theme: AppTheme) {
     marginTop: 4,
   },
   metaPill: {
-    backgroundColor: "rgba(255,255,255,0.07)",
+    backgroundColor: theme.surfaceAlt,
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: theme.border,
   },
   metaPillText: {
     fontSize: 11,
@@ -671,12 +678,12 @@ export function createResumeStyles(theme: AppTheme) {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: theme.surfaceAlt,
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: theme.border,
   },
   historyViewBannerText: {
     fontSize: 14,
@@ -688,7 +695,7 @@ export function createResumeStyles(theme: AppTheme) {
     paddingTop: 12,
     paddingBottom: 12,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.06)",
+    borderTopColor: theme.border,
     backgroundColor: theme.background,
   },
   });

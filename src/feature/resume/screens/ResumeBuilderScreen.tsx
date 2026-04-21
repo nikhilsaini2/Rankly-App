@@ -472,14 +472,14 @@ const NavButtons = React.memo(
           accessibilityState={{ disabled: !canProceed || isBuilding }}
         >
           {isBuilding && isLastStep ? (
-            <ActivityIndicator color="#fff" size="small" />
+            <ActivityIndicator color={theme.onPrimary} size="small" />
           ) : (
             <>
               <Text style={resumeStyles.nextButtonText}>
                 {isLastStep ? "✨ Build Resume" : "Next"}
               </Text>
               {!isLastStep && (
-                <Ionicons name="arrow-forward" size={18} color="#fff" />
+                <Ionicons name="arrow-forward" size={18} color={theme.onPrimary} />
               )}
             </>
           )}
@@ -545,7 +545,7 @@ const RestoreModal = React.memo(
                 paddingHorizontal: 24,
                 alignItems: "center",
                 borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.08)",
+                borderColor: theme.border,
               },
               cardStyle,
             ]}
@@ -615,7 +615,7 @@ const RestoreModal = React.memo(
                 style={{
                   fontSize: 16,
                   fontWeight: "700",
-                  color: "#FFFFFF",
+                  color: theme.onPrimary,
                 }}
               >
                 Resume Draft

@@ -642,7 +642,7 @@ export function InterviewScreen({
                 setSavedSession(null);
               }}
             >
-              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16, letterSpacing: -0.2 }}>
+              <Text style={{ color: theme.onPrimary, fontWeight: "600", fontSize: 16, letterSpacing: -0.2 }}>
                 Resume Session
               </Text>
             </PressableScale>

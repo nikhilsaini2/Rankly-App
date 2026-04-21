@@ -1,7 +1,9 @@
 import { StyleSheet } from "react-native";
-import type { AppTheme } from "../../theme";
+import { getElevation, type AppTheme } from "../../theme";
 
 export function createResumeScreenStyles(theme: AppTheme) {
+  const elevation = getElevation(theme);
+
   return StyleSheet.create({
   // ─── shared ────────────────────────────────────────────────
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
@@ -54,11 +56,12 @@ export function createResumeScreenStyles(theme: AppTheme) {
   },
   summaryCard: {
     backgroundColor: theme.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
     borderColor: theme.border,
+    ...elevation.card,
   },
   summaryLabel: {
     color: theme.textMuted,
@@ -74,7 +77,7 @@ export function createResumeScreenStyles(theme: AppTheme) {
     alignItems: "center",
     marginTop: 8,
   },
-  ctaText: { color: "#FFFFFF", fontWeight: "800", fontSize: 16 },
+  ctaText: { color: theme.onPrimary, fontWeight: "800", fontSize: 16 },
   chip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -119,6 +122,7 @@ export function createResumeScreenStyles(theme: AppTheme) {
     borderColor: theme.border,
     padding: 16,
     marginTop: 8,
+    ...elevation.subtle,
   },
   quickStatsSkCell: { flex: 1, alignItems: "center" },
   quickStatsSkDivider: { borderLeftWidth: 1, borderLeftColor: theme.border },
@@ -134,6 +138,7 @@ export function createResumeScreenStyles(theme: AppTheme) {
     borderWidth: 1,
     borderColor: theme.border,
     marginBottom: 12,
+    ...elevation.subtle,
   },
   resumeSkPdf: { width: 44, height: 52 },
   resumeSkTitle: { width: "72%", height: 14 },
@@ -212,7 +217,7 @@ export function createResumeScreenStyles(theme: AppTheme) {
   emptyUploadTxt: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#fff",
+    color: theme.onPrimary,
   },
   emptySupportRow: {
     flexDirection: "row",
@@ -240,16 +245,18 @@ export function createResumeScreenStyles(theme: AppTheme) {
     borderRadius: 12,
     borderWidth: 1,
     borderColor: theme.border,
+    ...elevation.subtle,
   },
   card: {
     backgroundColor: theme.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: theme.border,
     flexDirection: "row",
     gap: 14,
+    ...elevation.card,
   },
   pdfIcon: {
     width: 44,
@@ -259,7 +266,7 @@ export function createResumeScreenStyles(theme: AppTheme) {
     alignItems: "center",
     justifyContent: "center",
   },
-  pdfTxt: { color: theme.textPrimary, fontWeight: "800", fontSize: 11 },
+  pdfTxt: { color: theme.onPrimary, fontWeight: "800", fontSize: 11 },
   cardTitle: { color: theme.textPrimary, fontWeight: "700", fontSize: 16 },
   cardMeta: { color: theme.textMuted, fontSize: 12, marginTop: 4 },
   scorePill: {
@@ -340,7 +347,7 @@ export function createResumeScreenStyles(theme: AppTheme) {
     fontSize: 15,
   },
   modalCta: { paddingVertical: 16, borderRadius: 14, alignItems: "center" },
-  modalCtaTxt: { color: theme.textPrimary, fontWeight: "800", fontSize: 16 },
+  modalCtaTxt: { color: theme.onPrimary, fontWeight: "800", fontSize: 16 },
   listHeader: {
     flexDirection: "row",
     alignItems: "flex-end",

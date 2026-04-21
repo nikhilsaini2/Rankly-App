@@ -1,7 +1,9 @@
 import { StyleSheet } from "react-native";
-import type { AppTheme } from "../../theme";
+import { getElevation, type AppTheme } from "../../theme";
 
 export function createAIStyles(theme: AppTheme) {
+  const elevation = getElevation(theme);
+
   return StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
@@ -129,10 +131,11 @@ export function createAIStyles(theme: AppTheme) {
   suggestionChip: {
     marginBottom: 10,
     backgroundColor: theme.surface,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: theme.border,
     overflow: "hidden",
+    ...elevation.subtle,
   },
   suggestionChipInner: {
     flexDirection: "row",
@@ -211,6 +214,7 @@ export function createAIStyles(theme: AppTheme) {
     borderBottomLeftRadius: 4,
     borderWidth: 1,
     borderColor: theme.border,
+    ...elevation.subtle,
   },
   userBubbleText: {
     color: theme.onPrimary,
@@ -293,11 +297,12 @@ export function createAIStyles(theme: AppTheme) {
   },
   setupCard: {
     backgroundColor: theme.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: theme.border,
     padding: 16,
     marginBottom: 12,
+    ...elevation.card,
   },
   fieldLabel: {
     fontSize: 10,
@@ -371,7 +376,7 @@ export function createAIStyles(theme: AppTheme) {
     justifyContent: "center",
   },
   startBtnDisabledGrad: { opacity: 0.4 },
-  startBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 16 },
+  startBtnText: { color: theme.onPrimary, fontWeight: "700", fontSize: 16 },
 
   // ─── Live session ─────────────────────────────────────────
   liveBody: { flex: 1, paddingHorizontal: 20 },
@@ -401,13 +406,14 @@ export function createAIStyles(theme: AppTheme) {
   questionCard: {
     backgroundColor: theme.surface,
     padding: 18,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: theme.border,
     marginBottom: 16,
     paddingLeft: 22,
     overflow: "hidden",
     position: "relative",
+    ...elevation.card,
   },
   questionAccentBar: {
     position: "absolute",
@@ -481,7 +487,7 @@ export function createAIStyles(theme: AppTheme) {
   submitButton: { flex: 1, borderRadius: 14, overflow: "hidden" },
   submitButtonDisabled: { opacity: 0.45 },
   submitGrad: { paddingVertical: 14, alignItems: "center", borderRadius: 14 },
-  submitText: { color: "#FFFFFF", fontWeight: "700", fontSize: 16 },
+  submitText: { color: theme.onPrimary, fontWeight: "700", fontSize: 16 },
 
   // Voice mode styles
   voiceModeRow: {
@@ -541,10 +547,11 @@ export function createAIStyles(theme: AppTheme) {
   questionResult: {
     backgroundColor: theme.surface,
     padding: 14,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: theme.border,
     marginBottom: 12,
+    ...elevation.subtle,
   },
   questionResultHeader: {
     flexDirection: "row",
@@ -555,7 +562,7 @@ export function createAIStyles(theme: AppTheme) {
   questionResultNumber: { color: theme.textMuted, fontWeight: "700" },
   scoreBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   scoreBadgeText: {
-    color: "#FFFFFF",
+    color: theme.onPrimary,
     fontSize: 12,
     fontWeight: "700",
   },

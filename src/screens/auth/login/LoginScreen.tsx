@@ -25,10 +25,11 @@ import {
   signInWithEmailPassword,
   signInWithGoogle,
 } from "../../../services/supabase/auth.supabase";
+import { supabase } from "../../../services/supabase/supabase";
 import { useAppTheme } from "../../../theme/useAppTheme";
 import type { AuthScreenProps } from "../../../types/navigation.types";
-import { loginSchema } from "../../../validation/auth.schema";
 import { getGoogleAuthErrorMessage } from "../../../utils/googleAuthError";
+import { loginSchema } from "../../../validation/auth.schema";
 import { createLoginStyles } from "./styles";
 
 const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
@@ -51,30 +52,46 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
         setGlobalError(null);
         const email = values.email.trim().toLowerCase();
 
-        // Attempt sign-in directly — Supabase Auth is the source of truth.
-        // Pre-checking the custom users table caused false "account not found"
-        // errors when the profile row hadn't been created yet or email casing differed.
         const user = await signInWithEmailPassword(email, values.password);
         await handleUserProfile(user);
         // Navigation is driven by onAuthStateChange in RootNavigator — no manual navigate needed
       } catch (err) {
         const message = err instanceof Error ? err.message : "";
+
         if (
           message.includes("Invalid login credentials") ||
           message.includes("invalid_credentials") ||
           message.includes("Invalid email or password")
         ) {
-          setGlobalError("Incorrect email or password. Please try again.");
+          // Supabase returns the same error for both "wrong password" and
+          // "account doesn't exist". Check the users table to distinguish them.
+          try {
+            const { data: existingUser } = await supabase
+              .from("users")
+              .select("auth_id")
+              .eq("email", values.email.trim().toLowerCase())
+              .maybeSingle();
+
+            if (existingUser) {
+              // Account exists → wrong password
+              setGlobalError("Incorrect password. Please try again.");
+            } else {
+              // No account found
+              setGlobalError("Account does not Exits");
+            }
+          } catch {
+            // Fallback if the check itself fails
+            setGlobalError("Incorrect email or password. Please try again.");
+          }
         } else if (
           message.includes("Email not confirmed") ||
           message.includes("email_not_confirmed")
         ) {
           setGlobalError("Please verify your email before signing in.");
-        } else if (message.includes("User not found")) {
-          setGlobalError("No account found with this email. Please register.");
         } else {
           setGlobalError("Sign-in failed. Please try again.");
         }
+
         setLoading(false);
       }
       // Do NOT setLoading(false) on success — keep spinner until RootNavigator transitions
@@ -243,7 +260,10 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                     </View>
 
                     <TouchableOpacity
-                      onPress={() => { Keyboard.dismiss(); handleSubmit(); }}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        handleSubmit();
+                      }}
                       disabled={!isValid || !dirty || loading || googleLoading}
                       activeOpacity={0.9}
                       accessibilityLabel="Login button"
@@ -269,7 +289,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                             <Ionicons
                               name="arrow-forward"
                               size={16}
-                              color="#fff"
+                              color={theme.onPrimary}
                             />
                           </>
                         )}

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
+import { getElevation } from "../../theme";
 import { useAppTheme } from "../../theme/useAppTheme";
 
 type CardProps = {
@@ -14,13 +15,16 @@ export const Card = ({ children }: CardProps) => {
 };
 
 function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  const elevation = getElevation(theme);
+
   return StyleSheet.create({
     card: {
-      backgroundColor: theme.glass,
-      borderRadius: 16,
+      backgroundColor: theme.surface,
+      borderRadius: 20,
       padding: 16,
       borderWidth: 1,
       borderColor: theme.border,
+      ...elevation.card,
     },
   });
 }

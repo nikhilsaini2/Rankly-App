@@ -280,10 +280,10 @@ export default function AtsScoreScreen() {
           }
           activeOpacity={0.85}
         >
-          <Ionicons name="sparkles-outline" size={20} color="#fff" />
+          <Ionicons name="sparkles-outline" size={20} color={theme.onPrimary} />
           <Text
             style={{
-              color: "#fff",
+              color: theme.onPrimary,
               fontWeight: "800",
               fontSize: 16,
               letterSpacing: 0.2,

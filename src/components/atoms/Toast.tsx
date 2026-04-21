@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useRef, useState } from "react";
 import { Animated, StyleSheet, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getElevation } from "../../theme";
 import { useAppTheme } from "../../theme/useAppTheme";
 
 export type ToastVariant = "success" | "error" | "info";
@@ -75,6 +76,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 }
 
 function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  const elevation = getElevation(theme);
+
   return StyleSheet.create({
     banner: {
       position: "absolute",
@@ -88,6 +91,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       borderColor: theme.border,
       borderLeftWidth: 4,
       zIndex: 9999,
+      ...elevation.raised,
     },
     text: { color: theme.textPrimary, textAlign: "center", fontWeight: "600" },
   });

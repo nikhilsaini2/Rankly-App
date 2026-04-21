@@ -83,7 +83,7 @@ export function ResumeCard({
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Ionicons name="document-text-outline" size={20} color="#FFFFFF" />
+            <Ionicons name="document-text-outline" size={20} color={theme.onPrimary} />
             <Text style={cardStyles.pdfLabel}>{"PDF"}</Text>
           </LinearGradient>
         </View>

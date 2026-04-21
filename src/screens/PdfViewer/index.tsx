@@ -111,7 +111,7 @@ export default function PdfViewerScreen({ route, navigation }: Props) {
       >
         <Text
           style={{
-            color: theme.textPrimary,
+            color: theme.onPrimary,
             fontSize: 16,
             fontWeight: "600",
           }}

@@ -6,6 +6,7 @@ import {
   TextInputProps,
   View,
 } from "react-native";
+import { getElevation } from "../../theme";
 import { useAppTheme } from "../../theme/useAppTheme";
 
 type Props = TextInputProps & {
@@ -38,24 +39,28 @@ export const Input = ({ label, rightIcon, ...props }: Props) => {
 };
 
 function createStyles(theme: ReturnType<typeof useAppTheme>) {
+  const elevation = getElevation(theme);
+
   return StyleSheet.create({
     wrapper: {
       width: "100%",
     },
 
     label: {
-      color: theme.textMuted,
+      color: theme.inputLabel,
       fontSize: 11,
-      marginBottom: 6,
-      letterSpacing: 0.6,
+      fontWeight: "700",
+      marginBottom: 7,
+      letterSpacing: 0.8,
+      textTransform: "uppercase",
     },
 
     inputContainer: {
       flexDirection: "row",
       alignItems: "center",
 
-      backgroundColor: theme.glass,
-      borderRadius: 14,
+      backgroundColor: theme.surfaceAlt,
+      borderRadius: 16,
       paddingHorizontal: 14,
 
       borderWidth: 1,
@@ -64,9 +69,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
 
     inputFocused: {
       borderColor: theme.secondary,
-      shadowColor: theme.primary,
-      shadowOpacity: 0.4,
-      shadowRadius: 10,
+      ...elevation.subtle,
     },
 
     input: {
