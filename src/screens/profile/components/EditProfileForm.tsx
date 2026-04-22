@@ -22,6 +22,8 @@ interface EditProfileFormProps {
   setRoleModal: (open: boolean) => void;
   setDraft: (draft: any) => void;
   email?: string;
+  isCustomRole: boolean;
+  setIsCustomRole: (v: boolean) => void;
 }
 
 export function EditProfileForm({
@@ -30,11 +32,16 @@ export function EditProfileForm({
   setRoleModal,
   setDraft,
   email,
+  isCustomRole,
+  setIsCustomRole,
 }: EditProfileFormProps) {
   const theme = useAppTheme();
   const styles = createProfileStyles(theme);
-  const isCustomRole = draft.role && !PREDEFINED_ROLES.includes(draft.role);
-  const [showCustomInput, setShowCustomInput] = useState(isCustomRole);
+  const [customRoleTouched, setCustomRoleTouched] = useState(false);
+  const showCustomInput = isCustomRole;
+  const customRoleError = showCustomInput && customRoleTouched && !draft.role?.trim()
+    ? "Please enter your target role"
+    : undefined;
 
   return (
     <View style={{ marginBottom: 24, gap: 14 }}>
@@ -76,16 +83,30 @@ export function EditProfileForm({
         </Text>
       </TouchableOpacity>
       {showCustomInput && (
-        <TextInput
-          style={styles.inputBase}
-          placeholder="Enter your target role"
-          placeholderTextColor={theme.placeholder}
-          value={isCustomRole ? draft.role : ""}
-          onChangeText={(t) => setDraft((d: any) => ({ ...d, role: t }))}
-          autoCapitalize="words"
-          returnKeyType="done"
-          accessibilityLabel="Custom role input"
-        />
+        <View>
+          <TextInput
+            style={[
+              styles.inputBase,
+              customRoleError ? { borderColor: theme.danger, borderWidth: 1.5 } : undefined,
+            ]}
+            placeholder="Enter your target role"
+            placeholderTextColor={theme.placeholder}
+            value={isCustomRole ? draft.role : ""}
+            onChangeText={(t) => {
+              setCustomRoleTouched(true);
+              setDraft((d: any) => ({ ...d, role: t }));
+            }}
+            onBlur={() => setCustomRoleTouched(true)}
+            autoCapitalize="words"
+            returnKeyType="done"
+            accessibilityLabel="Custom role input"
+          />
+          {customRoleError ? (
+            <Text style={{ color: theme.danger, fontSize: 12, marginTop: 4, marginLeft: 2 }}>
+              {customRoleError}
+            </Text>
+          ) : null}
+        </View>
       )}
       <Modal
         visible={roleModal}
@@ -111,10 +132,11 @@ export function EditProfileForm({
                     style={[styles.modalRow, selected && styles.modalRowActive]}
                     onPress={() => {
                       if (isOther) {
-                        setShowCustomInput(true);
+                        setIsCustomRole(true);
+                        setCustomRoleTouched(false);
                         setDraft((d: any) => ({ ...d, role: "" }));
                       } else {
-                        setShowCustomInput(false);
+                        setIsCustomRole(false);
                         setDraft((d: any) => ({ ...d, role: item }));
                       }
                       setRoleModal(false);

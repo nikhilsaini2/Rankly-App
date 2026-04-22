@@ -29,10 +29,11 @@ export function validateStep(step: number, formData: any): Record<string, string
     }
     case 3: {
       if (formData.experienceLevel !== 'Fresher') {
-        const first = formData.experiences?.[0];
-        if (!first?.jobTitle?.trim()) errors['experiences[0].jobTitle'] = 'Job title is required';
-        if (!first?.company?.trim()) errors['experiences[0].company'] = 'Company name is required';
-        if (!first?.duration?.trim()) errors['experiences[0].duration'] = 'Duration is required';
+        (formData.experiences ?? []).forEach((exp: any, i: number) => {
+          if (!exp?.jobTitle?.trim()) errors[`experiences[${i}].jobTitle`] = 'Job title is required';
+          if (!exp?.company?.trim()) errors[`experiences[${i}].company`] = 'Company name is required';
+          if (!exp?.duration?.trim()) errors[`experiences[${i}].duration`] = 'Duration is required';
+        });
       }
       break;
     }

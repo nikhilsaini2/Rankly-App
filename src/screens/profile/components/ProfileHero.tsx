@@ -113,7 +113,7 @@ export function ProfileHero({
         ) : null}
 
         {!editing && (
-          <View style={styles.heroActionRow}>
+          <View style={[styles.heroActionRow, { justifyContent: "center" }]}>
             <TouchableOpacity
               onPress={onEditPress}
               style={styles.heroEditProfileBtn}
@@ -122,16 +122,6 @@ export function ProfileHero({
             >
               <Feather name="edit-3" size={14} color={theme.primary} />
               <Text style={styles.heroEditProfileText}>Edit Profile</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={onManagePlanPress}
-              style={styles.heroManagePlanBtn}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-            >
-              <Feather name="star" size={14} color={theme.warning} />
-              <Text style={styles.heroManagePlanText}>Plan & Usage</Text>
             </TouchableOpacity>
           </View>
         )}

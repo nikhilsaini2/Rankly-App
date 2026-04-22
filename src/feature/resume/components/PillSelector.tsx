@@ -26,7 +26,7 @@ export const PillSelector: React.FC<PillSelectorProps> = ({
       {label && (
         <Text style={resumeStyles.fieldLabel}>
           {label}
-          {required && <Text style={{ color: theme.error }}> *</Text>}
+          {required && <Text style={{ color: theme.accent }}> *</Text>}
         </Text>
       )}
       <View style={resumeStyles.pillGrid}>

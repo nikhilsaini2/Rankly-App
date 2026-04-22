@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../../../theme/useAppTheme";
 import { createResumeStyles } from "../styles/resume.styles";
@@ -144,8 +144,22 @@ export const ResumeRenderer = memo(function ResumeRenderer({
       )}
 
       {onAction && (
-        <TouchableOpacity style={[resumeStyles.previewPrimaryButton, processing && { opacity: 0.6 }]} onPress={onAction} disabled={processing}>
-          <Text style={resumeStyles.primaryButtonText}>{processing ? "Processing..." : actionLabel}</Text>
+        <TouchableOpacity 
+          style={[resumeStyles.previewPrimaryButton, processing && { opacity: 0.6 }]} 
+          onPress={onAction} 
+          disabled={processing}
+          accessibilityRole="button"
+          accessibilityLabel={processing ? "Preparing PDF" : actionLabel}
+          accessibilityState={{ disabled: processing }}
+        >
+          {processing ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <ActivityIndicator size="small" color={theme.onPrimary} />
+              <Text style={resumeStyles.primaryButtonText}>Preparing PDF...</Text>
+            </View>
+          ) : (
+            <Text style={resumeStyles.primaryButtonText}>{actionLabel}</Text>
+          )}
         </TouchableOpacity>
       )}
 

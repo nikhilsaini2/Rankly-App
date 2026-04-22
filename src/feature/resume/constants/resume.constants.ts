@@ -106,6 +106,9 @@ export const REQUIRED_FIELDS: Record<string, boolean> = {
   'exp.jobTitle': true,
   'exp.company': true,
   'exp.duration': true,
+  jobTitle: true,
+  company: true,
+  duration: true,
   // Step 4
   degree: true,
   institution: true,

@@ -51,7 +51,7 @@ export function SettingsCard({
         </View>
       </TouchableOpacity>
 
-      <View style={styles.settingsDivider} />
+      {/* <View style={styles.settingsDivider} />
 
       <TouchableOpacity activeOpacity={0.9} onPress={onManagePlanPress}>
         <View style={styles.settingsRow}>
@@ -66,7 +66,7 @@ export function SettingsCard({
           <Text style={styles.settingsLabel}>Plan & Usage</Text>
           <Feather name="chevron-right" size={16} color={theme.textSecondary} />
         </View>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       <View style={styles.settingsDivider} />
 

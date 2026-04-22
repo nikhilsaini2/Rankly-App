@@ -92,7 +92,10 @@ export function useResumeEngine() {
           version: DRAFT_VERSION,
           lastSaved: Date.now(),
         };
-        await AsyncStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+        // Only persist if there's meaningful content — prevents saving empty initial state
+        if (isDraftMeaningful(draft)) {
+          await AsyncStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+        }
       } catch (err) {
         console.warn("[ResumeEngine] Failed to persist draft", err);
       }
@@ -181,14 +184,20 @@ export function useResumeEngine() {
     return Object.keys(errors).length === 0;
   }, []);
 
+  const canProceedReactive = useCallback((): boolean => {
+    const { currentStep, formData } = state;
+    const errors = validateStep(currentStep, formData);
+    return Object.keys(errors).length === 0;
+  }, [state]);
+
   const handleNext = useCallback(() => {
-    if (!checkCanProceed()) return;
+    if (!canProceedReactive()) return;
     if (stateRef.current.currentStep < 5) {
       dispatch({ type: "SET_STEP", step: stateRef.current.currentStep + 1 });
     } else {
       buildResume();
     }
-  }, [checkCanProceed]);
+  }, [canProceedReactive]);
 
   const handleBack = useCallback((navigationGoBack: () => void) => {
     if (stateRef.current.currentStep > 1) {
@@ -257,6 +266,9 @@ export function useResumeEngine() {
         console.warn("[ResumeEngine] Failed to save resume to history", err);
         // Non-fatal — generation still completes normally
       }
+
+      // Clear draft — resume was successfully generated, no need to restore
+      try { await AsyncStorage.removeItem(DRAFT_STORAGE_KEY); } catch {}
 
       dispatch({ type: "GENERATE_SUCCESS", generatedResume: sanitized });
     } catch (err: any) {
@@ -344,7 +356,7 @@ export function useResumeEngine() {
 
   // ── Single unified action: export (if needed) then share ─────────────────
   // Execution lock prevents double-taps. PDF is cached — no re-generation.
-  const exportAndShare = useCallback(async (onSuccess?: () => void) => {
+  const exportAndShare = useCallback(async (onSuccess?: () => void, onError?: (msg: string) => void) => {
     if (isExportingRef.current) return;
 
     const existingUri = stateRef.current.pdfUri;
@@ -414,10 +426,15 @@ export function useResumeEngine() {
         dialogTitle: "Share Resume",
       });
     } catch {
-      dispatch({
-        type: "SET_ERROR",
-        error: { message: "Could not export PDF.", type: "server", retryAction: "export" },
-      });
+      if (onError) {
+        onError("Could not export PDF. Please try again.");
+        dispatch({ type: "ABORT_ASYNC" });
+      } else {
+        dispatch({
+          type: "SET_ERROR",
+          error: { message: "Could not export PDF.", type: "server", retryAction: "export" },
+        });
+      }
     } finally {
       isExportingRef.current = false;
     }
@@ -504,6 +521,6 @@ export function useResumeEngine() {
     restoreDraft,
     peekDraft,
     applyDraft,
-    canProceed: checkCanProceed,
+    canProceed: canProceedReactive,
   };
 }
