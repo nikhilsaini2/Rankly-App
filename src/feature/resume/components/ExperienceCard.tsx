@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { memo } from "react";
+import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { useAppTheme } from "../../../theme/useAppTheme";
 import { createResumeStyles } from "../styles/resume.styles";
@@ -12,13 +12,20 @@ interface ExperienceCardProps {
   showDelete: boolean;
   onUpdate: (field: keyof WorkExperience, value: string) => void;
   onDelete: () => void;
+  onBlur?: (field: keyof WorkExperience) => void;
+  errors?: Record<string, string>;
+  fieldsRequired?: boolean;
 }
 
-export const ExperienceCard: React.FC<ExperienceCardProps> = memo(({
-  experience, index, showDelete, onUpdate, onDelete,
+export const ExperienceCard: React.FC<ExperienceCardProps> = ({
+  experience, index, showDelete, onUpdate, onDelete, onBlur, errors = {}, fieldsRequired = true,
 }) => {
   const theme = useAppTheme();
   const resumeStyles = createResumeStyles(theme);
+
+  const jobTitleError = errors[`experiences[${index}].jobTitle`];
+  const companyError = errors[`experiences[${index}].company`];
+  const durationError = errors[`experiences[${index}].duration`];
 
   return (
     <View style={resumeStyles.expCard}>
@@ -42,11 +49,11 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = memo(({
         )}
       </View>
 
-      <FieldInput label="Job Title" icon="briefcase-outline" required value={experience.jobTitle} onChangeText={(v) => onUpdate("jobTitle", v)} placeholder="e.g. Senior Software Engineer" accessibilityLabel="Job title" />
-      <FieldInput label="Company Name" icon="business-outline" required value={experience.company} onChangeText={(v) => onUpdate("company", v)} placeholder="e.g. Google, Microsoft" accessibilityLabel="Company name" />
-      <FieldInput label="Duration" icon="calendar-outline" required value={experience.duration} onChangeText={(v) => onUpdate("duration", v)} placeholder="e.g. Jan 2022 – Mar 2024" accessibilityLabel="Employment duration" />
-      <FieldInput label="Key Achievement 1" icon="checkmark-circle-outline" value={experience.achievement1} onChangeText={(v) => onUpdate("achievement1", v)} placeholder="e.g. Led team of 5 engineers..." accessibilityLabel="Key achievement one" />
-      <FieldInput label="Key Achievement 2" icon="checkmark-circle-outline" value={experience.achievement2} onChangeText={(v) => onUpdate("achievement2", v)} placeholder="e.g. Increased revenue by 30%..." accessibilityLabel="Key achievement two" />
+      <FieldInput label="Job Title" icon="briefcase-outline" required={fieldsRequired} value={experience.jobTitle} onChangeText={(v) => onUpdate("jobTitle", v)} onBlur={() => onBlur?.("jobTitle")} placeholder="Senior Software Engineer" accessibilityLabel="Job title" hasError={!!jobTitleError} errorMessage={jobTitleError} />
+      <FieldInput label="Company Name" icon="business-outline" required={fieldsRequired} value={experience.company} onChangeText={(v) => onUpdate("company", v)} onBlur={() => onBlur?.("company")} placeholder="Google, Microsoft" accessibilityLabel="Company name" hasError={!!companyError} errorMessage={companyError} />
+      <FieldInput label="Duration" icon="calendar-outline" required={fieldsRequired} value={experience.duration} onChangeText={(v) => onUpdate("duration", v)} onBlur={() => onBlur?.("duration")} placeholder="Jan 2022 – Mar 2024" accessibilityLabel="Employment duration" hasError={!!durationError} errorMessage={durationError} />
+      <FieldInput label="Key Achievement 1" icon="checkmark-circle-outline" value={experience.achievement1} onChangeText={(v) => onUpdate("achievement1", v)} placeholder="Led team of 5 engineers..." accessibilityLabel="Key achievement one" />
+      <FieldInput label="Key Achievement 2" icon="checkmark-circle-outline" value={experience.achievement2} onChangeText={(v) => onUpdate("achievement2", v)} placeholder="Increased revenue by 30%..." accessibilityLabel="Key achievement two" />
     </View>
   );
-});
+};

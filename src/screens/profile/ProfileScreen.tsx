@@ -2,7 +2,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { NavigationProp } from "@react-navigation/native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -24,8 +30,10 @@ import {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useDispatch } from "react-redux";
 import { useToast } from "../../components/atoms/Toast";
 import { NOTIF_STORAGE_KEY } from "../../constants/content";
+import { roles } from "../../constants/all";
 import type { ResumeHistoryItem } from "../../feature/resume/types/resume.types";
 import { useProfile } from "../../hooks";
 import { useProfileStats } from "../../hooks/useProfileStats";
@@ -35,7 +43,6 @@ import {
   UserProfileUpdate,
 } from "../../services/profile/profileService";
 import { supabase } from "../../services/supabase/supabase";
-import { useDispatch } from "react-redux";
 import { toggleTheme } from "../../store/themeSlice";
 import { useAppTheme } from "../../theme/useAppTheme";
 import type { User } from "../../types/common.types";
@@ -118,6 +125,7 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<UserProfileUpdate>({});
   const [initialDraft, setInitialDraft] = useState<UserProfileUpdate>({});
+  const [isCustomRole, setIsCustomRole] = useState(false);
 
   // Normalize before comparison to avoid false dirty on whitespace
   const normalizeDraft = (d: UserProfileUpdate): UserProfileUpdate => ({
@@ -131,10 +139,14 @@ export default function ProfileScreen() {
   });
 
   const isDirty = useMemo(
-    () =>
-      JSON.stringify(normalizeDraft(draft)) !==
-      JSON.stringify(normalizeDraft(initialDraft)),
-    [draft, initialDraft],
+    () => {
+      if (isCustomRole && !draft.role?.trim()) return false;
+      return (
+        JSON.stringify(normalizeDraft(draft)) !==
+        JSON.stringify(normalizeDraft(initialDraft))
+      );
+    },
+    [draft, initialDraft, isCustomRole],
   );
   const [notif, setNotif] = useState(false);
   const [statsDisplay, setStatsDisplay] = useState({
@@ -186,6 +198,8 @@ export default function ProfileScreen() {
       industry: u.industry ?? "",
       linkedinUrl: u.linkedinUrl ?? "",
     };
+    const isPredefined = roles.filter((r) => r !== "Other").includes(u.role ?? "");
+    setIsCustomRole(!isPredefined && !!u.role);
     setDraft(snapshot);
     setInitialDraft(snapshot);
     setEditing(true);
@@ -270,20 +284,17 @@ export default function ProfileScreen() {
     await AsyncStorage.setItem(NOTIF_STORAGE_KEY, v ? "1" : "0");
   }
 
-  const statsDidAnimate = useSharedValue(0);
   const sResumes = useSharedValue(0);
   const sBest = useSharedValue(0);
   const sInterviews = useSharedValue(0);
 
   useEffect(() => {
-    if (statsDidAnimate.value === 1) return;
     const hasReal =
       stats.resumes > 0 || stats.bestAts > 0 || stats.interviews > 0;
     if (!hasReal) {
       setStatsDisplay(stats);
       return;
     }
-    statsDidAnimate.value = 1;
     sResumes.value = withTiming(stats.resumes, {
       duration: 800,
       easing: Easing.out(Easing.cubic),
@@ -374,7 +385,7 @@ export default function ProfileScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      // behavior={Platform.OS === "ios" ? "height" : "padding"}
       keyboardVerticalOffset={Platform.OS === "android" ? 80 : 0}
     >
       <View style={[profileStyles.root]}>
@@ -384,7 +395,9 @@ export default function ProfileScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             profileStyles.scrollContent,
-            { paddingBottom: editing ? insets.bottom + 100 : insets.bottom + 40 },
+            {
+              paddingBottom: editing ? insets.bottom + 100 : insets.bottom + 40,
+            },
           ]}
         >
           <ProfileHero
@@ -409,6 +422,8 @@ export default function ProfileScreen() {
               setRoleModal={setRoleModal}
               setDraft={setDraft}
               email={user?.email ?? ""}
+              isCustomRole={isCustomRole}
+              setIsCustomRole={setIsCustomRole}
             />
           ) : (
             <>
@@ -433,12 +448,7 @@ export default function ProfileScreen() {
         </ScrollView>
 
         {editing && (
-          <View
-            style={[
-              profileStyles.editActionBar,
-              { paddingBottom: insets.bottom + 12 },
-            ]}
-          >
+          <View style={profileStyles.editActionBar}>
             <TouchableOpacity
               onPress={cancelEdit}
               style={profileStyles.editCancelBtn}

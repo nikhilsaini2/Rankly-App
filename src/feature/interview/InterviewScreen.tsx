@@ -24,6 +24,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { PressableScale } from "../../components/atoms/PressableScale";
 import { ScoreRing } from "../../components/atoms/ScoreRing";
+import { useToast } from "../../components/atoms/Toast";
 import { useAIChatIntegration } from "../../hooks/useAIChatIntegration";
 import { useAppTheme } from "../../theme/useAppTheme";
 import { getInterviewResultMessage, scoreTierColor } from "../../utils/score";
@@ -407,6 +408,16 @@ export function InterviewScreen({
   engineRef.current = engine;
 
   const { sendInterviewContext } = useAIChatIntegration(engine.answers);
+  const toast = useToast();
+
+  // Show toast on error and auto-reset to idle so user can try again
+  useEffect(() => {
+    if (!engine.error) return;
+    toast(engine.error, "error");
+    // Reset back to idle after a short delay so the toast is visible
+    const t = setTimeout(() => engineRef.current.resetSession(), 100);
+    return () => clearTimeout(t);
+  }, [engine.error]);
 
   const [savedSession, setSavedSession] = useState<PersistedSession | null>(
     null,
@@ -737,18 +748,6 @@ export function InterviewScreen({
         )}
       </ScrollView>
 
-      {engine.error && (
-        <View style={s.errorOverlay}>
-          <View style={s.errorCard}>
-            <Ionicons name="warning" size={48} color={theme.error} />
-            <Text style={s.errorTitle}>Interview Error</Text>
-            <Text style={s.errorMessage}>{engine.error}</Text>
-            <TouchableOpacity style={s.errorBtn} onPress={handleReset}>
-              <Text style={s.errorBtnText}>Try Again</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
 
       {engine.isLoading && engine.phase === "processing" && (
         <View style={s.loadingOverlay}>

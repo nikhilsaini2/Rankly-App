@@ -64,7 +64,7 @@ export function StatsRow({
             size={18}
             color={theme.primary}
           />
-          <Text style={styles.statVal}>{`${resumeCount}`}</Text>
+          <Text style={styles.statVal}>{resumeCount === 0 ? "—" : `${resumeCount}`}</Text>
           <Text style={styles.statLab}>Resumes</Text>
         </View>
       </View>
@@ -72,7 +72,7 @@ export function StatsRow({
       <View style={styles.statPress}>
         <View style={styles.statCard}>
           <Ionicons name="mic-outline" size={18} color={theme.primary} />
-          <Text style={styles.statVal}>{`${sessionCount}`}</Text>
+          <Text style={styles.statVal}>{sessionCount === 0 ? "—" : `${sessionCount}`}</Text>
           <Text style={styles.statLab}>Sessions</Text>
         </View>
       </View>
