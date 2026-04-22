@@ -30,11 +30,10 @@ const AppProviders = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function App() {
-  // Set initial nav bar icon style and background for dark theme (default) before Redux hydrates
+  // Set initial nav bar icon style for dark theme (default) before Redux hydrates
   useEffect(() => {
     if (Platform.OS === "android") {
       NavigationBar.setStyle("light");
-      NavigationBar.setBackgroundColorAsync("#0A0812");
     }
   }, []);
 
