@@ -3,8 +3,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import * as NavigationBar from "expo-navigation-bar";
 import { useEffect } from "react";
 import { Platform } from "react-native";
-import { Provider } from "react-redux";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { Provider } from "react-redux";
 import { ToastProvider } from "./src/components/atoms/Toast";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
 import { GlobalBackground } from "./src/components/GlobalBackground";
@@ -20,20 +20,21 @@ GoogleSignin.configure({
 const AppProviders = ({ children }: { children: React.ReactNode }) => (
   <Provider store={store}>
     {/* ThemePersistence: loads/saves theme to AsyncStorage */}
-    <ThemePersistence />
-    {/* SystemBarsManager: keeps status bar + nav bar in sync with theme */}
-    <SystemBarsManager />
     <SafeAreaProvider>
+      <ThemePersistence />
+      {/* SystemBarsManager: keeps status bar + nav bar in sync with theme */}
+      <SystemBarsManager />
       <ToastProvider>{children}</ToastProvider>
     </SafeAreaProvider>
   </Provider>
 );
 
 export default function App() {
-  // Set initial nav bar icon style for dark theme (default) before Redux hydrates
+  // Set initial nav bar icon style and background for dark theme (default) before Redux hydrates
   useEffect(() => {
     if (Platform.OS === "android") {
       NavigationBar.setStyle("light");
+      NavigationBar.setBackgroundColorAsync("#0A0812");
     }
   }, []);
 

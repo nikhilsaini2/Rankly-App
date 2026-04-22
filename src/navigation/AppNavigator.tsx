@@ -36,8 +36,7 @@ export const AppNavigator = () => {
         component={SalaryNegotiationScreen}
         options={{
           headerShown: false,
-          // fullScreenModal on iOS, slide_from_bottom on Android to prevent tab bar flicker
-          presentation: Platform.OS === "ios" ? "fullScreenModal" : "card",
+          presentation: "fullScreenModal",
           animation: "slide_from_bottom",
         }}
       />

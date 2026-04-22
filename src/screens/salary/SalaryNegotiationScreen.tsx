@@ -30,7 +30,7 @@ import { supabase } from "../../services/supabase";
 import { getElevation } from "../../theme";
 import { useAppTheme } from "../../theme/useAppTheme";
 import { handleGeminiError, parseGeminiJson } from "../../utils/gemini";
-import LocationAutocomplete, { PlaceSelection } from "../../components/molecules/LocationAutocomplete";
+
 interface SalaryAnalysis {
   verdict: "Below Market" | "Fair Offer" | "Above Market";
   marketMin: number;
@@ -132,8 +132,9 @@ export default function SalaryNegotiationScreen() {
   const [currency, setCurrency] = useState<"USD" | "INR" | "EUR">("USD");
   const [experience, setExperience] = useState("0-1 yrs");
   const [jobType, setJobType] = useState<"Full Time" | "Remote">("Full Time");
-  const [location, setLocation] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState<PlaceSelection | null>(null);
+  const [jobTier, setJobTier] = useState<"Tier 1" | "Tier 2" | "Tier 3">(
+    "Tier 2",
+  );
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
   const [analysis, setAnalysis] = useState<SalaryAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -271,7 +272,7 @@ export default function SalaryNegotiationScreen() {
           offered_salary: Number(offeredSalary),
           currency,
           experience,
-          location: selectedLocation?.description || location || null,
+          location: jobTier,
           industries: selectedIndustries,
           verdict: data.verdict,
           market_min: data.marketMin,
@@ -365,60 +366,106 @@ export default function SalaryNegotiationScreen() {
     setPhase("loading");
     setSaveError(null); // clear save error, not analysis error
 
-    // Derive market context from currency when location is not provided
-    const locationName = selectedLocation?.description || location || "";
-    const marketContext = locationName
-      ? locationName
-      : currency === "INR"
-        ? "India (assume Tier-1 city like Bangalore/Mumbai/Delhi)"
-        : currency === "EUR"
-          ? "Europe (assume Western Europe average)"
-          : "United States";
+    // Derive market context from job tier
+    const tierContext =
+      jobTier === "Tier 1"
+        ? currency === "INR"
+          ? "India Tier-1 city (Bangalore, Mumbai, Delhi, Hyderabad, Pune)"
+          : currency === "EUR"
+            ? "Western Europe major city (London, Berlin, Paris, Amsterdam)"
+            : "Major US metro (San Francisco, New York, Seattle, Boston)"
+        : jobTier === "Tier 3"
+          ? currency === "INR"
+            ? "India Tier-3 city (smaller cities, lower cost of living)"
+            : currency === "EUR"
+              ? "Eastern Europe or smaller European city"
+              : "Smaller US city or rural area"
+          : currency === "INR"
+            ? "India Tier-2 city (Jaipur, Ahmedabad, Kochi, Chandigarh, Indore)"
+            : currency === "EUR"
+              ? "Mid-size European city (average European market)"
+              : "Mid-size US city (Austin, Denver, Chicago, Atlanta)";
+
+    const marketContext = tierContext;
 
     const currencyContext =
       currency === "INR"
-        ? "Indian Rupees (INR). Use Indian salary benchmarks — typical ranges in India are ₹3L–₹50L per annum for most roles. Do NOT convert from USD."
+        ? "Indian Rupees (INR). Use Indian salary benchmarks. Do NOT convert from USD."
         : currency === "EUR"
           ? "Euros (EUR). Use European salary benchmarks."
           : "US Dollars (USD). Use United States salary benchmarks.";
 
-    const prompt = `Salary negotiation coach. Analyze this offer and return ONLY a JSON object, no markdown, no extra text.
+    // Step 1: Ask AI for PURE market data — do NOT send the offer amount.
+    // This prevents the AI from anchoring its range around the user's offer.
+    const marketDataPrompt = `You are a salary data expert. Return ONLY a JSON object with real market salary data. No markdown, no extra text.
 
-Job: ${jobTitle} | Company: ${company || "N/A"} | Offer: ${offeredSalary} ${currency} | Exp: ${experience} | Type: ${jobType} | Location: ${marketContext} | Industry: ${selectedIndustries.join(", ") || "General"}
+Role: ${jobTitle}
+Experience: ${experience}
+Job Type: ${jobType}
+Location: ${marketContext}
+${company ? `Company: ${company}` : ""}
+Industry: ${selectedIndustries.join(", ") || "General"}
+Currency: ${currency}
+
+Return the realistic market salary range for this role in ${currency}. Use actual market data for ${marketContext}.
+
+JSON format:
+{"marketMin":<number>,"marketMedian":<number>,"marketMax":<number>,"leveragePoints":["<p1>","<p2>","<p3>"],"negotiationScript":"<1 short paragraph>","emailTemplate":"<subject + 2 sentence email>","tactics":["<t1>","<t2>","<t3>"]}
 
 Rules:
-1. All numbers in ${currency} using ${marketContext} local market data only.
-2. INR benchmarks: ₹3L–₹50L/yr. USD: $50K–$250K/yr. EUR: €30K–€150K/yr.
-3. verdict must match percentageDiff: >5%=Above Market, <-5%=Below Market, else=Fair Offer.
-4. suggestedAsk must be >= offered salary always.
-
-Return JSON:
-{"verdict":"Below Market"|"Fair Offer"|"Above Market","marketMin":<n>,"marketMedian":<n>,"marketMax":<n>,"percentageDiff":<n>,"suggestedAsk":<n>,"leveragePoints":["<p1>","<p2>","<p3>"],"negotiationScript":"<1 short paragraph>","emailTemplate":"<subject + 2 sentence email>","tactics":["<t1>","<t2>","<t3>"]}`;
+- All numbers must be annual salary in ${currency} only
+- marketMin < marketMedian < marketMax always
+- marketMedian must be the realistic midpoint for this exact role and experience
+- Do NOT anchor ranges to any specific number — use real market data only`;
 
     try {
-      setError(null); // clear analysis error right before Gemini call
-      const raw = await generateGeminiText(prompt);
-      const parsed = parseGeminiJson<SalaryAnalysis>(raw);
-      if (!parsed) throw new Error("Invalid response");
+      setError(null);
+      const raw = await generateGeminiText(marketDataPrompt);
+      const marketData =
+        parseGeminiJson<
+          Omit<SalaryAnalysis, "verdict" | "percentageDiff" | "suggestedAsk">
+        >(raw);
+      if (!marketData) throw new Error("Invalid response");
 
-      // Client-side safety: derive verdict from percentageDiff to prevent contradictions
-      const diff = parsed.percentageDiff;
-      if (diff > 5 && parsed.verdict !== "Above Market") {
-        parsed.verdict = "Above Market";
-      } else if (diff < -5 && parsed.verdict !== "Below Market") {
-        parsed.verdict = "Below Market";
-      } else if (diff >= -5 && diff <= 5 && parsed.verdict !== "Fair Offer") {
-        parsed.verdict = "Fair Offer";
-      }
-
-      // Client-side safety: suggestedAsk must never be lower than the offered salary
       const offeredNum = Number(offeredSalary);
-      if (parsed.suggestedAsk < offeredNum) {
-        // If above market, hold at offered; otherwise push 10–15% above offered
-        parsed.suggestedAsk = parsed.verdict === "Above Market"
-          ? offeredNum
-          : Math.round(offeredNum * 1.12);
+      const median = marketData.marketMedian;
+
+      // Step 2: Compute verdict + percentageDiff + suggestedAsk client-side
+      // This is 100% accurate since we control the logic, not the AI
+      const percentageDiff = Math.round(((offeredNum - median) / median) * 100);
+
+      let verdict: SalaryAnalysis["verdict"];
+      let suggestedAsk: number;
+
+      if (percentageDiff > 5) {
+        // Above market — ask 5% more on top of the offer
+        verdict = "Above Market";
+        suggestedAsk = Math.round(offeredNum * 1.1);
+      } else if (percentageDiff < -5) {
+        // Below market — ask up to the market median or 15% above offer, whichever is higher
+        verdict = "Below Market";
+        suggestedAsk = Math.max(
+          Math.round(offeredNum * 1.15),
+          Math.round(median * 0.95),
+        );
+      } else {
+        // Fair offer — ask 8% above offer to negotiate to a good number
+        verdict = "Fair Offer";
+        suggestedAsk = Math.round(offeredNum * 1.08);
       }
+
+      const parsed: SalaryAnalysis = {
+        verdict,
+        marketMin: marketData.marketMin,
+        marketMedian: marketData.marketMedian,
+        marketMax: marketData.marketMax,
+        percentageDiff,
+        suggestedAsk,
+        leveragePoints: marketData.leveragePoints,
+        negotiationScript: marketData.negotiationScript,
+        emailTemplate: marketData.emailTemplate,
+        tactics: marketData.tactics,
+      };
 
       await saveToHistory(parsed);
       setAnalysis(parsed);
@@ -433,12 +480,14 @@ Return JSON:
 
   const formatSalary = (amount: number, cur: string): string => {
     if (cur === "INR") {
+      if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)}Cr`;
       if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`;
       return `₹${amount.toLocaleString()}`;
     }
-    if (cur === "EUR") return `€${amount.toLocaleString()}`;
-    if (amount >= 1000) return `$${(amount / 1000).toFixed(0)}K`;
-    return `$${amount.toLocaleString()}`;
+    const symbol = cur === "EUR" ? "€" : "$";
+    if (amount >= 1000000) return `${symbol}${(amount / 1000000).toFixed(1)}M`;
+    if (amount >= 1000) return `${symbol}${(amount / 1000).toFixed(0)}K`;
+    return `${symbol}${amount.toLocaleString()}`;
   };
 
   const getVerdictColor = (verdict: string): string => {
@@ -473,11 +522,7 @@ Return JSON:
         <View style={styles.loadingContainer}>
           <View style={styles.loadingHeader}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Ionicons
-                name="arrow-back"
-                size={24}
-                color={theme.textPrimary}
-              />
+              <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
             </TouchableOpacity>
           </View>
           <Animated.View style={[styles.loadingIcon, pulseStyle]}>
@@ -495,9 +540,10 @@ Return JSON:
   if (phase === "results" && (analysis || selectedHistory)) {
     const currentData = (selectedHistory || analysis) as UnifiedSalaryData;
     const isHistoryView = !!selectedHistory;
-    const headerTitle = "job_title" in currentData
-      ? currentData.job_title
-      : jobTitle || "Salary Analysis";
+    const headerTitle =
+      "job_title" in currentData
+        ? currentData.job_title
+        : jobTitle || "Salary Analysis";
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -515,7 +561,9 @@ Return JSON:
           >
             <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle} numberOfLines={1}>{headerTitle}</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {headerTitle}
+          </Text>
           <View style={{ width: 24 }} />
         </View>
 
@@ -586,7 +634,13 @@ Return JSON:
           )}
 
           {/* Market Intelligence */}
-          <View style={[styles.resultCard, styles.resultCardSurface, styles.resultCardBorder]}>
+          <View
+            style={[
+              styles.resultCard,
+              styles.resultCardSurface,
+              styles.resultCardBorder,
+            ]}
+          >
             <Text style={styles.cardTitle}>📊 Market Data</Text>
             <View style={styles.statRow}>
               <Text style={styles.statLabel}>Market Minimum</Text>
@@ -620,7 +674,13 @@ Return JSON:
           </View>
 
           {/* Leverage Points */}
-          <View style={[styles.resultCard, styles.resultCardSurface, styles.resultCardBorder]}>
+          <View
+            style={[
+              styles.resultCard,
+              styles.resultCardSurface,
+              styles.resultCardBorder,
+            ]}
+          >
             <Text style={styles.cardTitle}>💪 Your Leverage</Text>
             {getLeveragePoints(currentData).map(
               (point: string, index: number) => (
@@ -633,7 +693,13 @@ Return JSON:
           </View>
 
           {/* Negotiation Script */}
-          <View style={[styles.resultCard, styles.resultCardSurface, styles.resultCardBorder]}>
+          <View
+            style={[
+              styles.resultCard,
+              styles.resultCardSurface,
+              styles.resultCardBorder,
+            ]}
+          >
             <Text style={styles.cardTitle}>🗣️ What to Say</Text>
             <View style={styles.codeBlock}>
               <Text style={styles.codeText}>
@@ -658,7 +724,13 @@ Return JSON:
           </View>
 
           {/* Email Template */}
-          <View style={[styles.resultCard, styles.resultCardSurface, styles.resultCardBorder]}>
+          <View
+            style={[
+              styles.resultCard,
+              styles.resultCardSurface,
+              styles.resultCardBorder,
+            ]}
+          >
             <Text style={styles.cardTitle}>📧 Counter-Offer Email</Text>
             <View style={styles.codeBlock}>
               <Text style={styles.codeText}>
@@ -683,7 +755,13 @@ Return JSON:
           </View>
 
           {/* Quick Tactics */}
-          <View style={[styles.resultCard, styles.resultCardSurface, styles.resultCardBorder]}>
+          <View
+            style={[
+              styles.resultCard,
+              styles.resultCardSurface,
+              styles.resultCardBorder,
+            ]}
+          >
             <Text style={styles.cardTitle}>⚡ Key Tactics</Text>
             {getTactics(currentData).map((tactic: string, index: number) => (
               <View key={index} style={styles.tacticCard}>
@@ -707,8 +785,7 @@ Return JSON:
                 setOfferedSalary("");
                 setExperience("0-1 yrs");
                 setJobType("Full Time");
-                setLocation("");
-                setSelectedLocation(null);
+                setJobTier("Tier 2");
                 setSelectedIndustries([]);
                 setAnalysis(null);
               }}
@@ -716,7 +793,6 @@ Return JSON:
               <Text style={styles.primaryButtonText}>Negotiate Again</Text>
             </TouchableOpacity>
           )}
-
         </ScrollView>
       </View>
     );
@@ -725,7 +801,6 @@ Return JSON:
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
     >
       <View style={styles.header}>
@@ -740,12 +815,10 @@ Return JSON:
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 40 },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 16 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
         <Text style={styles.subtitle}>
           Know your worth. Negotiate with confidence.
@@ -910,20 +983,37 @@ Return JSON:
               </View>
             </View>
 
-            {/* Location */}
-            <View style={[styles.inputCard, { zIndex: 999 }]}>
-              <Text style={styles.inputLabel}>Location (optional)</Text>
-              <LocationAutocomplete
-                value={location}
-                onSelect={(place) => {
-                  if (place) {
-                    setLocation(place.description);
-                    setSelectedLocation(place);
-                  } else {
-                    setSelectedLocation(null);
-                  }
-                }}
-              />
+            {/* Job Tier */}
+            <View style={styles.inputCard}>
+              <Text style={styles.inputLabel}>Job Location Tier</Text>
+              <View style={styles.pillRow}>
+                {(["Tier 1", "Tier 2", "Tier 3"] as const).map((tier) => (
+                  <TouchableOpacity
+                    key={tier}
+                    style={[
+                      styles.pill,
+                      jobTier === tier && styles.pillSelected,
+                    ]}
+                    onPress={() => setJobTier(tier)}
+                  >
+                    <Text
+                      style={[
+                        styles.pillText,
+                        jobTier === tier && styles.pillTextSelected,
+                      ]}
+                    >
+                      {tier}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={[styles.inputHint, { marginTop: 8 }]}>
+                {jobTier === "Tier 1"
+                  ? "Major metros (SF, NYC, Bangalore, London)"
+                  : jobTier === "Tier 3"
+                    ? "Smaller cities, lower cost of living"
+                    : "Mid-size cities (Austin, Pune, Berlin)"}
+              </Text>
             </View>
 
             {/* Industry */}
@@ -1020,7 +1110,8 @@ Return JSON:
                         </Text>
                       </View>
                       <Text style={styles.historyMeta}>
-                        {item.experience}{item.location ? ` • ${item.location}` : ""}
+                        {item.experience}
+                        {item.location ? ` • ${item.location}` : ""}
                       </Text>
                     </View>
                     <View style={styles.historyRight}>
@@ -1029,7 +1120,8 @@ Return JSON:
                           style={[
                             styles.verdictBadge,
                             {
-                              backgroundColor: getVerdictColor(item.verdict) + "20",
+                              backgroundColor:
+                                getVerdictColor(item.verdict) + "20",
                               borderColor: getVerdictColor(item.verdict) + "60",
                             },
                           ]}
@@ -1044,10 +1136,13 @@ Return JSON:
                           </Text>
                         </View>
                         <Text style={styles.historyDate}>
-                          {new Date(item.created_at).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}
+                          {new Date(item.created_at).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )}
                         </Text>
                       </View>
                       <TouchableOpacity
@@ -1077,533 +1172,542 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
   const isLight = theme.background === "#F3F4F8";
 
   return StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.background,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  headerBackButton: {
-    padding: 4,
-    zIndex: 1000,
-    alignSelf: "center",
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: theme.textPrimary,
-    position: "absolute",
-    left: 0,
-    right: 0,
-    textAlign: "center",
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: theme.textPrimary,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: theme.textSecondary,
-    marginBottom: 32,
-    textAlign: "center",
-  },
-  errorCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-    borderWidth: 1,
-    borderColor: isLight ? "rgba(239, 68, 68, 0.55)" : "rgba(239, 68, 68, 0.2)",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-  },
-  errorText: {
-    flex: 1,
-    fontSize: 14,
-    color: theme.danger,
-  },
-  inputCard: {
-    backgroundColor: theme.surface,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: theme.border,
-    padding: 16,
-    marginBottom: 16,
-    ...elevation.card,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: theme.textPrimary,
-    marginBottom: 12,
-  },
-  input: {
-    backgroundColor: theme.bgSecondary,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.border,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: theme.textPrimary,
-  },
-  inputError: {
-    borderColor: theme.danger,
-  },
-  fieldError: {
-    fontSize: 12,
-    color: theme.danger,
-    marginTop: 6,
-  },
-  currencyRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 12,
-  },
-  pillRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 12,
-  },
-  pill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: "transparent",
-  },
-  pillSelected: {
-    backgroundColor: theme.primary,
-    borderColor: theme.primary,
-  },
-  pillAccent: {
-    backgroundColor: theme.primary,
-    borderColor: theme.border,
-  },
-  pillText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: theme.textSecondary,
-  },
-  pillTextSelected: {
-    color: theme.onPrimary,
-  },
-  pillAccentText: {
-    color: theme.onPrimary,
-  },
-  submitButton: {
-    backgroundColor: theme.primary,
-    height: 56,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 24,
-  },
-  submitButtonDisabled: {
-    opacity: 0.5,
-  },
-  submitButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: theme.onPrimary,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 20,
-  },
-  loadingHeader: {
-    position: "absolute",
-    top: 25,
-    left: 20,
-    zIndex: 1,
-  },
-  loadingIcon: {
-    marginBottom: 32,
-  },
-  loadingTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: theme.textPrimary,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  loadingSubtitle: {
-    fontSize: 16,
-    color: theme.textSecondary,
-    textAlign: "center",
-  },
-  resultsScroll: {
-    flex: 1,
-  },
-  resultsContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  resultCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-  },
-  resultCardSurface: {
-    backgroundColor: theme.surface,
-    ...elevation.card,
-  },
-  resultCardBorder: {
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  verdictCard: {
-    borderWidth: 1,
-    shadowColor: "transparent",
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
-  },
-  verdictHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 12,
-  },
-  verdictTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  verdictRange: {
-    fontSize: 16,
-    color: theme.textPrimary,
-    marginBottom: 4,
-  },
-  verdictDiff: {
-    fontSize: 14,
-    color: theme.textSecondary,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: theme.textPrimary,
-    marginBottom: 16,
-  },
-  statRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: theme.textSecondary,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: theme.textPrimary,
-  },
-  highlight: {
-    color: theme.primary,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: theme.border,
-    marginHorizontal: -16,
-  },
-  bulletRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    marginBottom: 12,
-  },
-  bullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: theme.accent,
-    marginTop: 6,
-  },
-  bulletText: {
-    flex: 1,
-    fontSize: 14,
-    color: theme.textPrimary,
-    lineHeight: 20,
-  },
-  codeBlock: {
-    backgroundColor: theme.surfaceAlt,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.border,
-    padding: 16,
-    marginBottom: 12,
-  },
-  codeText: {
-    fontSize: 14,
-    color: theme.textPrimary,
-    lineHeight: 20,
-  },
-  copyButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: theme.surfaceAlt,
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  copyButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: theme.textPrimary,
-  },
-  tacticCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    marginBottom: 12,
-    paddingVertical: 8,
-  },
-  tacticNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: theme.accent,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tacticNumberText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: theme.onPrimary,
-  },
-  tacticText: {
-    flex: 1,
-    fontSize: 14,
-    color: theme.textPrimary,
-    lineHeight: 20,
-  },
-  primaryButton: {
-    backgroundColor: theme.primary,
-    height: 56,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-  },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: theme.onPrimary,
-  },
-  ghostButton: {
-    height: 56,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 12,
-  },
-  ghostButtonText: {
-    fontSize: 16,
-    color: theme.textSecondary,
-  },
-  tabBar: {
-    flexDirection: "row",
-    backgroundColor: theme.surface,
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: theme.border,
-    ...elevation.subtle,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  tabActive: {
-    backgroundColor: theme.primary,
-    borderColor: theme.primary,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: theme.textSecondary,
-  },
-  tabTextActive: {
-    color: theme.onPrimary,
-    fontWeight: "700",
-  },
-  refreshButton: {
-    marginLeft: 8,
-    padding: 4,
-  },
-  historyLoadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: theme.textSecondary,
-    marginTop: 16,
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: theme.textPrimary,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: theme.textSecondary,
-    textAlign: "center",
-  },
-  historyCard: {
-    backgroundColor: theme.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: theme.border,
-    padding: 14,
-    marginBottom: 10,
-    ...elevation.subtle,
-  },
-  historyCardContent: {
-    flexDirection: "row",
-  },
-  historyLeft: {
-    flex: 1,
-  },
-  historyRight: {
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    marginLeft: 8,
-  },
-  historyTopRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 8,
-  },
-  historyHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  historyJobTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: theme.textPrimary,
-    flex: 1,
-  },
-  verdictBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  verdictBadgeText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  historyCompany: {
-    fontSize: 12,
-    color: theme.textSecondary,
-    marginBottom: 4,
-  },
-  historySalaryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-    gap: 6,
-  },
-  historySalary: {
-    fontSize: 14,
-    color: theme.textPrimary,
-    lineHeight: 20,
-  },
-  historySalaryArrow: {
-    fontSize: 14,
-    color: theme.textPrimary,
-    lineHeight: 20,
-    marginTop: -2,
-  },
-  historyAsk: {
-    fontSize: 14,
-    color: theme.accent,
-    fontWeight: "600",
-    lineHeight: 20,
-  },
-  historyMeta: {
-    fontSize: 11,
-    color: theme.textSecondary,
-  },
-  historyDate: {
-    fontSize: 12,
-    color: theme.textSecondary,
-  },
-  deleteButton: {
-    padding: 4,
-  },
-  backToHistoryBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: theme.surface,
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: theme.border,
-    ...elevation.subtle,
-  },
-  backToHistoryText: {
-    fontSize: 14,
-    color: theme.textSecondary,
-    marginLeft: 8,
-  },
-  warningCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "rgba(255,209,102,0.1)",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: isLight ? "rgba(255,209,102,0.55)" : "rgba(255,209,102,0.2)",
-    padding: 12,
-    marginBottom: 12,
-  },
-  warningText: {
-    fontSize: 13,
-    color: "#FFD166",
-    flex: 1,
-  },
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 8,
+    },
+    headerBackButton: {
+      padding: 4,
+      zIndex: 1000,
+      alignSelf: "center",
+    },
+    headerTitle: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: theme.textPrimary,
+      position: "absolute",
+      left: 0,
+      right: 0,
+      textAlign: "center",
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      paddingHorizontal: 20,
+      paddingTop: 8,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: "800",
+      color: theme.textPrimary,
+      marginBottom: 8,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: theme.textSecondary,
+      marginBottom: 32,
+      textAlign: "center",
+    },
+    errorCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: "rgba(239, 68, 68, 0.1)",
+      borderWidth: 1,
+      borderColor: isLight
+        ? "rgba(239, 68, 68, 0.55)"
+        : "rgba(239, 68, 68, 0.2)",
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 24,
+    },
+    errorText: {
+      flex: 1,
+      fontSize: 14,
+      color: theme.danger,
+    },
+    inputCard: {
+      backgroundColor: theme.surface,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: 16,
+      marginBottom: 16,
+      ...elevation.card,
+    },
+    inputLabel: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: theme.textPrimary,
+      marginBottom: 12,
+    },
+    inputHint: {
+      fontSize: 12,
+      color: theme.textMuted,
+    },
+    input: {
+      backgroundColor: theme.bgSecondary,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 16,
+      color: theme.textPrimary,
+    },
+    inputError: {
+      borderColor: theme.danger,
+    },
+    fieldError: {
+      fontSize: 12,
+      color: theme.danger,
+      marginTop: 6,
+    },
+    currencyRow: {
+      flexDirection: "row",
+      gap: 8,
+      marginTop: 12,
+    },
+    pillRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      marginTop: 12,
+    },
+    pill: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: "transparent",
+    },
+    pillSelected: {
+      backgroundColor: theme.primary,
+      borderColor: theme.primary,
+    },
+    pillAccent: {
+      backgroundColor: theme.primary,
+      borderColor: theme.border,
+    },
+    pillText: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: theme.textSecondary,
+    },
+    pillTextSelected: {
+      color: theme.onPrimary,
+    },
+    pillAccentText: {
+      color: theme.onPrimary,
+    },
+    submitButton: {
+      backgroundColor: theme.primary,
+      height: 56,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 24,
+    },
+    submitButtonDisabled: {
+      opacity: 0.5,
+    },
+    submitButtonText: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: theme.onPrimary,
+    },
+    loadingContainer: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 20,
+    },
+    loadingHeader: {
+      position: "absolute",
+      top: 25,
+      left: 20,
+      zIndex: 1,
+    },
+    loadingIcon: {
+      marginBottom: 32,
+    },
+    loadingTitle: {
+      fontSize: 24,
+      fontWeight: "700",
+      color: theme.textPrimary,
+      marginBottom: 16,
+      textAlign: "center",
+    },
+    loadingSubtitle: {
+      fontSize: 16,
+      color: theme.textSecondary,
+      textAlign: "center",
+    },
+    resultsScroll: {
+      flex: 1,
+    },
+    resultsContent: {
+      paddingHorizontal: 20,
+      paddingBottom: 40,
+    },
+    resultCard: {
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+    },
+    resultCardSurface: {
+      backgroundColor: theme.surface,
+      ...elevation.card,
+    },
+    resultCardBorder: {
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    verdictCard: {
+      borderWidth: 1,
+      shadowColor: "transparent",
+      shadowOpacity: 0,
+      shadowRadius: 0,
+      elevation: 0,
+    },
+    verdictHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      marginBottom: 12,
+    },
+    verdictTitle: {
+      fontSize: 20,
+      fontWeight: "700",
+    },
+    verdictRange: {
+      fontSize: 16,
+      color: theme.textPrimary,
+      marginBottom: 4,
+    },
+    verdictDiff: {
+      fontSize: 14,
+      color: theme.textSecondary,
+    },
+    cardTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: theme.textPrimary,
+      marginBottom: 16,
+    },
+    statRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 12,
+    },
+    statLabel: {
+      fontSize: 14,
+      color: theme.textSecondary,
+    },
+    statValue: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: theme.textPrimary,
+    },
+    highlight: {
+      color: theme.primary,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: theme.border,
+      marginHorizontal: -16,
+    },
+    bulletRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 12,
+      marginBottom: 12,
+    },
+    bullet: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: theme.accent,
+      marginTop: 6,
+    },
+    bulletText: {
+      flex: 1,
+      fontSize: 14,
+      color: theme.textPrimary,
+      lineHeight: 20,
+    },
+    codeBlock: {
+      backgroundColor: theme.surfaceAlt,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: 16,
+      marginBottom: 12,
+    },
+    codeText: {
+      fontSize: 14,
+      color: theme.textPrimary,
+      lineHeight: 20,
+    },
+    copyButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: theme.surfaceAlt,
+      borderRadius: 8,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+    },
+    copyButtonText: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: theme.textPrimary,
+    },
+    tacticCard: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 12,
+      marginBottom: 12,
+      paddingVertical: 8,
+    },
+    tacticNumber: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: theme.accent,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    tacticNumberText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: theme.onPrimary,
+    },
+    tacticText: {
+      flex: 1,
+      fontSize: 14,
+      color: theme.textPrimary,
+      lineHeight: 20,
+    },
+    primaryButton: {
+      backgroundColor: theme.primary,
+      height: 56,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 8,
+    },
+    primaryButtonText: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: theme.onPrimary,
+    },
+    ghostButton: {
+      height: 56,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.border,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 12,
+    },
+    ghostButtonText: {
+      fontSize: 16,
+      color: theme.textSecondary,
+    },
+    tabBar: {
+      flexDirection: "row",
+      backgroundColor: theme.surface,
+      borderRadius: 14,
+      padding: 4,
+      marginBottom: 24,
+      borderWidth: 1,
+      borderColor: theme.border,
+      ...elevation.subtle,
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 8,
+      alignItems: "center",
+    },
+    tabActive: {
+      backgroundColor: theme.primary,
+      borderColor: theme.primary,
+    },
+    tabText: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: theme.textSecondary,
+    },
+    tabTextActive: {
+      color: theme.onPrimary,
+      fontWeight: "700",
+    },
+    refreshButton: {
+      marginLeft: 8,
+      padding: 4,
+    },
+    historyLoadingContainer: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 60,
+    },
+    loadingText: {
+      fontSize: 16,
+      color: theme.textSecondary,
+      marginTop: 16,
+    },
+    emptyState: {
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 60,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: theme.textPrimary,
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    emptySubtitle: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      textAlign: "center",
+    },
+    historyCard: {
+      backgroundColor: theme.surface,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: 14,
+      marginBottom: 10,
+      ...elevation.subtle,
+    },
+    historyCardContent: {
+      flexDirection: "row",
+    },
+    historyLeft: {
+      flex: 1,
+    },
+    historyRight: {
+      alignItems: "flex-end",
+      justifyContent: "space-between",
+      marginLeft: 8,
+    },
+    historyTopRight: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      marginBottom: 8,
+    },
+    historyHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    historyJobTitle: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: theme.textPrimary,
+      flex: 1,
+    },
+    verdictBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+      borderWidth: 1,
+    },
+    verdictBadgeText: {
+      fontSize: 11,
+      fontWeight: "600",
+    },
+    historyCompany: {
+      fontSize: 12,
+      color: theme.textSecondary,
+      marginBottom: 4,
+    },
+    historySalaryRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexWrap: "wrap",
+      marginBottom: 4,
+      gap: 4,
+    },
+    historySalary: {
+      fontSize: 13,
+      color: theme.textPrimary,
+      lineHeight: 18,
+      flexShrink: 1,
+    },
+    historySalaryArrow: {
+      fontSize: 14,
+      color: theme.textPrimary,
+      lineHeight: 20,
+      marginTop: -2,
+    },
+    historyAsk: {
+      fontSize: 14,
+      color: theme.accent,
+      fontWeight: "600",
+      lineHeight: 20,
+    },
+    historyMeta: {
+      fontSize: 11,
+      color: theme.textSecondary,
+    },
+    historyDate: {
+      fontSize: 12,
+      color: theme.textSecondary,
+    },
+    deleteButton: {
+      padding: 4,
+    },
+    backToHistoryBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: theme.surface,
+      borderRadius: 16,
+      padding: 12,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      ...elevation.subtle,
+    },
+    backToHistoryText: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      marginLeft: 8,
+    },
+    warningCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: "rgba(255,209,102,0.1)",
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: isLight ? "rgba(255,209,102,0.55)" : "rgba(255,209,102,0.2)",
+      padding: 12,
+      marginBottom: 12,
+    },
+    warningText: {
+      fontSize: 13,
+      color: "#FFD166",
+      flex: 1,
+    },
   });
 }

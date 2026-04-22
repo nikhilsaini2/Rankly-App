@@ -1,545 +1,140 @@
-# RANKLY APP - GLOBAL CONTEXT DOCUMENTATION
-
-**Generated:** April 2026  
-**Purpose:** Comprehensive reference for all core systems, architecture, and implementation details
-
----
-
-## TABLE OF CONTENTS
-
-1. [Architecture Overview](#architecture-overview)
-2. [Navigation System](#navigation-system)
-3. [Resume Builder System](#resume-builder-system)
-4. [AI Integration](#ai-integration)
-5. [Type System](#type-system)
-6. [Services & Utilities](#services--utilities)
-7. [Key Hooks](#key-hooks)
-8. [Screen Components](#screen-components)
-9. [Data Flow](#data-flow)
-10. [Error Handling](#error-handling)
+# RANKLY — GLOBAL CONTEXT
+**Last Updated:** April 2026  
+**Purpose:** Single source of truth for the entire Rankly codebase. Reference this before making any changes.
 
 ---
 
-## ARCHITECTURE OVERVIEW
+## 1. TECH STACK
 
-### App Structure
+| Layer | Technology |
+|---|---|
+| Framework | React Native + Expo (managed workflow) |
+| Language | TypeScript (strict) |
+| Navigation | React Navigation v6 (native stack + bottom tabs) |
+| State | Redux Toolkit (theme) + useReducer (feature state) + React hooks |
+| AI | Google Gemini API (`gemini-2.5-flash-lite`, v1 endpoint) |
+| Backend | Supabase (PostgreSQL + Auth + Storage) |
+| Animations | React Native Reanimated v3 |
+| UI Icons | Expo Vector Icons (Ionicons, Feather) |
+| Gradients | expo-linear-gradient |
+| Storage | AsyncStorage (local drafts/prefs), Supabase Storage (files) |
+| Speech | expo-speech (TTS), expo-speech-recognition (STT) |
+| PDF | expo-print + expo-sharing |
+| Safe Area | react-native-safe-area-context |
+| System Bars | expo-navigation-bar |
 
-Rankly is a React Native Expo app with the following core layers:
+---
+
+## 2. PROJECT STRUCTURE
 
 ```
 Rankly/
+├── App.tsx                        # Root: providers, NavigationContainer, GlobalBackground
+├── GLOBAL_CONTEXT.md              # This file
 ├── src/
-│   ├── navigation/          # Navigation configuration
-│   ├── screens/             # Screen components
-│   ├── feature/             # Feature modules (resume, interview, etc.)
-│   ├── services/            # External service integrations
-│   ├── hooks/               # Custom React hooks
-│   ├── types/               # TypeScript type definitions
-│   ├── utils/               # Utility functions
-│   ├── components/          # Reusable UI components
-│   ├── theme/               # Design tokens and styling
-│   └── constants/           # App constants
-├── App.tsx                  # Root component
-└── package.json             # Dependencies
-```
-
-### Technology Stack
-
-- **Framework:** React Native with Expo
-- **Navigation:** React Navigation (native stack + bottom tabs)
-- **State Management:** React Hooks + useReducer
-- **AI:** Google Gemini API (gemini-2.5-flash)
-- **Backend:** Supabase (PostgreSQL + Auth + Storage)
-- **Animations:** React Native Reanimated
-- **UI:** Expo Linear Gradient, Ionicons
-- **Storage:** AsyncStorage (local), Supabase Storage (cloud)
-
----
-
-## NAVIGATION SYSTEM
-
-### Navigation Structure
-
-```
-AppNavigator (Root Stack)
-├── Tabs (Bottom Tab Navigator)
-│   ├── Home
-│   ├── Resume
-│   ├── AI
-│   └── Profile
-├── AtsScore (Modal)
-├── SalaryNegotiation (Modal)
-├── ResumeBuilder (Modal)
-├── PdfViewer (Modal)
-└── ImprovedResumePreview (Modal)
-```
-
-### Key Files
-
-- **AppNavigator.tsx** - Root stack configuration with modal presentations
-- **BottomTabs.tsx** - Tab navigator setup
-- **TabBar.tsx** - Custom tab bar with gradient active states
-- **navigation.types.ts** - Navigation type definitions
-
-### Navigation Patterns
-
-#### Modal Presentations
-
-```typescript
-// iOS: fullScreenModal, Android: card (prevents tab bar flicker)
-presentation: Platform.OS === "ios" ? "fullScreenModal" : "card"
-animation: "slide_from_bottom"
-```
-
-#### Tab Navigation
-
-```typescript
-// Custom TabBar with gradient active states
-// Ionicons for tab icons
-// Smooth transitions between tabs
-```
-
----
-
-## RESUME BUILDER SYSTEM
-
-### Overview
-
-The Resume Builder is a multi-step form that generates AI-optimized resumes with ATS scoring.
-
-### Architecture
-
-```
-useResumeEngine (Main Hook)
-├── State: resumeEngineReducer
-├── Draft Persistence: AsyncStorage
-├── AI Generation: buildResumePrompt → Gemini
-├── PDF Export: expo-print
-└── History: Supabase resume_builds table
-```
-
-### Core Components
-
-#### 1. useResumeEngine Hook
-
-**Location:** `src/feature/resume/hooks/useResumeEngine.ts`
-
-**Responsibilities:**
-- Manage resume builder state via reducer
-- Handle draft persistence (auto-save every 500ms)
-- Coordinate AI generation pipeline
-- Export PDF and share functionality
-- Resume history management
-
-**Key Methods:**
-```typescript
-handleNext()           // Validate step and advance
-handleBack()           // Go back or exit
-buildResume()          // Generate AI resume
-exportPDF()            // Create PDF file
-shareResume()          // Share via native share
-peekDraft()            // Check if draft exists (no state change)
-applyDraft()           // Load draft into state
-clearDraft()           // Delete draft
-fetchResumeHistory()   // Load user's resume history
-```
-
-**Draft Persistence:**
-- Stored in AsyncStorage with version tracking
-- Auto-saves every 500ms when form changes
-- Validates structural integrity before restore
-- Checks for meaningful content (prevents empty draft restore)
-
-#### 2. resumeEngineReducer
-
-**Location:** `src/feature/resume/core/resumeReducer.ts`
-
-**State Shape:**
-```typescript
-interface ResumeEngineState {
-  phase: 'input' | 'loading' | 'preview' | 'exported'
-  currentStep: 1-5
-  inputTab: 'form' | 'history'
-  formData: ResumeFormData
-  generatedResume: GeneratedResume | null
-  pdfUri: string | null
-  selectedResume: ResumeHistoryItem | null
-  resumeHistory: ResumeHistoryItem[]
-  asyncStatus: 'idle' | 'loading' | 'success' | 'error'
-  loadingMessage: number (index into LOADING_MESSAGES)
-  error: { message, type, retryAction } | null
-  lastSaved: number (timestamp)
-}
-```
-
-**Phase Transitions:**
-```
-input → loading → preview → exported
-input ← preview ← loading
-```
-
-**Actions:**
-- `SET_TAB` - Switch between form/history
-- `SET_STEP` - Navigate to step 1-5
-- `UPDATE_FORM` - Update form fields
-- `UPDATE_EXPERIENCE` - Update work experience entry
-- `ADD_EXPERIENCE` / `REMOVE_EXPERIENCE` - Manage experiences
-- `START_ASYNC` / `ABORT_ASYNC` - Async operation lifecycle
-- `SET_ERROR` - Set error state
-- `SET_PHASE` - Change phase (with validation)
-- `GENERATE_SUCCESS` - Resume generated
-- `EXPORT_SUCCESS` - PDF exported
-- `HISTORY_FETCH_SUCCESS` - Resume history loaded
-- `HISTORY_DELETE_SUCCESS` - Resume deleted
-- `LOAD_HISTORY_ITEM` - Load previous resume
-- `RESTORE_SESSION` - Restore from draft
-- `RESET_BUILDER` / `RESET_ALL` - Clear state
-
-#### 3. Form Validation
-
-**Location:** `src/feature/resume/utils/validation.ts`
-
-**Validation Strategy:**
-- Per-step validation (returns field errors)
-- Full-form validation (returns flat error list)
-- Yup schema for Gemini response validation
-
-**Step Requirements:**
-```
-Step 1: fullName, email (+ optional linkedin)
-Step 2: targetRole, experienceLevel, industry, skills
-Step 3: First experience (jobTitle, company, duration) - skip for Fresher
-Step 4: degree, institution, graduationYear
-Step 5: tone
-```
-
-#### 4. AI Resume Generation
-
-**Location:** `src/feature/resume/utils/resumePrompt.ts`
-
-**Prompt Strategy:**
-- Experience-level specific directives (Fresher → Lead)
-- Elite verb enforcement (Architected, Engineered, Optimized, etc.)
-- Metric-driven bullet points (max 20 words each)
-- ATS keyword injection
-- Sanitization of weak language
-
-**Output Format:**
-```json
-{
-  "professionalSummary": "3 sentences, 60 words max",
-  "enhancedExperiences": [
-    {
-      "jobTitle": "string",
-      "company": "string",
-      "duration": "string",
-      "bulletPoints": ["4 bullets max, 20 words each"]
-    }
-  ],
-  "coreSkills": ["10-12 flat strings"],
-  "atsKeywords": ["8 keywords"]
-}
-```
-
-#### 5. Resume Sanitization
-
-**Location:** `src/feature/resume/utils/resumeSanitizer.ts`
-
-**Sanitization Rules:**
-- Cap bullets at 4 per role
-- Truncate overflowing bullets
-- Remove weak/placeholder bullets
-- Deduplicate and cap skills (12 max)
-- Deduplicate and cap keywords (8 max)
-- Enforce consistency (keywords must appear in content)
-- Strip placeholder text
-
-#### 6. HTML Generation
-
-**Location:** `src/feature/resume/utils/resumeHTML.ts`
-
-**Output:**
-- Professional PDF-ready HTML
-- Gradient header with role
-- Organized sections (summary, experience, education, skills)
-- ATS keyword footer
-- Print-optimized styling
-
-### Resume Screens
-
-#### ResumeScreen
-
-**Location:** `src/feature/resume/screens/ResumeScreen.tsx`
-
-**Features:**
-- Upload PDF resumes
-- View resume history
-- Trigger ATS analysis
-- Delete resumes
-- Empty state with feature highlights
-
-**Flow:**
-1. User uploads PDF
-2. File stored in Supabase Storage
-3. Resume record created (status: 'uploaded')
-4. User can analyze immediately or later
-
-#### ATSScoreScreen
-
-**Location:** `src/feature/resume/screens/ATSScoreScreen.tsx`
-
-**Displays:**
-- Overall ATS score (0-100)
-- Breakdown scores (keyword, format, content, readability)
-- Found/missing keywords
-- Strengths and improvements
-- AI summary
-
-**CTA:** "Improve with AI" button → ImprovedResumePreviewScreen
-
-#### ImprovedResumePreviewScreen
-
-**Location:** `src/feature/resume/screens/ImprovedResumePreviewScreen.tsx`
-
-**Process:**
-1. Fetch ATS report
-2. Fetch resume text from Supabase
-3. Call `generateImprovedResume()` service
-4. Display optimized resume preview
-5. Export PDF or share
-
-**Features:**
-- Real-time optimization animation
-- Contact info extraction
-- Experience enhancement
-- Skill/keyword optimization
-- PDF export and sharing
-
-### Resume Types
-
-**Location:** `src/feature/resume/types/resume.types.ts`
-
-```typescript
-interface ResumeFormData {
-  // Step 1
-  fullName, email, phone, linkedin, city
-  // Step 2
-  targetRole, experienceLevel, industry, skills
-  // Step 3
-  experiences: WorkExperience[]
-  // Step 4
-  degree, institution, graduationYear, grade, certifications, languages
-  // Step 5
-  tone, topAchievement, targetCompanies, specialInstructions
-}
-
-interface GeneratedResume {
-  professionalSummary: string
-  enhancedExperiences: EnhancedExperience[]
-  coreSkills: string[]
-  atsKeywords: string[]
-}
-
-interface ResumeHistoryItem {
-  id, user_id, full_name, target_role, experience_level, industry, tone
-  skills, professional_summary, core_skills, enhanced_experiences
-  ats_keywords, pdf_uri, created_at
-}
-```
-
-### Resume Constants
-
-**Location:** `src/feature/resume/constants/resume.constants.ts`
-
-```typescript
-LOADING_MESSAGES: string[]           // 5 rotating messages
-STEP_TITLES: string[]                // Step headers
-STEP_SUBTITLES: string[]             // Step descriptions
-STEP_ICONS: string[]                 // Ionicons names
-EXPERIENCE_LEVELS: string[]          // Fresher, 1-2 yrs, etc.
-INDUSTRIES: string[]                 // Tech, Finance, etc.
-TONES: string[]                      // Professional, Confident, etc.
-REQUIRED_FIELDS: Record<string, boolean>  // Single source of truth
+│   ├── components/
+│   │   ├── atoms/                 # Button, Card, Input, Pill, Toast, ScoreRing, ScoreBar, Skeleton, Badge, ProgressRing, PressableScale, AppName
+│   │   ├── molecules/             # LocationAutocomplete
+│   │   ├── organisms/             # (reserved)
+│   │   ├── layouts/               # HeroHeader, profileHeader, profileActions, profileStats
+│   │   ├── GlobalBackground.tsx   # LinearGradient full-screen background
+│   │   └── ErrorBoundary.tsx
+│   ├── constants/
+│   │   ├── tabs.ts                # TABS array (Home, Resume, AI, Profile)
+│   │   ├── options.ts
+│   │   ├── content.ts             # NOTIF_STORAGE_KEY etc.
+│   │   └── all.ts
+│   ├── feature/
+│   │   ├── interview/             # Full interview feature module
+│   │   └── resume/                # Full resume feature module
+│   ├── hooks/
+│   │   ├── useProfile.ts          # Fetch/cache user profile
+│   │   ├── useHome.ts             # Home screen stats (scores, counts)
+│   │   ├── useAIChat.ts           # AI chat with Gemini context
+│   │   ├── useAIChatIntegration.ts
+│   │   ├── useAtsScore.ts         # ATS scoring pipeline
+│   │   ├── useGemini.ts
+│   │   ├── useResumeUpload.ts     # PDF upload to Supabase Storage
+│   │   ├── useProfileStats.ts
+│   │   └── useRemoteConfig.ts
+│   ├── navigation/
+│   │   ├── RootNavigator.tsx      # Auth gate (session check)
+│   │   ├── AppNavigator.tsx       # Main stack (authenticated)
+│   │   ├── AuthNavigator.tsx      # Auth stack (login/register)
+│   │   ├── BottomTabs.tsx         # Tab navigator
+│   │   └── TabBar.tsx             # Custom floating pill tab bar
+│   ├── screens/
+│   │   ├── home/HomeScreen.tsx
+│   │   ├── ai/AIScreen.tsx
+│   │   ├── profile/ProfileScreen.tsx
+│   │   ├── salary/SalaryNegotiationScreen.tsx
+│   │   ├── premium/PremiumScreen.tsx
+│   │   └── PdfViewer/index.tsx
+│   ├── services/
+│   │   ├── gemini/                # Gemini API client + prompts
+│   │   ├── supabase/              # Supabase client + auth helpers
+│   │   ├── profile/               # Profile CRUD
+│   │   ├── resume/                # Resume service, history, storage
+│   │   ├── interview/             # Interview history service
+│   │   ├── premium/               # Plan limits, feature matrix
+│   │   └── local/                 # Local storage service
+│   ├── store/
+│   │   ├── store.ts               # Redux store
+│   │   ├── themeSlice.ts          # dark/light mode toggle
+│   │   ├── ThemePersistence.tsx   # Persists theme to AsyncStorage
+│   │   └── SystemBarsManager.tsx  # Syncs status bar + nav bar to theme
+│   ├── theme/
+│   │   ├── color.ts               # Dark theme tokens
+│   │   ├── lightTheme.ts          # Light theme tokens
+│   │   ├── useAppTheme.ts         # Hook: returns active theme colors
+│   │   ├── elevation.ts           # Shadow/elevation helpers
+│   │   ├── radius.ts, spacing.ts, typography.ts
+│   │   └── index.ts
+│   ├── types/
+│   │   ├── navigation.types.ts    # All navigation param lists
+│   │   ├── common.types.ts        # User, AtsScoreRow, ResumeRow, ChatMessage
+│   │   └── interview.types.ts     # Interview engine types
+│   ├── utils/
+│   │   ├── gemini.ts              # extractJsonPayload, parseGeminiJson, handleGeminiError
+│   │   ├── score.ts               # scoreTierColor, scoreTierLabel, getInterviewResultMessage
+│   │   ├── date.ts, format.ts
+│   │   ├── greetingDetection.ts
+│   │   ├── nameValidation.ts
+│   │   ├── resilience.ts
+│   │   └── geminiErrorHandler.ts
+│   └── validation/
+│       └── auth.schema.ts
 ```
 
 ---
 
-## AI INTEGRATION
+## 3. NAVIGATION ARCHITECTURE
 
-### Gemini Service
-
-**Location:** `src/services/gemini/gemini.ts`
-
-#### Configuration
-
-```typescript
-const PRIMARY_MODEL = "gemini-2.5-flash-lite"  // 1000 RPD, 15 RPM free tier
-const MIN_REQUEST_GAP_MS = 6500                // 10 RPM compliance
+### Full Tree
+```
+RootNavigator
+├── AuthNavigator (unauthenticated)
+│   ├── Onboarding
+│   ├── Login
+│   └── Register
+└── AppNavigator (authenticated — NativeStack)
+    ├── Tabs (BottomTabNavigator)
+    │   ├── Home
+    │   ├── Resume
+    │   ├── AI
+    │   └── Profile
+    ├── AtsScore          { resumeId, scoreId? }   — slide_from_right
+    ├── SalaryNegotiation {}                        — fullScreenModal, slide_from_bottom
+    ├── ResumeBuilder     {}                        — iOS: fullScreenModal / Android: card
+    ├── PdfViewer         { url, fileName }         — slide_from_right
+    ├── ImprovedResumePreview { resumeId, scoreId } — iOS: fullScreenModal / Android: card
+    ├── InterviewHistory  {}                        — slide_from_right
+    ├── ResumeHistory     {}                        — slide_from_right
+    └── Premium           {}                        — slide_from_right
 ```
 
-#### Core Functions
-
-**generateGeminiText(prompt, modelName)**
-- Single API call with caching
-- In-flight deduplication
-- Response cache (5 min TTL)
-- djb2 hash for collision-free keys
-
-**generateGeminiTextWithRetry(prompt, maxRetries, baseDelayMs)**
-- Retry logic for transient failures
-- Exponential backoff
-- Never retries 429 (quota errors)
-- Retries 503, 500, network errors
-
-**generateGeminiWithContext(params)**
-- Multi-turn conversation support
-- History sanitization (must start with user, end with model)
-- Prevents duplicate same-role entries
-- Structured output validation
-
-#### Error Handling
-
+### Navigation Types (`src/types/navigation.types.ts`)
 ```typescript
-class GeminiError extends Error {
-  code: 'invalid_key' | 'invalid_request' | 'rate_limit' | 
-        'unavailable' | 'server_error' | 'empty_response' | 'unknown'
-}
-
-// Error classification
-isGeminiQuotaError(error)      // 429, quota, resource_exhausted
-getGeminiErrorMessage(error)   // User-friendly messages
-trackQuotaError(error)         // Logging for monitoring
-```
-
-#### Rate Limiting
-
-```typescript
-// Global rate limiter
-const MIN_REQUEST_GAP_MS = 6500  // 10 RPM free tier
-const requestQueue: Array<() => void> = []
-
-// In-flight deduplication
-const inFlightRequests = new Map<string, Promise<string>>()
-
-// Response cache
-const responseCache = new Map<string, { result, timestamp }>()
-const CACHE_TTL_MS = 5 * 60 * 1000  // 5 minutes
-```
-
-### Prompts
-
-**Location:** `src/services/gemini/prompts.ts`
-
-#### buildAtsScorePrompt
-
-```typescript
-// Analyzes resume for ATS compatibility
-// Returns: { overall_score, keyword_score, format_score, content_score, 
-//            readability_score, keywords_found, keywords_missing, 
-//            ai_summary, feedback }
-```
-
-#### buildInterviewQuestionsPrompt
-
-```typescript
-// Generates interview questions by role/difficulty/type
-// Returns: ["q1", "q2", ...]
-```
-
-#### buildInterviewEvalPrompt
-
-```typescript
-// Evaluates interview answer
-// Returns: { score: 0-10, feedback: string }
-```
-
-#### buildCareerCoachSystemPrompt
-
-```typescript
-// System prompt for AI career coach
-// Handles greetings, domain filtering, warm tone
-// Only assists with: resume, interviews, jobs, skills, career strategy, salary
-```
-
-### AI Features
-
-#### 1. ATS Scoring
-
-**Hook:** `useAtsScore()`
-**Process:**
-1. Upload resume PDF
-2. Extract text via Gemini (if not already extracted)
-3. Score resume against job description
-4. Save score to Supabase
-5. Display results
-
-**Key Methods:**
-```typescript
-scoreResume(resumeId, jobDescription?)  // Main scoring function
-getLatestScore(resumeId)                // Fetch most recent score
-getScoreById(scoreId)                   // Fetch specific score
-getScoreHistory(userId)                 // Fetch all scores
-```
-
-#### 2. Resume Improvement
-
-**Service:** `generateImprovedResume(input)`
-**Process:**
-1. Fetch ATS report
-2. Fetch resume text
-3. Call Gemini with ATS findings
-4. Extract contact, education, experience
-5. Return optimized resume
-
-**Input:**
-```typescript
-{
-  resumeText: string
-  atsReport: AtsScoreRow
-  meta?: { title?, fileName? }
-}
-```
-
-**Output:**
-```typescript
-{
-  generatedResume: GeneratedResume
-  contact: { fullName, email, phone, city, linkedin, targetRole }
-  education: { degree, institution, graduationYear, grade }
-}
-```
-
-#### 3. AI Chat
-
-**Hook:** `useAIChat(profile)`
-**Features:**
-- Conversational career coaching
-- Greeting detection (local response)
-- Domain filtering (career-only)
-- Message persistence to Supabase
-- Warm, encouraging tone
-
-**Key Methods:**
-```typescript
-send(userText)      // Send message and get response
-clearChat()         // Delete all chat history
-```
-
----
-
-## TYPE SYSTEM
-
-### Navigation Types
-
-**Location:** `src/types/navigation.types.ts`
-
-```typescript
-type AuthStackParamList = {
-  Onboarding: undefined
-  Login: undefined
-  Register: undefined
-}
-
 type RootStackParamList = {
   Tabs: undefined
   AtsScore: { resumeId: string; scoreId?: string }
@@ -548,6 +143,9 @@ type RootStackParamList = {
   ResumeBuilder: undefined
   PdfViewer: { url: string; fileName: string }
   ImprovedResumePreview: { resumeId: string; scoreId: string }
+  InterviewHistory: undefined
+  ResumeHistory: undefined
+  Premium: undefined
 }
 
 type RootTabParamList = {
@@ -558,526 +156,515 @@ type RootTabParamList = {
 }
 ```
 
-### Common Types
-
-**Location:** `src/types/common.types.ts`
-
-```typescript
-interface User {
-  id, firstName, lastName, email, avatarUrl
-  role, bio, experienceLevel, industry, linkedinUrl
-  plan: 'free' | 'pro'
-  credits, onboardingDone, createdAt
-}
-
-interface AtsScoreRow {
-  id, userId, resumeId
-  overallScore, keywordScore, formatScore, contentScore, readabilityScore
-  feedback: { strengths?, improvements? }
-  keywordsFound, keywordsMissing, aiSummary, createdAt
-}
-
-interface ResumeRow {
-  id, userId, title, fileUrl, fileName
-  rawText, extractedText
-  status: 'uploaded' | 'analyzed'
-  latestScore, latestScoreId, isPrimary, createdAt
-  ats_scores: AtsScoreSummary[]
-}
-
-interface ChatMessage {
-  id, role: 'user' | 'assistant', content, createdAt?
-}
-```
+### Custom TabBar (`src/navigation/TabBar.tsx`)
+- Floating pill design with `borderRadius: 30`, `marginHorizontal: 10`
+- Active tab: LinearGradient pill (primary → primaryDark) with icon + label
+- Inactive tab: icon + muted label
+- Uses `useSafeAreaInsets` for `marginBottom`
+- Tabs: Home, Resume, AI, Profile
 
 ---
 
-## SERVICES & UTILITIES
+## 4. THEME SYSTEM
 
-### Resume Service
+### Architecture
+- Redux `themeSlice` stores `mode: 'dark' | 'light'`
+- `ThemePersistence` loads/saves to AsyncStorage on mount
+- `useAppTheme()` hook returns active color tokens
+- `SystemBarsManager` syncs Android nav bar color + icon style to theme
 
-**Location:** `src/services/resume/improveResumeService.ts`
-
-```typescript
-generateImprovedResume(input: ImproveResumeInput): Promise<ImprovedResumeResult>
+### Dark Theme (`src/theme/color.ts`)
+```
+background:   #0A0812    surface:      #130F1F    surfaceAlt:   #1C1830
+primary:      #8B5CF6    primaryDark:  #6D28D9    accent:       #10B981
+danger:       #EF4444    warning:      #F97316    textPrimary:  #FAF9FF
+textSecondary:#A09ABA    textMuted:    #6B6480    border:       #2A2440
 ```
 
-Orchestrates the ATS improvement pipeline:
-1. Builds optimization prompt with ATS findings
-2. Calls Gemini for enhanced resume
-3. Extracts contact/education info
-4. Sanitizes and validates output
-5. Returns structured result
-
-### Resume Upload Hook
-
-**Location:** `src/hooks/useResumeUpload.ts`
-
-```typescript
-useResumeUpload() → {
-  uploading: boolean
-  progress: number (0-1)
-  error: string | null
-  pickResume()                    // Open file picker
-  uploadResume(file)              // Upload to Supabase Storage
-  deleteResume(id, storagePath)   // Delete from Storage + DB
-}
+### Light Theme (`src/theme/lightTheme.ts`)
+```
+background:   #F3F4F8    surface:      #FFFFFF    surfaceAlt:   #F1F2F6
+primary:      #8B5CF6    accent:       #10B981    border:       #D1D5DB
 ```
 
-**Upload Process:**
-1. Pick PDF via DocumentPicker
-2. Read as base64
-3. Upload to Supabase Storage
-4. Create resume record (status: 'uploaded')
-5. Return resume row
+### SystemBarsManager
+- Sets Android nav bar background to `theme.background` (prevents black gap on keyboard dismiss)
+- Sets nav bar icon style: dark theme → `"light"` icons, light theme → `"dark"` icons
+- Initial color set in `App.tsx` before Redux hydrates: `#0A0812`
 
-### ATS Score Hook
-
-**Location:** `src/hooks/useAtsScore.ts`
-
-```typescript
-useAtsScore() → {
-  scoring: boolean
-  score: AtsScoreRow | null
-  error: string | null
-  scoreResume(resumeId, jobDescription?)
-  getLatestScore(resumeId)
-  getScoreById(scoreId)
-  getScoreHistory(userId)
-}
-```
-
-**Scoring Process:**
-1. Fetch resume record
-2. Extract text if needed (via Gemini)
-3. Build ATS prompt
-4. Call Gemini for scoring
-5. Save to Supabase
-6. Cache score on resume row
-7. Return mapped result
-
-### AI Chat Hook
-
-**Location:** `src/hooks/useAIChat.ts`
-
-```typescript
-useAIChat(profile: User | null) → {
-  messages: ChatMessage[]
-  loading: boolean
-  ready: boolean
-  send(userText: string)
-  clearChat()
-}
-```
-
-**Chat Flow:**
-1. Load chat history from Supabase
-2. Detect greetings (local response)
-3. Build system prompt with user profile
-4. Call Gemini with context
-5. Save both messages to DB
-6. Update UI with real DB IDs
+### GlobalBackground (`src/components/GlobalBackground.tsx`)
+- Renders `LinearGradient` as `StyleSheet.absoluteFill` behind all content
+- Adds `<View style={{ height: insets.top }} />` for status bar spacing
 
 ---
 
-## KEY HOOKS
+## 5. SCREENS
 
-### useResumeEngine
+### HomeScreen (`src/screens/home/HomeScreen.tsx`)
+- Displays greeting, user avatar, credits
+- Stats row: highest ATS score, resume count, interview session count
+- Latest score card with CTA to ATS report
+- Quick actions grid (navigate to features)
+- Career tips section
+- Uses `useHome()` + `useProfile()` hooks
+- `useFocusEffect` silently refetches stats on tab focus
 
-**State Management:**
-- Multi-step form with validation
-- Draft persistence
-- AI generation pipeline
-- PDF export
-- Resume history
+### AIScreen (`src/screens/ai/AIScreen.tsx`)
+- Two segments: **Chat** and **Interview** (tab switcher)
+- Chat: conversational AI career coach via `useAIChat`
+- Interview: `InterviewScreen` component (mock interview engine)
+- Accepts route params: `atsContext` (auto-sends ATS context to chat), `initialSegment`
+- History button navigates to `InterviewHistory` (saves session state first)
+- `KeyboardAvoidingView` with `behavior="padding"`, `keyboardVerticalOffset=35`
 
-**Key Features:**
-- Debounced auto-save (500ms)
-- Network-aware error handling
-- Resilience wrapper for retries
-- Abort signal support
+### ProfileScreen (`src/screens/profile/ProfileScreen.tsx`)
+- Shows avatar (with animated ring), plan badge, credits
+- Stats strip: resumes, best ATS, interviews
+- Bio card, settings card (notifications, theme toggle, history links, plan)
+- Danger zone (sign out, delete account)
+- Edit mode: inline form with save/cancel action bar
+- Avatar upload via `expo-image-picker` → Supabase Storage
+- `KeyboardAvoidingView` wraps edit form
 
-### useAtsScore
+### SalaryNegotiationScreen (`src/screens/salary/SalaryNegotiationScreen.tsx`)
+- **Phase: input** — form with job title, company, salary, currency (USD/INR/EUR), experience, job type, location (LocationAutocomplete), industries
+- **Phase: loading** — pulsing animation with rotating messages
+- **Phase: results** — verdict banner, market data, leverage points, negotiation script, email template, tactics
+- History tab: saved negotiations from Supabase `salary_negotiations` table
+- AI analysis via Gemini with client-side safety checks (verdict/suggestedAsk validation)
+- `KeyboardAvoidingView` with `behavior="padding"` (both platforms)
+- `ScrollView` with `flexGrow: 1` on `scrollContent`, `paddingBottom: 16`
+- Presented as `fullScreenModal` on both iOS and Android
 
-**Resume Analysis:**
-- PDF text extraction
-- ATS scoring
-- Keyword analysis
-- Improvement suggestions
-
-**Key Features:**
-- Lazy text extraction
-- Score caching
-- Error recovery
-- User-friendly messages
-
-### useResumeUpload
-
-**File Management:**
-- PDF selection
-- Upload to cloud storage
-- Progress tracking
-- Deletion
-
-**Key Features:**
-- Base64 encoding for React Native
-- Plan-based limits (free: 3, pro: unlimited)
-- Error handling
-
-### useAIChat
-
-**Conversation:**
-- Message history
-- Greeting detection
-- Domain filtering
-- Persistence
-
-**Key Features:**
-- Local greeting responses
-- System prompt personalization
-- Optimistic UI updates
-- DB sync on success
+### PremiumScreen (`src/screens/premium/PremiumScreen.tsx`)
+- Shows current plan (Free/Pro), credits balance
+- Usage snapshot: resumes used, interviews completed, best ATS score
+- Sync status rows (interview history, salary history, resume history)
+- Plan comparison matrix (Free vs Pro features)
+- Upgrade CTA (billing not yet connected)
 
 ---
 
-## SCREEN COMPONENTS
+## 6. FEATURE: RESUME
 
-### ResumeScreen
+### Module Location: `src/feature/resume/`
 
-**Purpose:** Resume management hub
-**Features:**
-- Upload new resumes
-- View resume list
-- Trigger ATS analysis
-- Delete resumes
-- Empty state guidance
+### Screens
+| Screen | Purpose |
+|---|---|
+| `ResumeScreen` | Upload PDFs, view list, trigger ATS analysis |
+| `ATSScoreScreen` | Display ATS report with score ring, bars, keywords, accordion |
+| `ResumeBuilderScreen` | 5-step AI resume builder form |
+| `ImprovedResumePreviewScreen` | AI-optimized resume preview + PDF export |
+| `ResumeHistoryScreen` | View/export/delete past generated resumes |
 
-**States:**
-- Loading
-- Empty (no resumes)
-- List (with resumes)
+### ResumeBuilderScreen — 5 Steps
+```
+Step 1: Personal Info    (fullName*, email*, phone, linkedin, city)
+Step 2: Career Profile   (targetRole*, experienceLevel*, industry*, skills*)
+Step 3: Work Experience  (jobTitle*, company*, duration* per role; up to 4 roles)
+Step 4: Education        (degree*, institution*, graduationYear*, grade, certifications, languages)
+Step 5: Preferences      (tone*, topAchievement, targetCompanies, specialInstructions)
+```
+- Draft auto-saves to AsyncStorage every 500ms (debounced)
+- Restore modal on re-open if meaningful draft exists
+- Phase transitions: `input → loading → preview → exported`
 
-### ATSScoreScreen
-
-**Purpose:** Display ATS analysis results
-**Features:**
-- Score visualization (ring + bars)
-- Keyword analysis
-- Strengths/improvements
-- AI summary
-- "Improve with AI" CTA
-
-**Sections:**
-- Overall score ring
-- Metric breakdown (4 bars)
-- Found/missing keywords
-- Accordion sections (strengths, improvements)
-- AI summary card
-
-### ImprovedResumePreviewScreen
-
-**Purpose:** Preview and export optimized resume
-**Features:**
-- Real-time optimization animation
-- Resume preview
-- PDF export
-- Share functionality
-
-**Phases:**
-- Loading (with pulsing animation)
-- Preview (full resume display)
-- Error (with retry option)
-
-### AIScreen
-
-**Purpose:** AI career coaching hub
-**Features:**
-- Chat tab (conversational AI)
-- Interview tab (practice interviews)
-- Tab switching
-- Message history
-
-**Segments:**
-- Chat (default)
-- Interview (practice)
-
----
-
-## DATA FLOW
+### useResumeEngine Hook (`src/feature/resume/hooks/useResumeEngine.ts`)
+- Manages all resume builder state via `resumeEngineReducer`
+- Key methods: `handleNext()`, `handleBack()`, `buildResume()`, `exportAndShare()`, `peekDraft()`, `applyDraft()`, `clearDraft()`, `fetchResumeHistory()`
 
 ### Resume Generation Flow
-
 ```
-ResumeScreen
-  ↓
-useResumeEngine.buildResume()
-  ↓
-buildResumePrompt(formData)
-  ↓
-generateGeminiTextWithRetry(prompt)
-  ↓
-parseGeminiJson<GeneratedResume>()
-  ↓
-sanitizeGeneratedResume()
-  ↓
-dispatch({ type: 'GENERATE_SUCCESS', generatedResume })
-  ↓
-ResumeScreen → ATSScoreScreen (preview phase)
+buildResume()
+  → buildResumePrompt(formData)
+  → generateGeminiTextWithRetry(prompt)
+  → parseGeminiJson<GeneratedResume>()
+  → sanitizeGeneratedResume()
+  → dispatch GENERATE_SUCCESS
+  → phase: preview
+```
+
+### Generated Resume Shape
+```typescript
+interface GeneratedResume {
+  professionalSummary: string        // 3 sentences, ~60 words
+  enhancedExperiences: {
+    jobTitle, company, duration
+    bulletPoints: string[]           // max 4, max 20 words each
+  }[]
+  coreSkills: string[]               // 10-12 items
+  atsKeywords: string[]              // 8 items
+}
 ```
 
 ### ATS Scoring Flow
-
 ```
-ResumeScreen
-  ↓
-useAtsScore.scoreResume(resumeId)
-  ↓
-Fetch resume from Supabase
-  ↓
-Extract text (if needed)
-  ↓
-buildAtsScorePrompt(resumeText, jobDescription)
-  ↓
-generateGeminiTextWithRetry(prompt)
-  ↓
-parseGeminiJson<GeminiAts>()
-  ↓
-Save to ats_scores table
-  ↓
-Cache on resumes table
-  ↓
-Navigate to ATSScoreScreen
+scoreResume(resumeId, jobDescription?)
+  → fetch resume from Supabase
+  → extract text (via Gemini if needed)
+  → buildAtsScorePrompt(text, fileName, jd?)
+  → generateGeminiTextWithRetry(prompt)
+  → parseGeminiJson<GeminiAts>()
+  → save to ats_scores table
+  → cache on resumes table
+  → navigate to ATSScoreScreen
 ```
 
-### Resume Improvement Flow
-
-```
-ATSScoreScreen
-  ↓
-"Improve with AI" button
-  ↓
-ImprovedResumePreviewScreen
-  ↓
-Fetch ATS report + resume text
-  ↓
-generateImprovedResume(input)
-  ↓
-buildImprovePrompt(input)
-  ↓
-generateGeminiTextWithRetry(prompt)
-  ↓
-parseGeminiJson() + sanitize
-  ↓
-generateResumeHTML(formShape, generatedResume)
-  ↓
-Display preview
-  ↓
-Export PDF or Share
+### ATS Score Shape
+```typescript
+interface AtsScoreRow {
+  overallScore, keywordScore, formatScore, contentScore, readabilityScore
+  keywordsFound: string[], keywordsMissing: string[]
+  feedback: { strengths: string[], improvements: string[] }
+  aiSummary: string
+}
 ```
 
-### AI Chat Flow
+### Resume History
+- Cloud: `resume_builds` Supabase table
+- Local: AsyncStorage fallback
+- `ResumeHistoryScreen` merges both sources, deduplicates by ID
+- Two types: `"Generated"` (builder) and `"AI Optimized"` (ATS improve)
 
+---
+
+## 7. FEATURE: INTERVIEW
+
+### Module Location: `src/feature/interview/`
+
+### InterviewScreen (`src/feature/interview/InterviewScreen.tsx`)
+- Embedded inside `AIScreen` (not a standalone stack screen)
+- Props: `defaultRole`, `onDiscussCoach`, `onViewHistory`, `onRegisterHistoryHandler`, `insetsBottom`
+
+### Interview Phases
 ```
-AIScreen (Chat tab)
-  ↓
-useAIChat.send(userText)
-  ↓
-Detect greeting? → Local response
-  ↓
-Build system prompt + history
-  ↓
+idle → ready → recording → processing → feedback → complete
+```
+
+### useInterviewEngine Hook
+- Manages full interview state via `reducer`
+- Session persisted to AsyncStorage on every state change (for resume on nav-away)
+- Parallel answer evaluation on last question via `Promise.all`
+- Saves completed session to Supabase `interview_sessions` + `interview_questions` tables
+- Speech: `expo-speech-recognition` (STT) + `expo-speech` (TTS)
+- Offline detection via `@react-native-community/netinfo`
+
+### Session Config
+```typescript
+interface SessionConfig {
+  role: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  sessionType: 'behavioral' | 'technical' | 'mixed'
+  questionCount: 3 | 5 | 10
+}
+```
+
+### Answer Shape
+```typescript
+interface Answer {
+  question, transcript, score: number (0-100)
+  overall, strengths: string[], improvements: string[], tip
+}
+```
+
+### Session Restore
+- On `AIScreen` mount, checks AsyncStorage for saved session
+- Shows `RestoreModal` (Resume Session / Start New) if session found
+- `restoreSession()` force-resets recording/speaking state before restoring
+
+### InterviewHistoryScreen (`src/feature/interview/screens/InterviewHistoryScreen.tsx`)
+- Standalone stack screen (navigated from Profile or AI screen history button)
+- Merges cloud (`interview_sessions`) + local (AsyncStorage) history
+
+---
+
+## 8. AI / GEMINI SERVICE
+
+### Location: `src/services/gemini/gemini.ts`
+
+### Model Config
+```
+Model:    gemini-2.5-flash-lite
+Endpoint: v1 (not v1beta — higher quota)
+Temp:     0.4 (structured), 0.7 (chat)
+MaxTokens: 1024
+```
+
+### API Key
+- Fetched from Supabase `app_config` table (`key = 'gemini_api_key'`)
+- Falls back to `EXPO_PUBLIC_GEMINI_API_KEY` env var
+- Cached in memory after first fetch
+
+### Core Functions
+```typescript
+generateGeminiText(prompt, modelName?)
+  // Single call with cache + in-flight dedup
+
+generateGeminiTextWithRetry(prompt, maxRetries=2, baseDelayMs=4000)
+  // Retries on 503/500/network errors, never retries 429
+
 generateGeminiWithContext(params)
-  ↓
-Save user message to DB
-  ↓
-Save assistant response to DB
-  ↓
-Update UI with real DB IDs
+  // Multi-turn chat with history sanitization
+  // Injects system prompt as first user+model turn (v1 compatible)
 ```
 
----
+### Rate Limiting
+- `MIN_REQUEST_GAP_MS = 1000` (global queue)
+- Response cache: 5-minute TTL, max 20 entries, djb2 hash keys
+- In-flight deduplication: identical prompts share one request
 
-## ERROR HANDLING
-
-### Error Types
-
+### Error Codes
 ```typescript
-// Gemini errors
-GeminiError {
-  code: 'invalid_key' | 'invalid_request' | 'rate_limit' | 
-        'unavailable' | 'server_error' | 'empty_response' | 'unknown'
-  message: string
-}
-
-// Resume engine errors
-{
-  message: string
-  type?: 'network' | 'validation' | 'server'
-  retryAction?: 'generate' | 'export'
-}
+type GeminiErrorCode = 
+  'invalid_key' | 'invalid_request' | 'rate_limit' | 
+  'unavailable' | 'server_error' | 'empty_response' | 'unknown'
 ```
 
-### Error Recovery Strategies
+### Prompts (`src/services/gemini/prompts.ts`)
+| Function | Purpose |
+|---|---|
+| `buildAtsScorePrompt` | ATS analysis (resume text + optional JD) |
+| `buildInterviewQuestionsPrompt` | Generate N interview questions |
+| `buildInterviewEvalPrompt` | Evaluate single answer (score 0-10) |
+| `buildCareerCoachSystemPrompt` | System prompt for AI chat coach |
 
-#### Network Errors (503, 500, timeout)
-- Exponential backoff retry
-- Max 2 retries
-- User-friendly message
-- Retry button in UI
+### Career Coach Scope
+- **Allowed:** resumes, interviews, salary, career growth, job search, tech skills, certifications, roadmaps, cloud platforms, DevOps, AI/ML
+- **Not allowed:** cooking, sports, entertainment, weather, politics, personal relationships
+- Response style: warm, concise (2-4 lines default, 6-8 for complex topics), emojis OK
 
-#### Quota Errors (429)
-- Immediate throw (no retry)
-- User message: "AI is busy, try again later"
-- Tracking for monitoring
+---
 
-#### Validation Errors
-- Per-field error messages
-- Prevent form submission
-- Clear guidance on fixes
+## 9. SUPABASE SCHEMA (Key Tables)
 
-#### Offline Errors
-- Detect via NetInfo
-- Save draft locally
-- Show offline message
-- Retry when online
+| Table | Purpose |
+|---|---|
+| `users` | User profiles (auth_id, first_name, last_name, plan, credits, etc.) |
+| `resumes` | Uploaded PDF resumes (file_url, raw_text, status, latest_score) |
+| `ats_scores` | ATS analysis results per resume |
+| `resume_builds` | AI-generated resume history |
+| `interview_sessions` | Interview session metadata (role, difficulty, score, completed) |
+| `interview_questions` | Per-question data (question, user_answer, ai_feedback, score) |
+| `salary_negotiations` | Salary coach analysis history |
+| `chat_messages` | AI chat message history |
+| `app_config` | Remote config (e.g. `gemini_api_key`) |
 
-### Error Messages
+---
 
+## 10. STATE MANAGEMENT
+
+### Redux Store (`src/store/store.ts`)
+- Single slice: `themeSlice` (`mode: 'dark' | 'light'`)
+- Actions: `toggleTheme()`, `setTheme(mode)`, `loadTheme(mode)`
+- Persisted via `ThemePersistence` component (AsyncStorage)
+
+### Feature State (useReducer)
+- `useResumeEngine` → `resumeEngineReducer` (complex multi-step form)
+- `useInterviewEngine` → local `reducer` (interview session state machine)
+- Both use `useRef` for async coordination (prevent stale closures)
+
+### Key Hooks
 ```typescript
-// User-friendly messages
-"No internet connection. Changes saved locally."
-"Could not build resume. Please try again."
-"Could not export PDF."
-"Could not score resume"
-"Resume not found. Please refresh and try again."
-"AI service is busy. Please wait 30 seconds and try again."
+useProfile()     → { user, loading, error, refetch }
+useHome()        → { latestScore, highestScore, resumeCount, sessionCount, firstName, loading, refetch }
+useAIChat(user)  → { messages, loading, ready, send(text), clearChat() }
+useAtsScore()    → { scoring, score, error, scoreResume, getLatestScore, getScoreById, getScoreHistory }
+useResumeUpload()→ { uploading, progress, error, pickResume(), uploadResume(file), deleteResume(id, path) }
+useProfileStats(userId) → { stats: { resumes, bestAts, interviews } }
 ```
 
 ---
 
-## BEST PRACTICES
+## 11. PLANS & PREMIUM
 
-### State Management
+### Plan Tiers: `'free' | 'pro'`
 
-1. **Use useReducer for complex state** - Resume builder uses reducer for multi-step form
-2. **Persist critical state** - Draft auto-saves to AsyncStorage
-3. **Validate state transitions** - Phase transitions validated in reducer
-4. **Use refs for async coordination** - Prevent race conditions in voice interview
+| Feature | Free | Pro |
+|---|---|---|
+| Resume uploads | 3 | Unlimited |
+| Cloud history | Interview + salary | Interview + salary + higher limits |
+| Credits | Visible | Visible |
 
-### Error Handling
-
-1. **Classify errors** - Network vs validation vs server
-2. **Provide retry mechanisms** - Exponential backoff for transient errors
-3. **User-friendly messages** - Avoid technical jargon
-4. **Log for debugging** - Console logs with context
-
-### Performance
-
-1. **Debounce auto-save** - 500ms delay prevents excessive writes
-2. **Cache AI responses** - 5-minute TTL for identical prompts
-3. **In-flight deduplication** - Single request per unique prompt
-4. **Lazy load history** - Pagination for resume history
-
-### Security
-
-1. **API key in Supabase** - Never in client code
-2. **Input truncation** - Limit prompt sizes
-3. **Auth gating** - All features require login
-4. **Data validation** - Validate all AI responses
+### Key Functions (`src/services/premium/premiumService.ts`)
+```typescript
+canUploadResume(plan, currentCount): boolean
+getResumeLimit(plan): number | null   // null = unlimited
+getResumeRemainingLabel(plan, count): string
+getPlanUsageSummary({ user, resumesUsed, interviewsCompleted }): PlanUsageSummary
+```
 
 ---
 
-## CONFIGURATION
-
-### Environment Variables
+## 12. ENVIRONMENT VARIABLES
 
 ```
-EXPO_PUBLIC_GEMINI_API_KEY=<key>
+EXPO_PUBLIC_GEMINI_API_KEY=<fallback key>
 EXPO_PUBLIC_SUPABASE_URL=<url>
 EXPO_PUBLIC_SUPABASE_ANON_KEY=<key>
 ```
+Primary Gemini key is stored in Supabase `app_config` table, not in env.
 
-### Constants
+---
+
+## 13. KEYBOARD & SCROLL PATTERNS
+
+### SalaryNegotiationScreen
+- `KeyboardAvoidingView behavior="padding"` (both platforms)
+- `keyboardVerticalOffset`: iOS=0, Android=50
+- `ScrollView` with `flexGrow: 1` on `scrollContent`, `paddingBottom: 16`
+- Presented as `fullScreenModal` (prevents black gap from tab bar)
+
+### ProfileScreen
+- `KeyboardAvoidingView behavior="padding"` iOS / `"height"` Android
+- `keyboardVerticalOffset`: Android=80, iOS=0
+
+### AIScreen
+- `KeyboardAvoidingView behavior="padding"` (both), `keyboardVerticalOffset=35`
+
+### ResumeBuilderScreen
+- `KeyboardAvoidingView behavior="padding"` iOS / `"height"` Android
+
+### Android Nav Bar Black Gap Fix
+- `SystemBarsManager` calls `NavigationBar.setBackgroundColorAsync(theme.background)` on theme change
+- Initial color set in `App.tsx`: `NavigationBar.setBackgroundColorAsync("#0A0812")`
+- This prevents the black system nav bar from showing when keyboard opens/closes
+
+---
+
+## 14. SCORE UTILITIES (`src/utils/score.ts`)
 
 ```typescript
+scoreTierColor(score: number): string
+  // ≥75 → accent (#10B981), ≥50 → warning (#F97316), <50 → danger (#EF4444)
+
+scoreTierLabel(score: number): string
+  // ≥90 → "Excellent", ≥75 → "Great", ≥50 → "Good", <50 → "Needs Work"
+
+getInterviewResultMessage(score: number): string
+  // ≥80 → "Excellent performance!", ≥60 → "Good effort!", etc.
+```
+
+---
+
+## 15. LOCATION AUTOCOMPLETE
+
+### Component: `src/components/molecules/LocationAutocomplete.tsx`
+- Used in `SalaryNegotiationScreen` for location field
+- Returns `PlaceSelection { description: string, placeId: string }`
+- Integrates with Google Places API
+
+---
+
+## 16. TOAST SYSTEM
+
+### Component: `src/components/atoms/Toast.tsx`
+- `ToastProvider` wraps app in `App.tsx`
+- `useToast()` hook returns `toast(message, type: 'success' | 'error' | 'info')`
+- Used across all screens for non-blocking feedback
+
+---
+
+## 17. ERROR HANDLING PATTERNS
+
+### Gemini Errors
+- 429/quota → never retry, show "AI is busy" message
+- 503/500/network → exponential backoff, max 2 retries
+- Empty response → `GeminiError('empty_response')`
+- `handleGeminiError(error, retryFn?)` in `src/utils/gemini.ts`
+
+### Resume Engine Errors
+```typescript
+{ message: string, type?: 'network' | 'validation' | 'server', retryAction?: 'generate' | 'export' }
+```
+
+### Interview Engine Errors
+- Quota errors → friendly message, answers still recorded
+- Offline → stub answers with "pending evaluation" message
+- Per-answer evaluation wrapped in `.catch()` so one failure doesn't abort all
+
+---
+
+## 18. CONSTANTS
+
+```typescript
+// Gemini
+PRIMARY_MODEL = "gemini-2.5-flash-lite"
+MIN_REQUEST_GAP_MS = 1000
+CACHE_TTL_MS = 5 * 60 * 1000   // 5 min
+
 // Resume builder
 MAX_EXPERIENCES = 4
 TOTAL_STEPS = 5
 DRAFT_VERSION = 2
 
-// Gemini
-PRIMARY_MODEL = "gemini-2.5-flash-lite"
-MIN_REQUEST_GAP_MS = 6500
-CACHE_TTL_MS = 5 * 60 * 1000
-
 // Resume upload
 MAX_FREE_RESUMES = 3
+
+// Interview
+QUESTION_COUNTS = [3, 5, 10]
+DIFFICULTIES = ['easy', 'medium', 'hard']
+SESSION_TYPES = ['behavioral', 'technical', 'mixed']
 ```
 
 ---
 
-## MONITORING & DEBUGGING
+## 19. SALARY COACH DETAILS
 
-### Key Metrics
+### SalaryNegotiationScreen (`src/screens/salary/SalaryNegotiationScreen.tsx`)
 
-- **Response time** - AI call latency
-- **Token usage** - Tokens per feature
-- **Error rate** - Failed requests percentage
-- **Cache hit rate** - Cached vs fresh requests
-- **User satisfaction** - Feedback scores
+**Input Fields:**
+- Job Title (required, validated)
+- Company (optional)
+- Offered Salary + Currency (USD/INR/EUR)
+- Experience (0-1 yrs, 2-3 yrs, 4-6 yrs, 7-10 yrs, 10+ yrs)
+- Job Type (Full Time / Remote)
+- Location (LocationAutocomplete)
+- Industries (multi-select pills)
 
-### Debug Logging
-
+**Analysis Output:**
 ```typescript
-// Gemini service
-console.log("[Gemini] cache hit")
-console.log("[Gemini] dedup - reusing in-flight request")
-console.log("[Gemini] attempt X/Y failed - retrying in Xs")
-
-// Resume engine
-console.log("[ResumeEngine] Draft applied to state")
-console.log("[ResumeEngine] Failed to persist draft")
-
-// ATS scoring
-console.log("[scoreResume] Resume record:", { ... })
-console.log("[scoreResume] Final scores being saved:", { ... })
+interface SalaryAnalysis {
+  verdict: 'Below Market' | 'Fair Offer' | 'Above Market'
+  marketMin, marketMedian, marketMax: number
+  percentageDiff: number
+  suggestedAsk: number          // always >= offered salary
+  leveragePoints: string[]
+  negotiationScript: string
+  emailTemplate: string
+  tactics: string[]
+}
 ```
 
----
+**Client-side Safety:**
+- Verdict re-derived from `percentageDiff` (>5% = Above, <-5% = Below, else Fair)
+- `suggestedAsk` clamped to >= offered salary
 
-## FUTURE ENHANCEMENTS
-
-### Short Term
-- [ ] Further token optimization (target <100 tokens per prompt)
-- [ ] Enhanced error recovery (smarter retry logic)
-- [ ] Offline support (cache critical AI responses)
-
-### Medium Term
-- [ ] Performance monitoring dashboard
-- [ ] Advanced context-aware AI
-- [ ] Multi-modal AI (text + voice)
-- [ ] Real-time interview coaching
-
-### Long Term
-- [ ] AI-powered resume generation from scratch
-- [ ] Industry-specific AI models
-- [ ] Salary negotiation simulation
-- [ ] Career path recommendations
+**History:** Saved to Supabase `salary_negotiations` table, shown in History tab
 
 ---
 
-## CONCLUSION
+## 20. PROFILE SCREEN DETAILS
 
-Rankly is a well-architected React Native app with:
+### ProfileScreen (`src/screens/profile/ProfileScreen.tsx`)
 
-✅ **Robust AI integration** - Gemini API with proper error handling and rate limiting  
-✅ **Complex state management** - Multi-step form with draft persistence  
-✅ **Type-safe codebase** - Full TypeScript coverage  
-✅ **User-friendly UX** - Clear error messages and loading states  
-✅ **Scalable architecture** - Modular services and hooks  
+**Sections:**
+1. `ProfileHero` — avatar (animated ring), name, plan badge, credits, edit button
+2. `StatsStrip` — animated counters (resumes, best ATS, interviews)
+3. `BioCard` — bio text display
+4. `SettingsCard` — notifications toggle, theme toggle, history links, plan management
+5. `DangerZone` — sign out, delete account, app version
 
-The system is production-ready with clear optimization roadmap for scaling and enhanced features.
+**Edit Mode:**
+- Inline form replaces bio/settings
+- Fields: firstName, lastName, bio, role, experienceLevel, industry, linkedinUrl
+- Dirty check prevents unnecessary saves
+- `EditProfileForm` + `EditActionBar` (Cancel / Save Changes)
+
+**Avatar Upload:**
+- `expo-image-picker` → base64 → Supabase Storage `avatars` bucket
+- `updateUserProfile({ avatarUrl })` saves public URL
 
 ---
 
-_Documentation complete. All systems documented and ready for reference._
+_End of GLOBAL_CONTEXT.md — keep this file updated when adding new features or changing architecture._
