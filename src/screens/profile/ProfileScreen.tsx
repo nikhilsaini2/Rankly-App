@@ -385,18 +385,21 @@ export default function ProfileScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      // behavior={Platform.OS === "ios" ? "height" : "padding"}
-      keyboardVerticalOffset={Platform.OS === "android" ? 80 : 0}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={[profileStyles.root]}>
         <ScrollView
           ref={scrollRef}
           bounces={false}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
           contentContainerStyle={[
             profileStyles.scrollContent,
             {
-              paddingBottom: editing ? insets.bottom + 100 : insets.bottom + 40,
+              paddingBottom: editing
+                ? insets.bottom + 100
+                : insets.bottom + 40,
             },
           ]}
         >

@@ -6,6 +6,7 @@ import {
   Alert,
   BackHandler,
   Clipboard,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -143,6 +144,28 @@ export default function SalaryNegotiationScreen() {
   const [copiedScript, setCopiedScript] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState(0);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // ── Dynamic keyboard height tracking ─────────────────────────────
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const show = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+
+    const hide = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const pulseScale = useSharedValue(1);
   const pulseOpacity = useSharedValue(0.3);
@@ -815,7 +838,7 @@ Rules:
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 16 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 24 : 16 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
