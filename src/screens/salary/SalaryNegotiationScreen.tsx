@@ -541,7 +541,7 @@ Rules:
 
   if (phase === "loading") {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
         <View style={styles.loadingContainer}>
           <View style={styles.loadingHeader}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -568,7 +568,7 @@ Rules:
         ? currentData.job_title
         : jobTitle || "Salary Analysis";
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => {
@@ -823,7 +823,7 @@ Rules:
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { paddingBottom: insets.bottom }]}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
     >
       <View style={styles.header}>
@@ -893,7 +893,7 @@ Rules:
 
             {/* Job Title */}
             <View style={styles.inputCard}>
-              <Text style={styles.inputLabel}>Job Title</Text>
+              <Text style={styles.inputLabel}>Job Title <Text style={{ color: "red" }}>*</Text></Text>
               <TextInput
                 style={[styles.input, jobTitleError ? styles.inputError : null]}
                 placeholder="e.g. Senior Product Manager"
@@ -920,7 +920,7 @@ Rules:
 
             {/* Offered Salary */}
             <View style={styles.inputCard}>
-              <Text style={styles.inputLabel}>Offer Received</Text>
+              <Text style={styles.inputLabel}>Offer Received <Text style={{ color: "red" }}>*</Text></Text>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. 80000"

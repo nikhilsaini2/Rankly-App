@@ -13,7 +13,12 @@ interface PillSelectorProps {
 }
 
 export const PillSelector: React.FC<PillSelectorProps> = ({
-  options, selected, onSelect, multiSelect, label, required,
+  options,
+  selected,
+  onSelect,
+  multiSelect,
+  label,
+  required,
 }) => {
   const theme = useAppTheme();
   const resumeStyles = createResumeStyles(theme);
@@ -26,11 +31,11 @@ export const PillSelector: React.FC<PillSelectorProps> = ({
       {label && (
         <Text style={resumeStyles.fieldLabel}>
           {label}
-          {required && <Text style={{ color: "red" }}> *</Text>}
+          {required && <Text style={{ color: 'red' }}> *</Text>}
         </Text>
       )}
       <View style={resumeStyles.pillGrid}>
-        {options.map(opt => (
+        {options.map((opt) => (
           <TouchableOpacity
             key={opt}
             style={[resumeStyles.pill, isSelected(opt) && resumeStyles.pillSelected]}

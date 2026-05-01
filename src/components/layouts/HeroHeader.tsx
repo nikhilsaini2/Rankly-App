@@ -20,7 +20,7 @@ export function HeroHeader(props: {
   return (
     <View style={styles.heroContainer}>
       <LinearGradient
-        colors={["rgba(108,99,255,0.15)", "transparent"]}
+        colors={[theme.primary + "20", "transparent"]}
         style={styles.heroGlow}
         start={{ x: 1, y: 0 }}
         end={{ x: 0.2, y: 1 }}
@@ -40,7 +40,7 @@ export function HeroHeader(props: {
         >
           <View style={styles.avatarRing}>
             <LinearGradient
-              colors={[theme.primary, theme.accent]}
+              colors={[theme.primary, theme.primaryDark]}
               style={StyleSheet.absoluteFillObject}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -58,10 +58,15 @@ export function HeroHeader(props: {
               </View>
             )}
           </View>
-          <View style={styles.creditsBadge}>
-            <View style={styles.creditsGreenDot} />
+          <LinearGradient
+            colors={[theme.primary, theme.primaryDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.creditsBadge}
+          >
+            <View style={styles.creditsDot} />
             <Text style={styles.creditsText}>{credits} credits</Text>
-          </View>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </View>
@@ -153,19 +158,16 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       flexDirection: "row",
       alignItems: "center",
       gap: 4,
-      backgroundColor: "rgba(0,212,170,0.1)",
-      borderWidth: 1,
-      borderColor: theme.background === "#F3F4F8" ? "rgba(0,212,170,0.55)" : "rgba(0,212,170,0.2)",
       borderRadius: 10,
       paddingHorizontal: 8,
       paddingVertical: 4,
     },
-    creditsGreenDot: {
+    creditsDot: {
       width: 5,
       height: 5,
       borderRadius: 3,
-      backgroundColor: theme.accent,
+      backgroundColor: theme.onPrimary,
     },
-    creditsText: { fontSize: 9, fontWeight: "600", color: theme.accent },
+    creditsText: { fontSize: 9, fontWeight: "700", color: theme.onPrimary },
   });
 }
