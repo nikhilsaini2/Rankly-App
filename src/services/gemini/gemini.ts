@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GenerateParams } from "../../types";
+import { emitGeminiErrorToast } from "../../utils/geminiToastBridge";
 import { supabase } from "../supabase/supabase";
 
 export class GeminiError extends Error {
@@ -201,7 +202,11 @@ export async function generateGeminiText(
 
   // Register in-flight - auto-removes when settled (success or error)
   inFlightRequests.set(cacheKey, requestPromise);
-  requestPromise.finally(() => inFlightRequests.delete(cacheKey));
+  requestPromise
+    .catch((err) => {
+      emitGeminiErrorToast(err);
+    })
+    .finally(() => inFlightRequests.delete(cacheKey));
 
   return requestPromise;
 }
@@ -265,6 +270,7 @@ export async function generateGeminiTextWithRetry(
 export async function generateGeminiWithContext(
   params: GenerateParams,
 ): Promise<string> {
+  try {
   const apiKey = await getApiKey();
   const genAI = new GoogleGenerativeAI(apiKey);
 
@@ -380,6 +386,10 @@ export async function generateGeminiWithContext(
   }
 
   return text.trim();
+  } catch (err) {
+    emitGeminiErrorToast(err);
+    throw err;
+  }
 }
 
 // ─── Quota error helpers ───────────────────────────────────────

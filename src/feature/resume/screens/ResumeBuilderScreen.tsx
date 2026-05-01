@@ -821,6 +821,36 @@ export default function ResumeBuilderScreen() {
     }
   }, [engine]);
 
+  const stepContent = useMemo(() => (
+    <>
+      <StepIndicator
+        currentStep={state.currentStep}
+        totalSteps={TOTAL_STEPS}
+        stepTitle={STEP_TITLES[state.currentStep - 1]}
+      />
+      <StepTitleCard
+        icon={STEP_ICONS[state.currentStep - 1]}
+        title={STEP_TITLES[state.currentStep - 1]}
+        subtitle={STEP_SUBTITLES[state.currentStep - 1]}
+      />
+      {state.currentStep === 1 && (
+        <Step1 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
+      )}
+      {state.currentStep === 2 && (
+        <Step2 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
+      )}
+      {state.currentStep === 3 && (
+        <Step3 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
+      )}
+      {state.currentStep === 4 && (
+        <Step4 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
+      )}
+      {state.currentStep === 5 && (
+        <Step5 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
+      )}
+    </>
+  ), [state.currentStep, state.formData, dispatch, visibleErrors, markTouched]);
+
   if (state.asyncStatus === "error" && state.error) {
     return (
       <View style={[resumeStyles.loadingContainer, { backgroundColor: theme.background, paddingBottom: insets.bottom }]}>
@@ -908,36 +938,6 @@ export default function ResumeBuilderScreen() {
     );
   }
 
-  const StepContent = () => (
-    <>
-      <StepIndicator
-        currentStep={state.currentStep}
-        totalSteps={TOTAL_STEPS}
-        stepTitle={STEP_TITLES[state.currentStep - 1]}
-      />
-      <StepTitleCard
-        icon={STEP_ICONS[state.currentStep - 1]}
-        title={STEP_TITLES[state.currentStep - 1]}
-        subtitle={STEP_SUBTITLES[state.currentStep - 1]}
-      />
-      {state.currentStep === 1 && (
-        <Step1 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
-      )}
-      {state.currentStep === 2 && (
-        <Step2 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
-      )}
-      {state.currentStep === 3 && (
-        <Step3 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
-      )}
-      {state.currentStep === 4 && (
-        <Step4 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
-      )}
-      {state.currentStep === 5 && (
-        <Step5 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
-      )}
-    </>
-  );
-
   return (
     <View style={[resumeStyles.container, { paddingBottom: insets.bottom }]}>
       {showRestoreModal && (
@@ -988,7 +988,7 @@ export default function ResumeBuilderScreen() {
             bounces={false}
             keyboardDismissMode="interactive"
           >
-            <StepContent />
+            {stepContent}
             <NavButtons
               onBack={() => engine.handleBack(() => navigation.goBack())}
               onNext={handleNext}

@@ -430,20 +430,21 @@ export function createProfileStyles(theme: AppTheme) {
     // Sticky action bar at the bottom of the screen while editing
     editActionBar: {
       position: "absolute",
-      bottom: 8,
+      bottom: 0,
       left: 0,
       right: 0,
       flexDirection: "row",
       gap: 12,
       paddingHorizontal: 20,
-      paddingTop: 14,
-      backgroundColor: theme.background, // or theme.surface
+      paddingVertical: 14,
+      alignItems: "center",
+      backgroundColor: theme.surface,
       borderTopWidth: 1,
-      borderTopColor: theme.border,
+      borderColor: theme.border,
     },
     editCancelBtn: {
       flex: 1,
-      paddingVertical: 14,
+      height: 48,
       borderRadius: 14,
       alignItems: "center",
       justifyContent: "center",
@@ -457,8 +458,8 @@ export function createProfileStyles(theme: AppTheme) {
       fontWeight: "600",
     },
     editSaveBtn: {
-      flex: 2,
-      paddingVertical: 14,
+      flex: 1,
+      height: 48,
       borderRadius: 14,
       alignItems: "center",
       justifyContent: "center",

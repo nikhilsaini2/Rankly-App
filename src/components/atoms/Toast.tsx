@@ -1,8 +1,12 @@
-import React, { createContext, useContext, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getElevation } from "../../theme";
 import { useAppTheme } from "../../theme/useAppTheme";
+import {
+  registerGeminiToastListener,
+  unregisterGeminiToastListener,
+} from "../../utils/geminiToastBridge";
 
 export type ToastVariant = "success" | "error" | "info";
 
@@ -43,6 +47,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     });
     hideRef.current = setTimeout(() => setState(null), 3000);
   }
+
+  // Register this toast as the global Gemini error sink
+  useEffect(() => {
+    registerGeminiToastListener((msg, variant) => show(msg, variant));
+    return () => unregisterGeminiToastListener();
+  }, []);
 
   const borderColor =
     state?.variant === "success"
@@ -96,3 +106,4 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     text: { color: theme.textPrimary, textAlign: "center", fontWeight: "600" },
   });
 }
+

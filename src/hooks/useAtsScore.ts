@@ -7,6 +7,7 @@ import {
 import { buildAtsScorePrompt } from "../services/gemini/prompts";
 import { supabase } from "../services/supabase/supabase";
 import type { AtsScoreRow } from "../types/common.types";
+import { emitGeminiErrorToast } from "../utils/geminiToastBridge";
 
 type GeminiAts = {
   overall_score: number;
@@ -184,6 +185,7 @@ async function extractTextFromStorageFile(
     return extractedText;
   } catch (err) {
     console.error("[extractTextFromStorageFile] Gemini call failed:", err);
+    emitGeminiErrorToast(err);
     throw new Error("GEMINI_API_ERROR");
   }
 }
@@ -417,6 +419,7 @@ export function useAtsScore() {
         }
 
         setError(userMessage);
+        emitGeminiErrorToast(e);
         throw e;
       } finally {
         setScoring(false);
