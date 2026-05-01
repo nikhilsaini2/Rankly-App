@@ -154,7 +154,7 @@ export function createResumeStyles(theme: AppTheme) {
       marginBottom: 8,
     },
     required: {
-      color: theme.accent,
+      color: "red",
     },
     // ─── Input system ────────────────────────────────────────────────
     inputWrapper: {

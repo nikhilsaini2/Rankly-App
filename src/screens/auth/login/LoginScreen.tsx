@@ -32,6 +32,8 @@ import { getGoogleAuthErrorMessage } from "../../../utils/googleAuthError";
 import { loginSchema } from "../../../validation/auth.schema";
 import { createLoginStyles } from "./styles";
 
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+
 const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
   const theme = useAppTheme();
   const styles = createLoginStyles(theme);
@@ -124,24 +126,24 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
   // RootNavigator's onAuthStateChange drives the navigation atomically.
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: isLight ? "#F5F6FA" : theme.bgPrimary }}
+      edges={["bottom", "left", "right"]}
+    >
       <StatusBar style={isLight ? "dark" : "light"} />
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 44 : 0}
-      >
-        <View style={styles.container}>
-          <ScrollView
-            contentContainerStyle={{
-              flexGrow: 1,
-              paddingBottom: bottomPadding + 40,
-            }}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-          >
+      <View style={styles.container}>
+        <KeyboardAwareScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingBottom: bottomPadding + 40,
+          }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          enableOnAndroid={true}
+          extraScrollHeight={20}
+        >
             <View style={styles.header}>
               <AppName size={26} />
             </View>
@@ -181,7 +183,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                     )}
 
                     <View>
-                      <Text style={styles.label}>EMAIL ADDRESS</Text>
+                      <Text style={styles.label}>EMAIL ADDRESS <Text style={{ color: "red" }}>*</Text></Text>
                       <TextInput
                         ref={emailRef}
                         style={[
@@ -213,7 +215,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                     </View>
 
                     <View>
-                      <Text style={styles.label}>PASSWORD</Text>
+                      <Text style={styles.label}>PASSWORD <Text style={{ color: "red" }}>*</Text></Text>
                       <View style={styles.inputRow}>
                         <TextInput
                           ref={passwordRef}
@@ -321,7 +323,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                             gap: 10,
                           }}
                         >
-                          <ActivityIndicator size="small" color="white" />
+                          <ActivityIndicator size="small" color={isLight ? "#000" : "white"} />
                           <Text style={styles.googleText}>Logging in...</Text>
                         </View>
                       ) : (
@@ -357,9 +359,8 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                 )}
               </Formik>
             </View>
-          </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
+      </View>
     </SafeAreaView>
   );
 };

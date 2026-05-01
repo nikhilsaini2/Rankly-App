@@ -218,7 +218,7 @@ function SetupPhase({
       </View>
 
       <Animated.View style={[s.card, cardStyles[0]]}>
-        <Text style={s.fieldLabel}>Role</Text>
+        <Text style={s.fieldLabel}>Role <Text style={{ color: "red" }}>*</Text></Text>
         <TextInput
           style={[s.roleInput, roleFocused && s.roleInputFocused]}
           value={role}

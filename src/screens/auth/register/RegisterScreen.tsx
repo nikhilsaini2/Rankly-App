@@ -7,13 +7,11 @@ import {
   ActivityIndicator,
   Image,
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
-  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import {
   SafeAreaView,
@@ -29,10 +27,12 @@ import {
 } from "../../../services/supabase/auth.supabase";
 import { useAppTheme } from "../../../theme/useAppTheme";
 import type { AuthScreenProps } from "../../../types/navigation.types";
-import { RegisterSchema } from "../../../validation/auth.schema";
 import { getGoogleAuthErrorMessage } from "../../../utils/googleAuthError";
 import { sanitizeFirstName, sanitizeLastName } from "../../../utils/nameValidation";
+import { RegisterSchema } from "../../../validation/auth.schema";
 import { createRegisterStyles } from "./styles";
+
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
   const theme = useAppTheme();
@@ -88,6 +88,8 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
     setShowConfirmPassword((prev) => !prev);
   }, []);
 
+  const scrollRef = useRef<any>(null);
+
   const bottomPadding =
     Platform.OS === "android" ? Math.max(insets.bottom, 16) : insets.bottom;
 
@@ -96,24 +98,26 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
   // RootNavigator's onAuthStateChange drives the navigation atomically.
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: isLight ? "#F5F6FA" : theme.bgPrimary }}
+      edges={["bottom", "left", "right"]}
+    >
       <StatusBar style={isLight ? "dark" : "light"} />
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 44 : 0}
-      >
-        <View style={styles.container}>
-          <ScrollView
-            contentContainerStyle={{
-              flexGrow: 1,
-              paddingBottom: bottomPadding + 16,
-            }}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-          >
+      <View style={styles.container}>
+        <KeyboardAwareScrollView
+          ref={scrollRef}
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingBottom: bottomPadding + 16,
+          }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          enableOnAndroid={true}
+          extraHeight={120}
+          extraScrollHeight={60}
+        >
             <View style={styles.header}>
               <AppName size={26} />
             </View>
@@ -199,7 +203,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
 
                       <View style={styles.row}>
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.label}>FIRST NAME</Text>
+                          <Text style={styles.label}>FIRST NAME <Text style={{ color: "red" }}>*</Text></Text>
                           <TextInput
                             ref={firstNameRef}
                             style={[
@@ -228,7 +232,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                         </View>
 
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.label}>LAST NAME</Text>
+                          <Text style={styles.label}>LAST NAME <Text style={{ color: "red" }}>*</Text></Text>
                           <TextInput
                             ref={lastNameRef}
                             style={[
@@ -258,7 +262,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                       </View>
 
                       <View>
-                        <Text style={styles.label}>EMAIL ADDRESS</Text>
+                        <Text style={styles.label}>EMAIL ADDRESS <Text style={{ color: "red" }}>*</Text></Text>
                         <TextInput
                           ref={emailRef}
                           style={[
@@ -287,7 +291,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                       </View>
 
                       <View>
-                        <Text style={styles.label}>PASSWORD</Text>
+                        <Text style={styles.label}>PASSWORD <Text style={{ color: "red" }}>*</Text></Text>
                         <View style={styles.inputRow}>
                           <TextInput
                             ref={passwordRef}
@@ -335,7 +339,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                       </View>
 
                       <View>
-                        <Text style={styles.label}>CONFIRM PASSWORD</Text>
+                        <Text style={styles.label}>CONFIRM PASSWORD <Text style={{ color: "red" }}>*</Text></Text>
                         <View style={styles.inputRow}>
                           <TextInput
                             ref={confirmPasswordRef}
@@ -384,7 +388,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                         )}
                       </View>
 
-                      <Text style={styles.label}>TARGET ROLE</Text>
+                      <Text style={styles.label}>TARGET ROLE <Text style={{ color: "red" }}>*</Text></Text>
                       <View style={styles.roles}>
                         {roles.map((role) => {
                           const isOtherChip = role === "Other";
@@ -434,6 +438,11 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                           onChangeText={(text) => {
                             setCustomRole(text);
                             setFieldValue("role", text.trim() || "Other");
+                          }}
+                          onFocus={() => {
+                            setTimeout(() => {
+                              scrollRef.current?.scrollToEnd({ animated: true });
+                            }, 150);
                           }}
                           autoCapitalize="words"
                           returnKeyType="done"
@@ -500,7 +509,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                               gap: 10,
                             }}
                           >
-                            <ActivityIndicator size="small" color="white" />
+                            <ActivityIndicator size="small" color={isLight ? "#000" : "white"} />
                             <Text style={styles.googleText}>Signing in...</Text>
                           </View>
                         ) : (
@@ -536,9 +545,8 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                   )}
                 </Formik>
             </View>
-          </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
+      </View>
     </SafeAreaView>
   );
 };

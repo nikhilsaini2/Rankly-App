@@ -11,7 +11,6 @@ import React, {
 import {
   ActivityIndicator,
   BackHandler,
-  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -717,32 +716,8 @@ export default function ResumeBuilderScreen() {
   const toast = useToast();
 
   const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const hasCheckedDraft = useRef(false);
   const hasUserInteracted = useRef(false);
-
-  // ── Dynamic keyboard height tracking ────────────────────────────
-  // Use keyboardWillShow/Hide on iOS for smoother animation (fires before
-  // the keyboard animation starts). Android only supports Did variants.
-  useEffect(() => {
-    const showEvent =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const show = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-    });
-
-    const hide = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
-    });
-
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
 
   // Check draft ONCE on mount using peekDraft (no state mutation).
   // Only show modal if draft has meaningful content AND user hasn't typed anything.
@@ -1113,96 +1088,186 @@ export default function ResumeBuilderScreen() {
           />
         </View>
       ) : (
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
-          <ScrollView
-            style={resumeStyles.scrollContent}
-            contentContainerStyle={[
-              resumeStyles.scrollContentContainer,
-              {
-                flexGrow: 1,
-                paddingBottom: keyboardHeight > 0 ? 80 : 8,
-              },
-            ]}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-            keyboardDismissMode="interactive"
+        Platform.OS === "ios" ? (
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior="padding"
           >
-            <StepIndicator
-              currentStep={state.currentStep}
-              totalSteps={TOTAL_STEPS}
-              stepTitle={STEP_TITLES[state.currentStep - 1]}
-            />
-            <StepTitleCard
-              icon={STEP_ICONS[state.currentStep - 1]}
-              title={STEP_TITLES[state.currentStep - 1]}
-              subtitle={STEP_SUBTITLES[state.currentStep - 1]}
-            />
+            <ScrollView
+              style={resumeStyles.scrollContent}
+              contentContainerStyle={[
+                resumeStyles.scrollContentContainer,
+                {
+                  flexGrow: 1,
+                  paddingBottom: 8,
+                },
+              ]}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+              keyboardDismissMode="interactive"
+            >
+              <StepIndicator
+                currentStep={state.currentStep}
+                totalSteps={TOTAL_STEPS}
+                stepTitle={STEP_TITLES[state.currentStep - 1]}
+              />
+              <StepTitleCard
+                icon={STEP_ICONS[state.currentStep - 1]}
+                title={STEP_TITLES[state.currentStep - 1]}
+                subtitle={STEP_SUBTITLES[state.currentStep - 1]}
+              />
 
-            {state.currentStep === 1 && (
-              <Step1
-                state={state.formData}
-                dispatch={dispatch}
-                errors={visibleErrors}
-                markTouched={markTouched}
-              />
-            )}
-            {state.currentStep === 2 && (
-              <Step2
-                state={state.formData}
-                dispatch={dispatch}
-                errors={visibleErrors}
-                markTouched={markTouched}
-              />
-            )}
-            {state.currentStep === 3 && (
-              <Step3
-                state={state.formData}
-                dispatch={dispatch}
-                errors={visibleErrors}
-                markTouched={markTouched}
-              />
-            )}
-            {state.currentStep === 4 && (
-              <Step4
-                state={state.formData}
-                dispatch={dispatch}
-                errors={visibleErrors}
-                markTouched={markTouched}
-              />
-            )}
-            {state.currentStep === 5 && (
-              <Step5
-                state={state.formData}
-                dispatch={dispatch}
-                errors={visibleErrors}
-                markTouched={markTouched}
-              />
-            )}
-          </ScrollView>
+              {state.currentStep === 1 && (
+                <Step1
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+              {state.currentStep === 2 && (
+                <Step2
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+              {state.currentStep === 3 && (
+                <Step3
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+              {state.currentStep === 4 && (
+                <Step4
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+              {state.currentStep === 5 && (
+                <Step5
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+            </ScrollView>
 
-          {/* Fixed footer — always visible, never scrolls */}
-          <View
-            style={[
-              resumeStyles.fixedFooter,
-              { paddingBottom: bottomInset + 12 },
-            ]}
-          >
-            <NavButtons
-              onBack={() => engine.handleBack(() => navigation.goBack())}
-              onNext={handleNext}
-              canProceed={engine.canProceed()}
-              isLastStep={state.currentStep === TOTAL_STEPS}
-              isBuilding={
-                state.currentStep === TOTAL_STEPS &&
-                state.asyncStatus === "loading"
-              }
-            />
+            {/* Fixed footer — always visible, never scrolls */}
+            <View
+              style={[
+                resumeStyles.fixedFooter,
+                { paddingBottom: bottomInset + 12 },
+              ]}
+            >
+              <NavButtons
+                onBack={() => engine.handleBack(() => navigation.goBack())}
+                onNext={handleNext}
+                canProceed={engine.canProceed()}
+                isLastStep={state.currentStep === TOTAL_STEPS}
+                isBuilding={
+                  state.currentStep === TOTAL_STEPS &&
+                  state.asyncStatus === "loading"
+                }
+              />
+            </View>
+          </KeyboardAvoidingView>
+        ) : (
+          <View style={{ flex: 1 }}>
+            <ScrollView
+              style={resumeStyles.scrollContent}
+              contentContainerStyle={[
+                resumeStyles.scrollContentContainer,
+                {
+                  flexGrow: 1,
+                  paddingBottom: 8,
+                },
+              ]}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+              keyboardDismissMode="interactive"
+            >
+              <StepIndicator
+                currentStep={state.currentStep}
+                totalSteps={TOTAL_STEPS}
+                stepTitle={STEP_TITLES[state.currentStep - 1]}
+              />
+              <StepTitleCard
+                icon={STEP_ICONS[state.currentStep - 1]}
+                title={STEP_TITLES[state.currentStep - 1]}
+                subtitle={STEP_SUBTITLES[state.currentStep - 1]}
+              />
+
+              {state.currentStep === 1 && (
+                <Step1
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+              {state.currentStep === 2 && (
+                <Step2
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+              {state.currentStep === 3 && (
+                <Step3
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+              {state.currentStep === 4 && (
+                <Step4
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+              {state.currentStep === 5 && (
+                <Step5
+                  state={state.formData}
+                  dispatch={dispatch}
+                  errors={visibleErrors}
+                  markTouched={markTouched}
+                />
+              )}
+            </ScrollView>
+
+            {/* Fixed footer — always visible, never scrolls */}
+            <View
+              style={[
+                resumeStyles.fixedFooter,
+                { paddingBottom: bottomInset + 12 },
+              ]}
+            >
+              <NavButtons
+                onBack={() => engine.handleBack(() => navigation.goBack())}
+                onNext={handleNext}
+                canProceed={engine.canProceed()}
+                isLastStep={state.currentStep === TOTAL_STEPS}
+                isBuilding={
+                  state.currentStep === TOTAL_STEPS &&
+                  state.asyncStatus === "loading"
+                }
+              />
+            </View>
           </View>
-        </KeyboardAvoidingView>
+        )
       )}
     </View>
   );

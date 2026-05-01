@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import {
   SafeAreaView,
-  useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import AppName from "../../../components/atoms/AppName";
 import ProgressRing from "../../../components/atoms/ProgressRing";
@@ -23,7 +22,6 @@ import { createOnboardingStyles } from "./styles";
 const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
   const theme = useAppTheme();
   const styles = createOnboardingStyles(theme);
-  const insets = useSafeAreaInsets();
   const isLight = theme.background === "#F3F4F8";
   const [getStartedLoading, setGetStartedLoading] = useState(false);
 
@@ -41,11 +39,14 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
   }, [navigation, getStartedLoading]);
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: isLight ? "#F5F6FA" : theme.bgPrimary }}
+      edges={["bottom", "left", "right"]}
+    >
       <StatusBar style={isLight ? "dark" : "light"} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View
           style={[
@@ -53,7 +54,6 @@ const OnBoardingScreen = ({ navigation }: AuthScreenProps<"Onboarding">) => {
             {
               flex: 1,
               paddingTop: 8,
-              paddingBottom: Math.max(insets.bottom, 12),
               paddingHorizontal: 16,
               justifyContent: "space-between",
             },
