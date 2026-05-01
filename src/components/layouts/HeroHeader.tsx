@@ -58,15 +58,10 @@ export function HeroHeader(props: {
               </View>
             )}
           </View>
-          <LinearGradient
-            colors={[theme.primary, theme.primaryDark]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.creditsBadge}
-          >
+          <View style={styles.creditsBadge}>
             <View style={styles.creditsDot} />
             <Text style={styles.creditsText}>{credits} credits</Text>
-          </LinearGradient>
+          </View>
         </TouchableOpacity>
       </View>
     </View>
@@ -158,6 +153,9 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       flexDirection: "row",
       alignItems: "center",
       gap: 4,
+      backgroundColor: theme.primary + "12",
+      borderWidth: 1,
+      borderColor: theme.primary + "30",
       borderRadius: 10,
       paddingHorizontal: 8,
       paddingVertical: 4,
@@ -166,8 +164,8 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       width: 5,
       height: 5,
       borderRadius: 3,
-      backgroundColor: theme.onPrimary,
+      backgroundColor: theme.primary,
     },
-    creditsText: { fontSize: 9, fontWeight: "700", color: theme.onPrimary },
+    creditsText: { fontSize: 9, fontWeight: "700", color: theme.primary },
   });
 }

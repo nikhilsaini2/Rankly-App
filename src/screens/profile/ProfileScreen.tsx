@@ -13,11 +13,10 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import {
   Easing,
@@ -32,8 +31,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch } from "react-redux";
 import { useToast } from "../../components/atoms/Toast";
-import { NOTIF_STORAGE_KEY } from "../../constants/content";
 import { roles } from "../../constants/all";
+import { NOTIF_STORAGE_KEY } from "../../constants/content";
 import type { ResumeHistoryItem } from "../../feature/resume/types/resume.types";
 import { useProfile } from "../../hooks";
 import { useProfileStats } from "../../hooks/useProfileStats";
@@ -385,9 +384,10 @@ export default function ProfileScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior="padding"
+      keyboardVerticalOffset={insets.top}
     >
-      <View style={[profileStyles.root]}>
+      <View style={[profileStyles.root, { flex: 1 }]}>
         <ScrollView
           ref={scrollRef}
           bounces={false}
@@ -397,9 +397,7 @@ export default function ProfileScreen() {
           contentContainerStyle={[
             profileStyles.scrollContent,
             {
-              paddingBottom: editing
-                ? insets.bottom + 100
-                : insets.bottom + 40,
+              paddingBottom: insets.bottom + 40,
             },
           ]}
         >
@@ -419,15 +417,41 @@ export default function ProfileScreen() {
           />
 
           {editing ? (
-            <EditProfileForm
-              draft={draft}
-              roleModal={roleModal}
-              setRoleModal={setRoleModal}
-              setDraft={setDraft}
-              email={user?.email ?? ""}
-              isCustomRole={isCustomRole}
-              setIsCustomRole={setIsCustomRole}
-            />
+            <>
+              <EditProfileForm
+                draft={draft}
+                roleModal={roleModal}
+                setRoleModal={setRoleModal}
+                setDraft={setDraft}
+                email={user?.email ?? ""}
+                isCustomRole={isCustomRole}
+                setIsCustomRole={setIsCustomRole}
+              />
+              <View style={profileStyles.editActionBar}>
+                <TouchableOpacity
+                  onPress={cancelEdit}
+                  style={profileStyles.editCancelBtn}
+                  activeOpacity={0.8}
+                >
+                  <Text style={profileStyles.editCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={saveEdit}
+                  disabled={!isDirty || saving}
+                  style={[
+                    profileStyles.editSaveBtn,
+                    (!isDirty || saving) && { opacity: 0.45 },
+                  ]}
+                  activeOpacity={0.85}
+                >
+                  {saving ? (
+                    <ActivityIndicator size="small" color={theme.onPrimary} />
+                  ) : (
+                    <Text style={profileStyles.editSaveText}>Save Changes</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </>
           ) : (
             <>
               <StatsStrip statsDisplay={statsDisplay} />
@@ -450,32 +474,6 @@ export default function ProfileScreen() {
           )}
         </ScrollView>
 
-        {editing && (
-          <View style={profileStyles.editActionBar}>
-            <TouchableOpacity
-              onPress={cancelEdit}
-              style={profileStyles.editCancelBtn}
-              activeOpacity={0.8}
-            >
-              <Text style={profileStyles.editCancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={saveEdit}
-              disabled={!isDirty || saving}
-              style={[
-                profileStyles.editSaveBtn,
-                (!isDirty || saving) && { opacity: 0.45 },
-              ]}
-              activeOpacity={0.85}
-            >
-              {saving ? (
-                <ActivityIndicator size="small" color={theme.onPrimary} />
-              ) : (
-                <Text style={profileStyles.editSaveText}>Save Changes</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
     </KeyboardAvoidingView>
   );

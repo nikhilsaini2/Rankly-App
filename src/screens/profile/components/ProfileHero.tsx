@@ -100,7 +100,7 @@ export function ProfileHero({
             <Text style={styles.planBadgeText}>{planLabel}</Text>
           </View>
           <View style={styles.creditsBadge}>
-            <Feather name="zap" size={11} color={theme.accent} />
+            <Feather name="zap" size={11} color={theme.primary} />
             <Text style={styles.creditsBadgeText}>{creditsLabel}</Text>
           </View>
         </Animated.View>
