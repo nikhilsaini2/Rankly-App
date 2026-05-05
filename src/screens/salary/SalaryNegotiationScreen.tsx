@@ -1,12 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import * as NavigationBar from "expo-navigation-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   BackHandler,
   Clipboard,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -138,37 +138,19 @@ export default function SalaryNegotiationScreen() {
   );
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
   const [analysis, setAnalysis] = useState<SalaryAnalysis | null>(null);
+  /** Shown on results header after analyze — form fields are cleared immediately */
+  const [submittedJobTitleForResults, setSubmittedJobTitleForResults] =
+    useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [jobTitleError, setJobTitleError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [copiedScript, setCopiedScript] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState(0);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-
-  // ── Dynamic keyboard height tracking ─────────────────────────────
-  useEffect(() => {
-    const showEvent =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const show = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-    });
-
-    const hide = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
-    });
-
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
-
   const pulseScale = useSharedValue(1);
   const pulseOpacity = useSharedValue(0.3);
+
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const refreshHistory = async () => {
     setRefreshing(true);
@@ -359,6 +341,8 @@ export default function SalaryNegotiationScreen() {
       const onBack = () => {
         if (phase === "results") {
           setPhase("input");
+          setAnalysis(null);
+          setSubmittedJobTitleForResults(null);
           return true;
         }
         return false;
@@ -367,6 +351,25 @@ export default function SalaryNegotiationScreen() {
       return () => sub.remove();
     }, [phase]),
   );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== "android") return undefined;
+      void NavigationBar.setBackgroundColorAsync(theme.background).catch(() => {});
+      return undefined;
+    }, [theme.background]),
+  );
+
+  const resetOfferFormFields = () => {
+    setJobTitle("");
+    setJobTitleError(null);
+    setCompany("");
+    setOfferedSalary("");
+    setExperience("0-1 yrs");
+    setJobType("Full Time");
+    setJobTier("Tier 2");
+    setSelectedIndustries([]);
+  };
 
   const toggleIndustry = (ind: string) => {
     setSelectedIndustries((prev) =>
@@ -491,6 +494,9 @@ Rules:
       };
 
       await saveToHistory(parsed);
+      const titleSnap = jobTitle.trim();
+      setSubmittedJobTitleForResults(titleSnap || null);
+      resetOfferFormFields();
       setAnalysis(parsed);
       setPhase("results");
     } catch (err) {
@@ -528,7 +534,7 @@ Rules:
     if (!title.trim()) return "Job title is required.";
     if (title.trim().length < 2) return "Job title is too short.";
     if (!/^[a-zA-Z][a-zA-Z0-9\s\-\/&.,()]+$/.test(title.trim()))
-      return "Enter a valid job title (e.g. Software Engineer, Product Manager).";
+      return "Enter a valid job title (Software Engineer, Product Manager).";
     return null;
   };
 
@@ -541,7 +547,7 @@ Rules:
 
   if (phase === "loading") {
     return (
-      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+      <View style={styles.container}>
         <View style={styles.loadingContainer}>
           <View style={styles.loadingHeader}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -566,9 +572,9 @@ Rules:
     const headerTitle =
       "job_title" in currentData
         ? currentData.job_title
-        : jobTitle || "Salary Analysis";
+        : submittedJobTitleForResults || jobTitle || "Salary Analysis";
     return (
-      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+      <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => {
@@ -592,7 +598,10 @@ Rules:
 
         <ScrollView
           style={styles.resultsScroll}
-          contentContainerStyle={styles.resultsContent}
+          contentContainerStyle={[
+            styles.resultsContent,
+            { paddingBottom: Math.max(insets.bottom, 16) + 40 },
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {/* Verdict Banner */}
@@ -801,15 +810,9 @@ Rules:
             <TouchableOpacity
               style={styles.primaryButton}
               onPress={() => {
+                setSubmittedJobTitleForResults(null);
+                resetOfferFormFields();
                 setPhase("input");
-                setJobTitle("");
-                setJobTitleError(null);
-                setCompany("");
-                setOfferedSalary("");
-                setExperience("0-1 yrs");
-                setJobType("Full Time");
-                setJobTier("Tier 2");
-                setSelectedIndustries([]);
                 setAnalysis(null);
               }}
             >
@@ -822,59 +825,70 @@ Rules:
   }
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { paddingBottom: insets.bottom }]}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
-    >
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{ padding: 4, zIndex: 1 }}
-        >
-          <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Salary Coach</Text>
+    <View style={styles.container}>
+      <View
+        style={styles.fixedChrome}
+        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{ padding: 4, zIndex: 1 }}
+          >
+            <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Salary Coach</Text>
+        </View>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 24 : 16 }]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior="padding"
+        keyboardVerticalOffset={headerHeight}
       >
-        <Text style={styles.subtitle}>
-          Know your worth. Negotiate with confidence.
-        </Text>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: Math.max(insets.bottom, 16) + 32 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+        <View>
+          <Text style={styles.subtitle}>
+            Know your worth. Negotiate with confidence.
+          </Text>
 
-        {/* Tab Bar */}
-        <View style={styles.tabBar}>
-          <TouchableOpacity
-            style={[styles.tab, inputTab === "form" && styles.tabActive]}
-            onPress={() => setInputTab("form")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                inputTab === "form" && styles.tabTextActive,
-              ]}
+          <View style={styles.tabBar}>
+            <TouchableOpacity
+              style={[styles.tab, inputTab === "form" && styles.tabActive]}
+              onPress={() => setInputTab("form")}
             >
-              New Offer
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, inputTab === "history" && styles.tabActive]}
-            onPress={() => setInputTab("history")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                inputTab === "history" && styles.tabTextActive,
-              ]}
+              <Text
+                style={[
+                  styles.tabText,
+                  inputTab === "form" && styles.tabTextActive,
+                ]}
+              >
+                New Offer
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, inputTab === "history" && styles.tabActive]}
+              onPress={() => setInputTab("history")}
             >
-              History
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.tabText,
+                  inputTab === "history" && styles.tabTextActive,
+                ]}
+              >
+                History
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Form Content */}
@@ -896,7 +910,7 @@ Rules:
               <Text style={styles.inputLabel}>Job Title <Text style={{ color: "red" }}>*</Text></Text>
               <TextInput
                 style={[styles.input, jobTitleError ? styles.inputError : null]}
-                placeholder="e.g. Senior Product Manager"
+                placeholder="Senior Product Manager"
                 placeholderTextColor={theme.placeholder}
                 value={jobTitle}
                 onChangeText={handleJobTitleChange}
@@ -911,7 +925,7 @@ Rules:
               <Text style={styles.inputLabel}>Company (optional)</Text>
               <TextInput
                 style={styles.input}
-                placeholder="e.g. Google, startup, agency..."
+                placeholder="Google, startup, agency..."
                 placeholderTextColor={theme.placeholder}
                 value={company}
                 onChangeText={setCompany}
@@ -923,7 +937,7 @@ Rules:
               <Text style={styles.inputLabel}>Offer Received <Text style={{ color: "red" }}>*</Text></Text>
               <TextInput
                 style={styles.input}
-                placeholder="e.g. 80000"
+                placeholder="80000"
                 placeholderTextColor={theme.placeholder}
                 value={offeredSalary}
                 onChangeText={setOfferedSalary}
@@ -1122,16 +1136,17 @@ Rules:
                           {item.company}
                         </Text>
                       )}
-                      <View style={styles.historySalaryRow}>
+                      <Text style={styles.historySalaryFlow}>
                         <Text style={styles.historySalary}>
                           Offer:{" "}
                           {formatSalary(item.offered_salary, item.currency)}
                         </Text>
-                        <Text style={styles.historySalaryArrow}>→</Text>
+                        <Text style={styles.historySalaryArrow}> → </Text>
                         <Text style={styles.historyAsk}>
-                          Ask: {formatSalary(item.suggested_ask, item.currency)}
+                          Ask:{" "}
+                          {formatSalary(item.suggested_ask, item.currency)}
                         </Text>
-                      </View>
+                      </Text>
                       <Text style={styles.historyMeta}>
                         {item.experience}
                         {item.location ? ` • ${item.location}` : ""}
@@ -1186,7 +1201,8 @@ Rules:
           </>
         )}
       </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -1199,12 +1215,18 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       flex: 1,
       backgroundColor: theme.background,
     },
+    fixedChrome: {
+      flexShrink: 0,
+      backgroundColor: theme.background,
+    },
     header: {
       flexDirection: "row",
       alignItems: "center",
       paddingHorizontal: 20,
       paddingTop: 16,
       paddingBottom: 8,
+      flexShrink: 0,
+      backgroundColor: theme.background,
     },
     headerBackButton: {
       padding: 4,
@@ -1220,11 +1242,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       right: 0,
       textAlign: "center",
     },
-    scroll: {
-      flex: 1,
-    },
     scrollContent: {
-      flexGrow: 1,
       paddingHorizontal: 20,
       paddingTop: 8,
     },
@@ -1664,30 +1682,30 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
       color: theme.textSecondary,
       marginBottom: 4,
     },
-    historySalaryRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      flexWrap: "wrap",
+    /** Single Text so Offer / arrow / Ask wrap as inline content — avoids orphaned → on wrap */
+    historySalaryFlow: {
+      flexShrink: 1,
       marginBottom: 4,
-      gap: 4,
+      fontSize: 13,
+      lineHeight: 22,
+      color: theme.textPrimary,
     },
     historySalary: {
       fontSize: 13,
       color: theme.textPrimary,
-      lineHeight: 18,
-      flexShrink: 1,
+      lineHeight: 22,
     },
     historySalaryArrow: {
-      fontSize: 14,
-      color: theme.textPrimary,
-      lineHeight: 20,
-      marginTop: -2,
+      fontSize: 13,
+      color: theme.textSecondary,
+      lineHeight: 22,
+      fontWeight: "600",
     },
     historyAsk: {
-      fontSize: 14,
+      fontSize: 13,
       color: theme.accent,
       fontWeight: "600",
-      lineHeight: 20,
+      lineHeight: 22,
     },
     historyMeta: {
       fontSize: 11,

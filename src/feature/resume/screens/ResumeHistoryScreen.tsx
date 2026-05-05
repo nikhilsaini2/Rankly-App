@@ -420,9 +420,9 @@ export default function ResumeHistoryScreen() {
               width: 80,
               height: 80,
               borderRadius: 40,
-              backgroundColor: theme.surface,
+              backgroundColor: theme.accent + "14",
               borderWidth: 1,
-              borderColor: theme.border,
+              borderColor: theme.accent + "30",
               alignItems: "center",
               justifyContent: "center",
               marginBottom: 20,
@@ -431,7 +431,7 @@ export default function ResumeHistoryScreen() {
             <Ionicons
               name="document-text-outline"
               size={36}
-              color={theme.textMuted}
+              color={theme.accent}
             />
           </View>
           <Text

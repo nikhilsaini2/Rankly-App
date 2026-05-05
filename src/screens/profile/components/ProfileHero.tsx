@@ -75,13 +75,28 @@ export function ProfileHero({
                 <Text style={styles.avatarInitials}>{initials}</Text>
               </View>
             )}
+            {savingAvatar ? (
+              <View
+                style={styles.avatarBusyOverlay}
+                pointerEvents="none"
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                <ActivityIndicator size="small" color={theme.onPrimary} />
+                <Text style={styles.avatarBusyOverlayText}>
+                  Updating avatar…
+                </Text>
+              </View>
+            ) : null}
           </View>
 
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={pickAvatar}
-            style={styles.avatarEditBtn}
+            disabled={savingAvatar}
+            style={[styles.avatarEditBtn, savingAvatar && styles.avatarEditBtnDisabled]}
             accessibilityRole="button"
+            accessibilityState={{ disabled: savingAvatar }}
           >
             <Feather name="edit-2" size={13} color={theme.onPrimary} />
           </TouchableOpacity>
@@ -104,13 +119,6 @@ export function ProfileHero({
             <Text style={styles.creditsBadgeText}>{creditsLabel}</Text>
           </View>
         </Animated.View>
-
-        {savingAvatar ? (
-          <View style={styles.avatarBusyRow}>
-            <ActivityIndicator size="small" color={theme.textSecondary} />
-            <Text style={styles.avatarBusyText}>Updating avatar…</Text>
-          </View>
-        ) : null}
 
         {!editing && (
           <View style={[styles.heroActionRow, { justifyContent: "center" }]}>

@@ -1,4 +1,9 @@
-import { EMPTY_EXPERIENCE } from "../constants/resume.constants";
+import {
+  EMPTY_EXPERIENCE,
+  EXPERIENCE_LEVELS,
+  INDUSTRIES,
+  TONES,
+} from "../constants/resume.constants";
 import type {
   ResumeEngineAction,
   ResumeEngineState,
@@ -12,8 +17,8 @@ export const INITIAL_FORM_DATA = {
   linkedin: "",
   city: "",
   targetRole: "",
-  experienceLevel: "",
-  industry: "",
+  experienceLevel: EXPERIENCE_LEVELS[0],
+  industry: INDUSTRIES[0],
   skills: "",
   experiences: [{ ...EMPTY_EXPERIENCE }],
   degree: "",
@@ -22,7 +27,7 @@ export const INITIAL_FORM_DATA = {
   grade: "",
   certifications: "",
   languages: "",
-  tone: "",
+  tone: TONES[0],
   topAchievement: "",
   targetCompanies: "",
   specialInstructions: "",

@@ -23,7 +23,10 @@ export function validateStep(step: number, formData: any): Record<string, string
     case 2: {
       if (!formData.targetRole?.trim()) errors.targetRole = 'Target job title is required';
       if (!formData.experienceLevel) errors.experienceLevel = 'Select an experience level';
-      if (!formData.industry) errors.industry = 'Select an industry';
+      const ind = formData.industry?.trim();
+      if (!ind) errors.industry = 'Select an industry';
+      else if (ind === 'Other')
+        errors.industry = 'Please specify your industry';
       if (!formData.skills?.trim()) errors.skills = 'List at least one skill';
       break;
     }

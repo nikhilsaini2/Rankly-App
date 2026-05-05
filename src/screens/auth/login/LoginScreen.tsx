@@ -7,9 +7,7 @@ import {
   ActivityIndicator,
   Image,
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
-  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -32,7 +30,7 @@ import { getGoogleAuthErrorMessage } from "../../../utils/googleAuthError";
 import { loginSchema } from "../../../validation/auth.schema";
 import { createLoginStyles } from "./styles";
 
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { KeyboardAwareScreenScroll } from "../../../components/layouts/KeyboardAwareScreenScroll";
 
 const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
   const theme = useAppTheme();
@@ -118,8 +116,9 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
     setShowPassword((prev) => !prev);
   }, []);
 
-  const bottomPadding =
-    Platform.OS === "android" ? Math.max(insets.bottom, 16) : insets.bottom;
+  const scrollBottomPad =
+    40 +
+    (Platform.OS === "android" ? Math.max(0, 16 - insets.bottom) : 0);
 
   // FIX: No early return with full-screen loader — that causes flicker by
   // unmounting the form. Loading state is shown inside the CTA button instead.
@@ -132,17 +131,15 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
     >
       <StatusBar style={isLight ? "dark" : "light"} />
       <View style={styles.container}>
-        <KeyboardAwareScrollView
+        <KeyboardAwareScreenScroll
           contentContainerStyle={{
             flexGrow: 1,
-            paddingBottom: bottomPadding + 40,
+            paddingBottom: scrollBottomPad,
           }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
           bounces={false}
-          enableOnAndroid={true}
-          extraScrollHeight={20}
         >
             <View style={styles.header}>
               <AppName size={26} />
@@ -359,7 +356,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                 )}
               </Formik>
             </View>
-          </KeyboardAwareScrollView>
+        </KeyboardAwareScreenScroll>
       </View>
     </SafeAreaView>
   );

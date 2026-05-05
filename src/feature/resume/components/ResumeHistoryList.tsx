@@ -88,7 +88,7 @@ export const ResumeHistoryList: React.FC<ResumeHistoryListProps> = ({
     return (
       <View style={resumeStyles.emptyState}>
         <View style={resumeStyles.emptyIconCircle}>
-          <Ionicons name="document-text-outline" size={40} color={theme.textSecondary} />
+          <Ionicons name="document-text-outline" size={40} color={theme.accent} />
         </View>
         <Text style={resumeStyles.emptyTitle}>No resumes yet</Text>
         <Text style={resumeStyles.emptySubtitle}>Your built resumes will appear here</Text>

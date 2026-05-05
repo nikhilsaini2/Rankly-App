@@ -7,7 +7,9 @@ export function createProfileStyles(theme: AppTheme) {
 
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: theme.background },
-    scrollContent: { paddingHorizontal: 20, paddingTop: 0 },
+    scrollContent: { paddingTop: 0 },
+    /** Horizontal inset for cards below hero — hero banner is full-bleed */
+    scrollHorizontalInset: { paddingHorizontal: 20 },
 
     heroWrap: { marginBottom: 18 },
     heroBanner: {
@@ -66,6 +68,7 @@ export function createProfileStyles(theme: AppTheme) {
       borderWidth: 2,
       borderColor: theme.background,
     },
+    avatarEditBtnDisabled: { opacity: 0.55 },
 
     heroNameContainer: {
       width: "100%",
@@ -128,13 +131,22 @@ export function createProfileStyles(theme: AppTheme) {
       fontWeight: "700",
       letterSpacing: 1,
     },
-    avatarBusyRow: {
-      flexDirection: "row",
+    avatarBusyOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(13,13,20,0.58)",
       alignItems: "center",
-      gap: 8,
-      marginTop: 10,
+      justifyContent: "center",
+      paddingHorizontal: 6,
+      borderRadius: 42,
     },
-    avatarBusyText: { color: theme.textSecondary, fontSize: 12 },
+    avatarBusyOverlayText: {
+      color: theme.onPrimary,
+      fontSize: 10,
+      fontWeight: "600",
+      marginTop: 6,
+      textAlign: "center",
+      lineHeight: 12,
+    },
     heroActionRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -174,12 +186,13 @@ export function createProfileStyles(theme: AppTheme) {
       letterSpacing: 1.2,
     },
 
+    /** Profile About card — section title only */
     sectionCap: {
-      color: theme.textSecondary,
-      fontSize: 10,
-      fontWeight: "700",
+      color: theme.textPrimary,
+      fontSize: 11,
+      fontWeight: "800",
       textTransform: "uppercase",
-      letterSpacing: 1.5,
+      letterSpacing: 1.6,
     },
 
     bioCard: {

@@ -12,12 +12,12 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
   ScrollView,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import { KeyboardAwareScreenScroll } from "../../components/layouts/KeyboardAwareScreenScroll";
 import {
   Easing,
   runOnJS,
@@ -28,7 +28,6 @@ import {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch } from "react-redux";
 import { useToast } from "../../components/atoms/Toast";
 import { roles } from "../../constants/all";
@@ -55,7 +54,6 @@ import { StatsStrip } from "./components/StatsStrip";
 import { createProfileStyles } from "./styles";
 
 export default function ProfileScreen() {
-  const insets = useSafeAreaInsets();
   const toast = useToast();
   const theme = useAppTheme();
   const profileStyles = createProfileStyles(theme);
@@ -382,25 +380,20 @@ export default function ProfileScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior="padding"
-      keyboardVerticalOffset={insets.top}
-    >
-      <View style={[profileStyles.root, { flex: 1 }]}>
-        <ScrollView
-          ref={scrollRef}
-          bounces={false}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-          contentContainerStyle={[
-            profileStyles.scrollContent,
-            {
-              paddingBottom: insets.bottom + 40,
-            },
-          ]}
-        >
+    <View style={[profileStyles.root, { flex: 1 }]}>
+      <KeyboardAwareScreenScroll
+        innerRef={(ref) => {
+          scrollRef.current = ref as ScrollView | null;
+        }}
+        bounces={false}
+        contentContainerStyle={[
+          profileStyles.scrollContent,
+          {
+            // Editing: reserve space under scroll content for fixed Cancel/Save bar
+            paddingBottom: 40 + (editing ? 88 : 0),
+          },
+        ]}
+      >
           <ProfileHero
             user={user}
             fullName={fullName}
@@ -416,66 +409,66 @@ export default function ProfileScreen() {
             onManagePlanPress={handleManagePlanPress}
           />
 
-          {editing ? (
-            <>
-              <EditProfileForm
-                draft={draft}
-                roleModal={roleModal}
-                setRoleModal={setRoleModal}
-                setDraft={setDraft}
-                email={user?.email ?? ""}
-                isCustomRole={isCustomRole}
-                setIsCustomRole={setIsCustomRole}
-              />
-              <View style={profileStyles.editActionBar}>
-                <TouchableOpacity
-                  onPress={cancelEdit}
-                  style={profileStyles.editCancelBtn}
-                  activeOpacity={0.8}
-                >
-                  <Text style={profileStyles.editCancelText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={saveEdit}
-                  disabled={!isDirty || saving}
-                  style={[
-                    profileStyles.editSaveBtn,
-                    (!isDirty || saving) && { opacity: 0.45 },
-                  ]}
-                  activeOpacity={0.85}
-                >
-                  {saving ? (
-                    <ActivityIndicator size="small" color={theme.onPrimary} />
-                  ) : (
-                    <Text style={profileStyles.editSaveText}>Save Changes</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </>
-          ) : (
-            <>
-              <StatsStrip statsDisplay={statsDisplay} />
-              <BioCard user={user} />
+          <View style={profileStyles.scrollHorizontalInset}>
+            {editing ? (
+              <>
+                <EditProfileForm
+                  draft={draft}
+                  roleModal={roleModal}
+                  setRoleModal={setRoleModal}
+                  setDraft={setDraft}
+                  email={user?.email ?? ""}
+                  isCustomRole={isCustomRole}
+                  setIsCustomRole={setIsCustomRole}
+                />
+                <View style={profileStyles.editActionBar}>
+                  <TouchableOpacity
+                    onPress={cancelEdit}
+                    style={profileStyles.editCancelBtn}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={profileStyles.editCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={saveEdit}
+                    disabled={!isDirty || saving}
+                    style={[
+                      profileStyles.editSaveBtn,
+                      (!isDirty || saving) && { opacity: 0.45 },
+                    ]}
+                    activeOpacity={0.85}
+                  >
+                    {saving ? (
+                      <ActivityIndicator size="small" color={theme.onPrimary} />
+                    ) : (
+                      <Text style={profileStyles.editSaveText}>Save Changes</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <>
+                <StatsStrip statsDisplay={statsDisplay} />
+                <BioCard user={user} />
 
-              <SettingsCard
-                notif={notif}
-                onToggleNotif={onToggleNotif}
-                onInterviewHistoryPress={handleInterviewHistoryPress}
-                onResumeHistoryPress={handleResumeHistoryPress}
-                onManagePlanPress={handleManagePlanPress}
-                onThemeToggle={handleThemeToggle}
-              />
-              <DangerZone
-                appVersion={appVersion}
-                onError={(msg) => toast(msg, "error")}
-                onSuccess={(msg) => toast(msg, "success")}
-              />
-            </>
-          )}
-        </ScrollView>
-
-      </View>
-    </KeyboardAvoidingView>
+                <SettingsCard
+                  notif={notif}
+                  onToggleNotif={onToggleNotif}
+                  onInterviewHistoryPress={handleInterviewHistoryPress}
+                  onResumeHistoryPress={handleResumeHistoryPress}
+                  onManagePlanPress={handleManagePlanPress}
+                  onThemeToggle={handleThemeToggle}
+                />
+                <DangerZone
+                  appVersion={appVersion}
+                  onError={(msg) => toast(msg, "error")}
+                  onSuccess={(msg) => toast(msg, "success")}
+                />
+              </>
+            )}
+          </View>
+      </KeyboardAwareScreenScroll>
+    </View>
   );
 }
 

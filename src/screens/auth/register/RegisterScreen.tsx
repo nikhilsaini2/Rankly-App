@@ -8,10 +8,11 @@ import {
   Image,
   Keyboard,
   Platform,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import {
   SafeAreaView,
@@ -32,7 +33,7 @@ import { sanitizeFirstName, sanitizeLastName } from "../../../utils/nameValidati
 import { RegisterSchema } from "../../../validation/auth.schema";
 import { createRegisterStyles } from "./styles";
 
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { KeyboardAwareScreenScroll } from "../../../components/layouts/KeyboardAwareScreenScroll";
 
 const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
   const theme = useAppTheme();
@@ -88,10 +89,11 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
     setShowConfirmPassword((prev) => !prev);
   }, []);
 
-  const scrollRef = useRef<any>(null);
+  const scrollRef = useRef<ScrollView | null>(null);
 
-  const bottomPadding =
-    Platform.OS === "android" ? Math.max(insets.bottom, 16) : insets.bottom;
+  const scrollBottomPad =
+    16 +
+    (Platform.OS === "android" ? Math.max(0, 16 - insets.bottom) : 0);
 
   // FIX: No early return with full-screen loader — that causes flicker by
   // unmounting the form. Loading state is shown inside the CTA button instead.
@@ -104,19 +106,16 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
     >
       <StatusBar style={isLight ? "dark" : "light"} />
       <View style={styles.container}>
-        <KeyboardAwareScrollView
+        <KeyboardAwareScreenScroll
           ref={scrollRef}
           contentContainerStyle={{
             flexGrow: 1,
-            paddingBottom: bottomPadding + 16,
+            paddingBottom: scrollBottomPad,
           }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
           bounces={false}
-          enableOnAndroid={true}
-          extraHeight={120}
-          extraScrollHeight={60}
         >
             <View style={styles.header}>
               <AppName size={26} />
@@ -545,7 +544,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                   )}
                 </Formik>
             </View>
-          </KeyboardAwareScrollView>
+        </KeyboardAwareScreenScroll>
       </View>
     </SafeAreaView>
   );

@@ -279,15 +279,15 @@ export default function InterviewHistoryScreen() {
               width: 80,
               height: 80,
               borderRadius: 40,
-              backgroundColor: theme.surface,
+              backgroundColor: theme.primary + "14",
               borderWidth: 1,
-              borderColor: theme.border,
+              borderColor: theme.primary + "30",
               alignItems: "center",
               justifyContent: "center",
               marginBottom: 20,
             }}
           >
-            <Ionicons name="time-outline" size={36} color={theme.textMuted} />
+            <Ionicons name="time-outline" size={36} color={theme.primary} />
           </View>
           <Text
             style={{

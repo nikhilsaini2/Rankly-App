@@ -19,7 +19,7 @@ type Props = {
 export default function LocationAutocomplete({
   value,
   onSelect,
-  placeholder = "e.g. Bangalore, Mumbai, New York",
+  placeholder = "Bangalore, Mumbai, New York",
 }: Props) {
   const theme = useAppTheme();
   const ref = useRef<any>(null);

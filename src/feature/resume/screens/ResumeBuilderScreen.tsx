@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { NavigationProp } from "@react-navigation/native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import * as NavigationBar from "expo-navigation-bar";
 import React, {
   useCallback,
   useEffect,
@@ -11,10 +12,8 @@ import React, {
 import {
   ActivityIndicator,
   BackHandler,
-  KeyboardAvoidingView,
   Modal,
   Platform,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -29,6 +28,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useToast } from "../../../components/atoms/Toast";
+import { KeyboardAwareScreenScroll } from "../../../components/layouts/KeyboardAwareScreenScroll";
 import { useAppTheme } from "../../../theme/useAppTheme";
 import type { RootStackParamList } from "../../../types/navigation.types";
 import { ExperienceCard } from "../components/ExperienceCard";
@@ -162,16 +162,9 @@ const Step2 = React.memo(({ state, dispatch, errors, markTouched }: StepProps) =
   const theme = useAppTheme();
   const resumeStyles = createResumeStyles(theme);
 
-  const PRESET_INDUSTRIES = [
-    "Technology",
-    "Finance",
-    "Healthcare",
-    "Marketing",
-    "Design",
-    "Sales",
-    "Other",
-  ];
-  const isOtherIndustry = state.industry !== "" && !PRESET_INDUSTRIES.includes(state.industry);
+  /** True when industry is custom text (not one of the preset pills including Other). */
+  const isOtherIndustry =
+    state.industry !== "" && !INDUSTRIES.includes(state.industry);
   const industryPillValue = isOtherIndustry ? "Other" : state.industry;
 
   return (
@@ -211,21 +204,27 @@ const Step2 = React.memo(({ state, dispatch, errors, markTouched }: StepProps) =
         onSelect={(v) => {
           if (v === industryPillValue) return;
           if (v === "Other") {
-            dispatch({ type: "UPDATE_FORM", data: { industry: "" } });
+            dispatch({ type: "UPDATE_FORM", data: { industry: "Other" } });
           } else {
             dispatch({ type: "UPDATE_FORM", data: { industry: v } });
           }
           markTouched("industry");
         }}
       />
-      {(industryPillValue === "Other" || state.industry === "") && (
+      {!!errors.industry && industryPillValue !== "Other" && (
+        <FieldError message={errors.industry} />
+      )}
+      {industryPillValue === "Other" && (
         <FieldInput
           label="Specify Industry"
           icon="create-outline"
           required={isFieldRequired("industry")}
           value={isOtherIndustry ? state.industry : ""}
           onChangeText={(v) => {
-            dispatch({ type: "UPDATE_FORM", data: { industry: v || "" } });
+            dispatch({
+              type: "UPDATE_FORM",
+              data: { industry: v.trim() === "" ? "Other" : v },
+            });
             markTouched("industry");
           }}
           onBlur={() => markTouched("industry")}
@@ -234,9 +233,6 @@ const Step2 = React.memo(({ state, dispatch, errors, markTouched }: StepProps) =
           hasError={!!errors.industry}
           errorMessage={errors.industry}
         />
-      )}
-      {industryPillValue !== "Other" && state.industry !== "" && (
-        <FieldError message={errors.industry} />
       )}
       <FieldInput
         label="Key Skills"
@@ -633,13 +629,10 @@ const RestoreModal = React.memo(
   },
 );
 
-const HEADER_HEIGHT = 56;
-
 export default function ResumeBuilderScreen() {
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
   const resumeStyles = createResumeStyles(theme);
-  const bottomInset = Platform.OS === "android" ? Math.max(insets.bottom, 48) : insets.bottom;
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const engine = useResumeEngine();
   const { state, dispatch } = engine;
@@ -812,6 +805,14 @@ export default function ResumeBuilderScreen() {
     ]),
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== "android") return undefined;
+      void NavigationBar.setBackgroundColorAsync(theme.background).catch(() => {});
+      return undefined;
+    }, [theme.background]),
+  );
+
   const handleNext = useCallback(() => {
     if (!engine.canProceed()) {
       setShowErrors(true);
@@ -821,7 +822,34 @@ export default function ResumeBuilderScreen() {
     }
   }, [engine]);
 
-  const stepContent = useMemo(() => (
+  /** Single place for step branches + shared scroll children — avoids remount/layout fights with keyboard. */
+  const renderResumeBuilderSteps = (): React.ReactNode => {
+    const stepProps = {
+      state: state.formData,
+      dispatch,
+      errors: visibleErrors,
+      markTouched,
+    };
+    switch (state.currentStep) {
+      case 1:
+        return <Step1 {...stepProps} />;
+      case 2:
+        return <Step2 {...stepProps} />;
+      case 3:
+        return <Step3 {...stepProps} />;
+      case 4:
+        return <Step4 {...stepProps} />;
+      case 5:
+        return <Step5 {...stepProps} />;
+      default:
+        return null;
+    }
+  };
+
+  const resumeFormScrollPaddingBottom =
+    24 + Math.max(0, 16 - insets.bottom);
+
+  const stepContent = (
     <>
       <StepIndicator
         currentStep={state.currentStep}
@@ -833,23 +861,35 @@ export default function ResumeBuilderScreen() {
         title={STEP_TITLES[state.currentStep - 1]}
         subtitle={STEP_SUBTITLES[state.currentStep - 1]}
       />
-      {state.currentStep === 1 && (
-        <Step1 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
-      )}
-      {state.currentStep === 2 && (
-        <Step2 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
-      )}
-      {state.currentStep === 3 && (
-        <Step3 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
-      )}
-      {state.currentStep === 4 && (
-        <Step4 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
-      )}
-      {state.currentStep === 5 && (
-        <Step5 state={state.formData} dispatch={dispatch} errors={visibleErrors} markTouched={markTouched} />
-      )}
+      {renderResumeBuilderSteps()}
+      <NavButtons
+        onBack={() => engine.handleBack(() => navigation.goBack())}
+        onNext={handleNext}
+        canProceed={engine.canProceed()}
+        isLastStep={state.currentStep === TOTAL_STEPS}
+        isBuilding={state.currentStep === TOTAL_STEPS && state.asyncStatus === "loading"}
+      />
     </>
-  ), [state.currentStep, state.formData, dispatch, visibleErrors, markTouched]);
+  );
+
+  const resumeFormScrollView = (
+    <KeyboardAwareScreenScroll
+      style={{ flex: 1 }}
+      contentContainerStyle={[
+        resumeStyles.scrollContentContainer,
+        {
+          flexGrow: 1,
+          paddingBottom: resumeFormScrollPaddingBottom,
+        },
+      ]}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
+      showsVerticalScrollIndicator={false}
+      bounces={false}
+    >
+      {stepContent}
+    </KeyboardAwareScreenScroll>
+  );
 
   if (state.asyncStatus === "error" && state.error) {
     return (
@@ -939,7 +979,7 @@ export default function ResumeBuilderScreen() {
   }
 
   return (
-    <View style={[resumeStyles.container, { paddingBottom: insets.bottom }]}>
+    <View style={resumeStyles.container}>
       {showRestoreModal && (
         <RestoreModal onResume={handleResumeDraft} onStartFresh={handleStartFresh} />
       )}
@@ -956,7 +996,12 @@ export default function ResumeBuilderScreen() {
       </View>
 
       {state.inputTab === "history" ? (
-        <View style={[resumeStyles.scrollContent, { paddingBottom: bottomInset + 20 }]}>
+        <View
+          style={[
+            resumeStyles.scrollContent,
+            { paddingBottom: Math.max(insets.bottom, 16) + 20 },
+          ]}
+        >
           <StepIndicator
             currentStep={state.currentStep}
             totalSteps={TOTAL_STEPS}
@@ -972,32 +1017,7 @@ export default function ResumeBuilderScreen() {
           />
         </View>
       ) : (
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + HEADER_HEIGHT : 0}
-        >
-          <ScrollView
-            style={resumeStyles.scrollContent}
-            contentContainerStyle={[
-              resumeStyles.scrollContentContainer,
-              { flexGrow: 1, paddingBottom: bottomInset + 24 },
-            ]}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-            keyboardDismissMode="interactive"
-          >
-            {stepContent}
-            <NavButtons
-              onBack={() => engine.handleBack(() => navigation.goBack())}
-              onNext={handleNext}
-              canProceed={engine.canProceed()}
-              isLastStep={state.currentStep === TOTAL_STEPS}
-              isBuilding={state.currentStep === TOTAL_STEPS && state.asyncStatus === "loading"}
-            />
-          </ScrollView>
-        </KeyboardAvoidingView>
+        resumeFormScrollView
       )}
     </View>
   );

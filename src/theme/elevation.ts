@@ -1,29 +1,30 @@
 import type { AppTheme } from "./index";
 
+/** Light surfaces use softer opacity than dark — same brand purple as darkElevation */
 export const lightElevation = {
   subtle: {
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 2,
   },
   card: {
-    shadowColor: "#0F172A",
+    shadowColor: "#8B5CF6",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    elevation: 3,
+    shadowOpacity: 0.11,
+    shadowRadius: 18,
+    elevation: 4,
   },
   raised: {
-    shadowColor: "#0F172A",
+    shadowColor: "#8B5CF6",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
+    shadowOpacity: 0.14,
+    shadowRadius: 22,
     elevation: 6,
   },
   action: {
-    shadowColor: "#6D28D9",
+    shadowColor: "#8B5CF6",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.22,
     shadowRadius: 18,

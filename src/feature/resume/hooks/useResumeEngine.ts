@@ -5,7 +5,11 @@ import { Alert, AppState, AppStateStatus } from "react-native";
 import { generateGeminiTextWithRetry, parseGeminiJson } from "../../../services/gemini";
 import { supabase } from "../../../services/supabase";
 import { handleGeminiError } from "../../../utils/gemini";
-import { INITIAL_RESUME_STATE, resumeEngineReducer } from "../core/resumeReducer";
+import {
+  INITIAL_FORM_DATA,
+  INITIAL_RESUME_STATE,
+  resumeEngineReducer,
+} from "../core/resumeReducer";
 import { EMPTY_EXPERIENCE } from "../constants/resume.constants";
 import type { GeneratedResume, ResumeEngineState } from "../types/resume.types";
 import { generateResumeHTML } from "../utils/resumeHTML";
@@ -25,15 +29,6 @@ const DRAFT_VERSION = 2;
 function migrateDraft(raw: any): { formData: any; currentStep: number; inputTab: string } | null {
   if (!raw || typeof raw !== "object") return null;
 
-  const baseFormData = {
-    fullName: "", email: "", phone: "", linkedin: "", city: "",
-    targetRole: "", experienceLevel: "", industry: "", skills: "",
-    experiences: [{ ...EMPTY_EXPERIENCE }],
-    degree: "", institution: "", graduationYear: "", grade: "",
-    certifications: "", languages: "", tone: "", topAchievement: "",
-    targetCompanies: "", specialInstructions: "",
-  };
-
   const rawFormData = raw.formData && typeof raw.formData === "object" ? raw.formData : {};
 
   const experiences =
@@ -44,7 +39,7 @@ function migrateDraft(raw: any): { formData: any; currentStep: number; inputTab:
         : [{ ...EMPTY_EXPERIENCE }];
 
   return {
-    formData: { ...baseFormData, ...rawFormData, experiences },
+    formData: { ...INITIAL_FORM_DATA, ...rawFormData, experiences },
     currentStep: typeof raw.currentStep === "number" ? raw.currentStep : 1,
     inputTab: raw.inputTab ?? "form",
   };

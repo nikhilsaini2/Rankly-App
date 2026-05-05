@@ -60,27 +60,27 @@ export const lightGradients = {
 };
 
 // ─── Light shadows ────────────────────────────────────────────────────────────
-// Real elevation system — shadow instead of glow
+// Brand-tinted elevation — matches dark mode purple halo, softer on white surfaces
 export const lightShadows = {
   glow: {
-    shadowColor: "#000000",
+    shadowColor: "#8B5CF6",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
     elevation: 6,
   },
   card: {
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
+    elevation: 4,
   },
   subtle: {
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 2,
   },
 };
