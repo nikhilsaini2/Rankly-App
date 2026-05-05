@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { NavigationProp } from "@react-navigation/native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import * as NavigationBar from "expo-navigation-bar";
 import React, {
   useCallback,
   useEffect,
@@ -803,14 +802,6 @@ export default function ResumeBuilderScreen() {
       dispatch,
       goHomeAndReset,
     ]),
-  );
-
-  useFocusEffect(
-    useCallback(() => {
-      if (Platform.OS !== "android") return undefined;
-      void NavigationBar.setBackgroundColorAsync(theme.background).catch(() => {});
-      return undefined;
-    }, [theme.background]),
   );
 
   const handleNext = useCallback(() => {

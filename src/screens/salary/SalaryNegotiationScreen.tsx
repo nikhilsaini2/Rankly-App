@@ -7,6 +7,7 @@ import {
   Alert,
   BackHandler,
   Clipboard,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -24,7 +25,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useProfile } from "../../hooks/index";
 import { clearResponseCache, generateGeminiText } from "../../services/gemini";
 import { supabase } from "../../services/supabase";
@@ -151,6 +152,51 @@ export default function SalaryNegotiationScreen() {
   const pulseOpacity = useSharedValue(0.3);
 
   const [headerHeight, setHeaderHeight] = useState(0);
+  /** Extra scroll content slack while IME is open (Android + resize — avoids clipping without KeyboardAvoidingView). */
+  const [androidKeyboardScrollPad, setAndroidKeyboardScrollPad] = useState(0);
+
+  const salaryCoachScrollRef = useRef<ScrollView>(null);
+  const jobTitleInputRef = useRef<TextInput>(null);
+  const companyInputRef = useRef<TextInput>(null);
+  const offeredSalaryInputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    if (Platform.OS !== "android") return undefined;
+    const onShow = Keyboard.addListener("keyboardDidShow", (e) => {
+      setAndroidKeyboardScrollPad(
+        Math.min(160, Math.round(e.endCoordinates.height * 0.12)),
+      );
+    });
+    const onHide = Keyboard.addListener("keyboardDidHide", () => {
+      setAndroidKeyboardScrollPad(0);
+    });
+    return () => {
+      onShow.remove();
+      onHide.remove();
+    };
+  }, []);
+
+  const androidScrollSalaryInputIntoView = useCallback(
+    (inputRef: React.RefObject<TextInput | null>) => {
+      if (Platform.OS !== "android") return;
+      const scroll = salaryCoachScrollRef.current;
+      const input = inputRef.current;
+      if (!scroll || !input) return;
+      const scrollIntoView = () => {
+        scroll.scrollResponderScrollNativeHandleToKeyboard?.(
+          input as never,
+          96,
+          false,
+        );
+      };
+      requestAnimationFrame(() => {
+        scrollIntoView();
+        setTimeout(scrollIntoView, 120);
+        setTimeout(scrollIntoView, 280);
+      });
+    },
+    [],
+  );
 
   const refreshHistory = async () => {
     setRefreshing(true);
@@ -824,38 +870,27 @@ Rules:
     );
   }
 
-  return (
-    <View style={styles.container}>
-      <View
-        style={styles.fixedChrome}
-        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
-      >
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={{ padding: 4, zIndex: 1 }}
-          >
-            <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Salary Coach</Text>
-        </View>
-      </View>
+  const salaryCoachScrollBottomPad =
+    Math.max(insets.bottom, Platform.OS === "android" ? 48 : 16) + 32;
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior="padding"
-        keyboardVerticalOffset={headerHeight}
-      >
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: Math.max(insets.bottom, 16) + 32 },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-        >
+  const renderSalaryCoachInputScroll = () => (
+    <ScrollView
+      ref={salaryCoachScrollRef}
+      style={{ flex: 1, backgroundColor: theme.background }}
+      contentContainerStyle={[
+        styles.scrollContent,
+        {
+          paddingBottom:
+            salaryCoachScrollBottomPad +
+            (Platform.OS === "android" ? androidKeyboardScrollPad : 0),
+        },
+      ]}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
+      showsVerticalScrollIndicator={false}
+      bounces={false}
+      nestedScrollEnabled={Platform.OS === "android"}
+    >
         <View>
           <Text style={styles.subtitle}>
             Know your worth. Negotiate with confidence.
@@ -909,11 +944,13 @@ Rules:
             <View style={styles.inputCard}>
               <Text style={styles.inputLabel}>Job Title <Text style={{ color: "red" }}>*</Text></Text>
               <TextInput
+                ref={jobTitleInputRef}
                 style={[styles.input, jobTitleError ? styles.inputError : null]}
                 placeholder="Senior Product Manager"
                 placeholderTextColor={theme.placeholder}
                 value={jobTitle}
                 onChangeText={handleJobTitleChange}
+                onFocus={() => androidScrollSalaryInputIntoView(jobTitleInputRef)}
               />
               {jobTitleError ? (
                 <Text style={styles.fieldError}>{jobTitleError}</Text>
@@ -924,11 +961,13 @@ Rules:
             <View style={styles.inputCard}>
               <Text style={styles.inputLabel}>Company (optional)</Text>
               <TextInput
+                ref={companyInputRef}
                 style={styles.input}
                 placeholder="Google, startup, agency..."
                 placeholderTextColor={theme.placeholder}
                 value={company}
                 onChangeText={setCompany}
+                onFocus={() => androidScrollSalaryInputIntoView(companyInputRef)}
               />
             </View>
 
@@ -936,12 +975,16 @@ Rules:
             <View style={styles.inputCard}>
               <Text style={styles.inputLabel}>Offer Received <Text style={{ color: "red" }}>*</Text></Text>
               <TextInput
+                ref={offeredSalaryInputRef}
                 style={styles.input}
                 placeholder="80000"
                 placeholderTextColor={theme.placeholder}
                 value={offeredSalary}
                 onChangeText={setOfferedSalary}
                 keyboardType="numeric"
+                onFocus={() =>
+                  androidScrollSalaryInputIntoView(offeredSalaryInputRef)
+                }
               />
               <View style={styles.currencyRow}>
                 {["USD", "INR", "EUR"].map((cur) => (
@@ -1201,7 +1244,41 @@ Rules:
           </>
         )}
       </ScrollView>
-      </KeyboardAvoidingView>
+  );
+
+  return (
+    <View style={styles.container}>
+      <View
+        style={styles.fixedChrome}
+        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{ padding: 4, zIndex: 1 }}
+          >
+            <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Salary Coach</Text>
+        </View>
+      </View>
+
+      {Platform.OS === "android" ? (
+        <SafeAreaView
+          style={{ flex: 1, backgroundColor: theme.background }}
+          edges={["bottom"]}
+        >
+          {renderSalaryCoachInputScroll()}
+        </SafeAreaView>
+      ) : (
+        <KeyboardAvoidingView
+          style={{ flex: 1, backgroundColor: theme.background }}
+          behavior="padding"
+          keyboardVerticalOffset={headerHeight}
+        >
+          {renderSalaryCoachInputScroll()}
+        </KeyboardAvoidingView>
+      )}
     </View>
   );
 }
@@ -1396,6 +1473,7 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
     },
     resultsScroll: {
       flex: 1,
+      backgroundColor: theme.background,
     },
     resultsContent: {
       paddingHorizontal: 20,

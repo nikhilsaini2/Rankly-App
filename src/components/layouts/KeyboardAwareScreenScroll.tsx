@@ -9,6 +9,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAppTheme } from "../../theme/useAppTheme";
 
 export type KeyboardAwareScreenScrollProps = ScrollViewProps & {
   /**
@@ -16,8 +17,10 @@ export type KeyboardAwareScreenScrollProps = ScrollViewProps & {
    * Use for spacing above the home indicator or tab bars (see `useBottomTabBarHeight`).
    */
   extraBottomPad?: number;
-  /** Passed through to `KeyboardAvoidingView` when the scroll sits below a fixed chrome row. */
+  /** Passed through to `KeyboardAvoidingView`. */
   keyboardVerticalOffset?: number;
+  /** Paints under Android resize gaps; defaults to `theme.background`. */
+  contentBackgroundColor?: string;
   /** Alias merged with `ref` (legacy keyboard-aware-scroll-view API). */
   innerRef?: React.Ref<ScrollView>;
 };
@@ -41,6 +44,7 @@ export const KeyboardAwareScreenScroll = forwardRef<
     children,
     extraBottomPad = 0,
     keyboardVerticalOffset = 0,
+    contentBackgroundColor,
     innerRef,
     keyboardShouldPersistTaps = "handled",
     keyboardDismissMode = "interactive",
@@ -51,6 +55,8 @@ export const KeyboardAwareScreenScroll = forwardRef<
   },
   ref,
 ) {
+  const theme = useAppTheme();
+  const bg = contentBackgroundColor ?? theme.background;
   const insets = useSafeAreaInsets();
 
   const mergedContentContainerStyle = useMemo<StyleProp<ViewStyle>>(() => {
@@ -74,13 +80,13 @@ export const KeyboardAwareScreenScroll = forwardRef<
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: bg }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={keyboardVerticalOffset}
     >
       <ScrollView
         ref={handleRef}
-        style={[{ flex: 1 }, style]}
+        style={[{ flex: 1, backgroundColor: bg }, style]}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
         keyboardDismissMode={keyboardDismissMode}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
