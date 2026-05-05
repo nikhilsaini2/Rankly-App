@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   FlatList,
   Modal,
+  Platform,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -16,6 +18,25 @@ import { createProfileStyles } from "../styles";
 
 const PREDEFINED_ROLES = roles.filter((r) => r !== "Other");
 
+/**
+ * `scrollResponderScrollNativeHandleToKeyboard` extra offset — larger ⇒ field sits higher.
+ * Tiered so upper rows aren’t pinned to the top while lowest rows still clear IME + Save/Cancel.
+ */
+const KEYBOARD_SCROLL_EXTRA = {
+  upper: { android: 64, ios: 48 },
+  mid: { android: 96, ios: 80 },
+  lower: { android: 176, ios: 148 },
+  nearBottom: { android: 224, ios: 186 },
+  /** Bio is last in scroll content + multiline — IME/layout settles later than single-line fields */
+  bottom: { android: 292, ios: 246 },
+} as const;
+
+/** Multiline bio: escalate clearance until IME + footer metrics exist (scrollResponder often undershoots once). */
+const BIO_SCROLL_EXTRAS_ANDROID = [300, 352, 404, 448];
+const BIO_SCROLL_EXTRAS_IOS = [252, 286, 318];
+
+type KeyboardScrollTier = keyof typeof KEYBOARD_SCROLL_EXTRA;
+
 interface EditProfileFormProps {
   draft: any;
   roleModal: boolean;
@@ -24,6 +45,7 @@ interface EditProfileFormProps {
   email?: string;
   isCustomRole: boolean;
   setIsCustomRole: (v: boolean) => void;
+  scrollRef?: React.RefObject<ScrollView | null>;
 }
 
 export function EditProfileForm({
@@ -34,32 +56,110 @@ export function EditProfileForm({
   email,
   isCustomRole,
   setIsCustomRole,
+  scrollRef,
 }: EditProfileFormProps) {
   const theme = useAppTheme();
   const styles = createProfileStyles(theme);
   const [customRoleTouched, setCustomRoleTouched] = useState(false);
   const showCustomInput = isCustomRole;
-  const customRoleError = showCustomInput && customRoleTouched && !draft.role?.trim()
-    ? "Please enter your target role"
-    : undefined;
+  const customRoleError =
+    showCustomInput && customRoleTouched && !draft.role?.trim()
+      ? "Please enter your target role"
+      : undefined;
+
+  const firstNameRef = useRef<TextInput>(null);
+  const lastNameRef = useRef<TextInput>(null);
+  const customRoleRef = useRef<TextInput>(null);
+  const industryRef = useRef<TextInput>(null);
+  const linkedinRef = useRef<TextInput>(null);
+  const bioRef = useRef<TextInput>(null);
+
+  const scrollInputIntoView = useCallback(
+    (inputRef: React.RefObject<TextInput | null>, tier: KeyboardScrollTier) => {
+      const scroll = scrollRef?.current;
+      const input = inputRef.current;
+      if (!scroll || !input) return;
+      const cfg = KEYBOARD_SCROLL_EXTRA[tier];
+      const extra = Platform.OS === "android" ? cfg.android : cfg.ios;
+      const run = () => {
+        scroll.scrollResponderScrollNativeHandleToKeyboard?.(
+          input as never,
+          extra,
+          false,
+        );
+      };
+      const isHeavyTier =
+        tier === "nearBottom" || tier === "bottom" || tier === "lower";
+      requestAnimationFrame(() => {
+        run();
+        setTimeout(run, Platform.OS === "android" ? 72 : 36);
+        if (isHeavyTier) {
+          setTimeout(run, Platform.OS === "android" ? 190 : 100);
+          if (Platform.OS === "android") {
+            setTimeout(run, 360);
+          }
+        } else {
+          setTimeout(run, Platform.OS === "android" ? 140 : 0);
+        }
+      });
+    },
+    [scrollRef],
+  );
+
+  const scrollBioIntoView = useCallback(() => {
+    const scroll = scrollRef?.current;
+    const input = bioRef.current;
+    if (!scroll || !input) return;
+
+    const extras =
+      Platform.OS === "android" ? BIO_SCROLL_EXTRAS_ANDROID : BIO_SCROLL_EXTRAS_IOS;
+
+    const apply = (extra: number) => {
+      scroll.scrollResponderScrollNativeHandleToKeyboard?.(
+        input as never,
+        extra,
+        false,
+      );
+    };
+
+    scrollInputIntoView(bioRef, "bottom");
+
+    requestAnimationFrame(() => {
+      extras.forEach((extra, i) => {
+        const delay =
+          i === 0
+            ? Platform.OS === "android"
+              ? 120
+              : 80
+            : Platform.OS === "android"
+              ? 120 + i * 155
+              : 90 + i * 140;
+        setTimeout(() => apply(extra), delay);
+      });
+    });
+  }, [scrollInputIntoView, scrollRef]);
 
   return (
     <View style={{ marginBottom: 24, gap: 14 }}>
       <Field
+        ref={firstNameRef}
         label="First name"
         value={draft.firstName ?? ""}
         onChange={(t) => setDraft((d: any) => ({ ...d, firstName: t }))}
         maxLength={30}
         theme={theme}
         styles={styles}
+        onFocus={() => scrollInputIntoView(firstNameRef, "upper")}
       />
       <Field
+        ref={lastNameRef}
         label="Last name"
         value={draft.lastName ?? ""}
         onChange={(t) => setDraft((d: any) => ({ ...d, lastName: t }))}
         maxLength={30}
         theme={theme}
         styles={styles}
+        onFocus={() => scrollInputIntoView(lastNameRef, "upper")}
       />
       {email ? (
         <View>
@@ -85,6 +185,7 @@ export function EditProfileForm({
       {showCustomInput && (
         <View>
           <TextInput
+            ref={customRoleRef}
             style={[
               styles.inputBase,
               customRoleError ? { borderColor: theme.danger, borderWidth: 1.5 } : undefined,
@@ -97,6 +198,7 @@ export function EditProfileForm({
               setDraft((d: any) => ({ ...d, role: t }));
             }}
             onBlur={() => setCustomRoleTouched(true)}
+            onFocus={() => scrollInputIntoView(customRoleRef, "mid")}
             autoCapitalize="words"
             returnKeyType="done"
             accessibilityLabel="Custom role input"
@@ -162,7 +264,9 @@ export function EditProfileForm({
           return (
             <TouchableOpacity
               key={r.value}
-              onPress={() => setDraft((d: any) => ({ ...d, experienceLevel: r.value as ExperienceLevel }))}
+              onPress={() =>
+                setDraft((d: any) => ({ ...d, experienceLevel: r.value as ExperienceLevel }))
+              }
               style={[styles.chipsBase, on && styles.chipsActive]}
             >
               <Text style={[styles.chipsText, on && styles.chipsTextActive]}>{r.label}</Text>
@@ -171,42 +275,43 @@ export function EditProfileForm({
         })}
       </View>
       <Field
+        ref={industryRef}
         label="Industry"
         value={draft.industry ?? ""}
         onChange={(t) => setDraft((d: any) => ({ ...d, industry: t }))}
         theme={theme}
         styles={styles}
+        onFocus={() => scrollInputIntoView(industryRef, "lower")}
       />
       <Field
+        ref={linkedinRef}
         label="LinkedIn URL"
         value={draft.linkedinUrl ?? ""}
         onChange={(t) => setDraft((d: any) => ({ ...d, linkedinUrl: t }))}
         autoCapitalize="none"
         theme={theme}
         styles={styles}
+        onFocus={() => scrollInputIntoView(linkedinRef, "nearBottom")}
       />
-      <Text style={styles.labelsRole}>Bio</Text>
-      <TextInput
-        style={styles.inputArea}
-        placeholder="Tell recruiters about you"
-        placeholderTextColor={theme.placeholder}
-        value={draft.bio ?? ""}
-        onChangeText={(t) => setDraft((d: any) => ({ ...d, bio: t }))}
-        multiline
-      />
+      {/* collapsable={false}: Android otherwise flattens views and breaks scroll-to-focused-input measurement for multiline */}
+      <View collapsable={false}>
+        <Text style={styles.labelsRole}>Bio</Text>
+        <TextInput
+          ref={bioRef}
+          style={styles.inputArea}
+          placeholder="Tell recruiters about you"
+          placeholderTextColor={theme.placeholder}
+          value={draft.bio ?? ""}
+          onChangeText={(t) => setDraft((d: any) => ({ ...d, bio: t }))}
+          multiline
+          onFocus={scrollBioIntoView}
+        />
+      </View>
     </View>
   );
 }
 
-function Field({
-  label,
-  value,
-  onChange,
-  autoCapitalize = "sentences",
-  maxLength,
-  theme,
-  styles,
-}: {
+type FieldProps = {
   label: string;
   value: string;
   onChange: (t: string) => void;
@@ -214,18 +319,35 @@ function Field({
   maxLength?: number;
   theme: ReturnType<typeof useAppTheme>;
   styles: ReturnType<typeof createProfileStyles>;
-}) {
+  onFocus?: () => void;
+};
+
+const Field = React.forwardRef<TextInput, FieldProps>(function Field(
+  {
+    label,
+    value,
+    onChange,
+    autoCapitalize = "sentences",
+    maxLength,
+    theme,
+    styles,
+    onFocus,
+  },
+  ref,
+) {
   return (
     <View>
       <Text style={styles.labelsRole}>{label}</Text>
       <TextInput
+        ref={ref}
         style={styles.inputBase}
         value={value}
         onChangeText={onChange}
+        onFocus={onFocus}
         placeholderTextColor={theme.placeholder}
         autoCapitalize={autoCapitalize}
         maxLength={maxLength}
       />
     </View>
   );
-}
+});

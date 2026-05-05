@@ -440,16 +440,13 @@ export function createProfileStyles(theme: AppTheme) {
       letterSpacing: 0.2,
     },
 
-    // Sticky action bar at the bottom of the screen while editing
+    /** Cancel/Save row — use below ScrollView inside KeyboardAvoidingView (not position:absolute). */
     editActionBar: {
-      position: "absolute",
-      bottom: 0,
-      left: 0,
-      right: 0,
+      flexShrink: 0,
       flexDirection: "row",
       gap: 12,
       paddingHorizontal: 20,
-      paddingVertical: 14,
+      paddingTop: 14,
       alignItems: "center",
       backgroundColor: theme.surface,
       borderTopWidth: 1,

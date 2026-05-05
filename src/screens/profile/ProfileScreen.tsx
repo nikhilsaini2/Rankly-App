@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { NavigationProp } from "@react-navigation/native";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import React, {
@@ -57,6 +58,7 @@ export default function ProfileScreen() {
   const toast = useToast();
   const theme = useAppTheme();
   const profileStyles = createProfileStyles(theme);
+  const tabBarHeight = useBottomTabBarHeight();
   const dispatch = useDispatch();
   const { user, loading, error, refetch: refetchProfile } = useProfile();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -386,13 +388,46 @@ export default function ProfileScreen() {
           scrollRef.current = ref as ScrollView | null;
         }}
         bounces={false}
+        keyboardVerticalOffset={Math.max(tabBarHeight, 8)}
         contentContainerStyle={[
           profileStyles.scrollContent,
-          {
-            // Editing: reserve space under scroll content for fixed Cancel/Save bar
-            paddingBottom: 40 + (editing ? 88 : 0),
-          },
+          /* Editing: base slack under form; keyboard-open slack comes from KeyboardAwareScreenScroll */
+          { paddingBottom: editing ? 25 : 36 },
         ]}
+        bottomAccessory={
+          editing ? (
+            <View
+              style={[
+                profileStyles.editActionBar,
+                /* Tab bar already clears home indicator; large `insets.bottom` here doubled safe area */
+                { paddingBottom: 12 },
+              ]}
+            >
+              <TouchableOpacity
+                onPress={cancelEdit}
+                style={profileStyles.editCancelBtn}
+                activeOpacity={0.8}
+              >
+                <Text style={profileStyles.editCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={saveEdit}
+                disabled={!isDirty || saving}
+                style={[
+                  profileStyles.editSaveBtn,
+                  (!isDirty || saving) && { opacity: 0.45 },
+                ]}
+                activeOpacity={0.85}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color={theme.onPrimary} />
+                ) : (
+                  <Text style={profileStyles.editSaveText}>Save Changes</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          ) : null
+        }
       >
           <ProfileHero
             user={user}
@@ -411,41 +446,16 @@ export default function ProfileScreen() {
 
           <View style={profileStyles.scrollHorizontalInset}>
             {editing ? (
-              <>
-                <EditProfileForm
-                  draft={draft}
-                  roleModal={roleModal}
-                  setRoleModal={setRoleModal}
-                  setDraft={setDraft}
-                  email={user?.email ?? ""}
-                  isCustomRole={isCustomRole}
-                  setIsCustomRole={setIsCustomRole}
-                />
-                <View style={profileStyles.editActionBar}>
-                  <TouchableOpacity
-                    onPress={cancelEdit}
-                    style={profileStyles.editCancelBtn}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={profileStyles.editCancelText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={saveEdit}
-                    disabled={!isDirty || saving}
-                    style={[
-                      profileStyles.editSaveBtn,
-                      (!isDirty || saving) && { opacity: 0.45 },
-                    ]}
-                    activeOpacity={0.85}
-                  >
-                    {saving ? (
-                      <ActivityIndicator size="small" color={theme.onPrimary} />
-                    ) : (
-                      <Text style={profileStyles.editSaveText}>Save Changes</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </>
+              <EditProfileForm
+                scrollRef={scrollRef}
+                draft={draft}
+                roleModal={roleModal}
+                setRoleModal={setRoleModal}
+                setDraft={setDraft}
+                email={user?.email ?? ""}
+                isCustomRole={isCustomRole}
+                setIsCustomRole={setIsCustomRole}
+              />
             ) : (
               <>
                 <StatsStrip statsDisplay={statsDisplay} />

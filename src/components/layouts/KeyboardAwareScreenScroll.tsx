@@ -1,10 +1,18 @@
-import React, { forwardRef, useCallback, useMemo } from "react";
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   type ScrollViewProps,
   StyleSheet,
+  View,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
@@ -21,6 +29,8 @@ export type KeyboardAwareScreenScrollProps = ScrollViewProps & {
   keyboardVerticalOffset?: number;
   /** Paints under Android resize gaps; defaults to `theme.background`. */
   contentBackgroundColor?: string;
+  /** Rendered below the scroll view inside `KeyboardAvoidingView` (e.g. sticky Save/Cancel). */
+  bottomAccessory?: React.ReactNode;
   /** Alias merged with `ref` (legacy keyboard-aware-scroll-view API). */
   innerRef?: React.Ref<ScrollView>;
 };
@@ -45,6 +55,7 @@ export const KeyboardAwareScreenScroll = forwardRef<
     extraBottomPad = 0,
     keyboardVerticalOffset = 0,
     contentBackgroundColor,
+    bottomAccessory,
     innerRef,
     keyboardShouldPersistTaps = "handled",
     keyboardDismissMode = "interactive",
@@ -59,17 +70,57 @@ export const KeyboardAwareScreenScroll = forwardRef<
   const bg = contentBackgroundColor ?? theme.background;
   const insets = useSafeAreaInsets();
 
+  /** Footer (`bottomAccessory`) already sits above home/tab chrome — avoid double-counting `insets.bottom` on scroll padding (creates a gap). */
+  const scrollSafeBottomInset = bottomAccessory != null ? 0 : insets.bottom;
+
+  /**
+   * When `bottomAccessory` is used (e.g. Profile Save/Cancel), extra bottom padding only while
+   * the IME is open increases scroll content height so the user can scroll through the full form
+   * on both platforms (iOS KeyboardAvoidingView + Android resize both shrink the ScrollView).
+   */
+  const [accessoryKeyboardPad, setAccessoryKeyboardPad] = useState(0);
+
+  useEffect(() => {
+    if (bottomAccessory == null) {
+      setAccessoryKeyboardPad(0);
+      return undefined;
+    }
+    const onShow = Keyboard.addListener("keyboardDidShow", (e) => {
+      const h = e.endCoordinates.height;
+      const pad =
+        Platform.OS === "ios"
+          ? Math.min(280, Math.round(h * 0.3))
+          : Math.min(210, Math.round(h * 0.19));
+      setAccessoryKeyboardPad(pad);
+    });
+    const onHide = Keyboard.addListener("keyboardDidHide", () => {
+      setAccessoryKeyboardPad(0);
+    });
+    return () => {
+      onShow.remove();
+      onHide.remove();
+    };
+  }, [bottomAccessory]);
+
   const mergedContentContainerStyle = useMemo<StyleProp<ViewStyle>>(() => {
     const flat = StyleSheet.flatten(contentContainerStyle) ?? {};
     const callerBottom =
       typeof flat.paddingBottom === "number" ? flat.paddingBottom : 0;
+    const kbPad = bottomAccessory != null ? accessoryKeyboardPad : 0;
     return [
       contentContainerStyle,
       {
-        paddingBottom: callerBottom + insets.bottom + extraBottomPad,
+        paddingBottom:
+          callerBottom + scrollSafeBottomInset + extraBottomPad + kbPad,
       },
     ];
-  }, [contentContainerStyle, insets.bottom, extraBottomPad]);
+  }, [
+    contentContainerStyle,
+    scrollSafeBottomInset,
+    extraBottomPad,
+    bottomAccessory,
+    accessoryKeyboardPad,
+  ]);
 
   const handleRef = useCallback(
     (instance: ScrollView | null) => {
@@ -78,28 +129,51 @@ export const KeyboardAwareScreenScroll = forwardRef<
     [ref, innerRef],
   );
 
+  const scrollView = (
+    <ScrollView
+      ref={handleRef}
+      style={[{ flex: 1, backgroundColor: bg }, style]}
+      keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+      keyboardDismissMode={keyboardDismissMode}
+      showsVerticalScrollIndicator={showsVerticalScrollIndicator}
+      automaticallyAdjustKeyboardInsets={false}
+      {...(Platform.OS === "ios"
+        ? { contentInsetAdjustmentBehavior: "never" as const }
+        : {})}
+      {...(Platform.OS === "android" ? { nestedScrollEnabled: true } : {})}
+      {...rest}
+      contentContainerStyle={mergedContentContainerStyle}
+    >
+      {children}
+    </ScrollView>
+  );
+
+  const accessory =
+    bottomAccessory != null ? (
+      <View style={{ flexShrink: 0, backgroundColor: bg }}>{bottomAccessory}</View>
+    ) : null;
+
+  /**
+   * Android + `adjustResize` + footer: `KeyboardAvoidingView` `behavior="height"` fights window resize
+   * and leaves a black strip. Rely on resize + caller scroll-into-view instead.
+   */
+  if (Platform.OS === "android" && bottomAccessory != null) {
+    return (
+      <View style={{ flex: 1, backgroundColor: bg }}>
+        {scrollView}
+        {accessory}
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: bg }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={keyboardVerticalOffset}
     >
-      <ScrollView
-        ref={handleRef}
-        style={[{ flex: 1, backgroundColor: bg }, style]}
-        keyboardShouldPersistTaps={keyboardShouldPersistTaps}
-        keyboardDismissMode={keyboardDismissMode}
-        showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-        automaticallyAdjustKeyboardInsets={false}
-        {...(Platform.OS === "ios"
-          ? { contentInsetAdjustmentBehavior: "never" as const }
-          : {})}
-        {...(Platform.OS === "android" ? { nestedScrollEnabled: true } : {})}
-        {...rest}
-        contentContainerStyle={mergedContentContainerStyle}
-      >
-        {children}
-      </ScrollView>
+      {scrollView}
+      {accessory}
     </KeyboardAvoidingView>
   );
 });
