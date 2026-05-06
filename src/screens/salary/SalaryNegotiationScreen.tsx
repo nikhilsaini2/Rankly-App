@@ -152,8 +152,8 @@ export default function SalaryNegotiationScreen() {
   const pulseOpacity = useSharedValue(0.3);
 
   const [headerHeight, setHeaderHeight] = useState(0);
-  /** Extra scroll content slack while IME is open (Android + resize — avoids clipping without KeyboardAvoidingView). */
-  const [androidKeyboardScrollPad, setAndroidKeyboardScrollPad] = useState(0);
+  /** Extra `paddingBottom` on the salary form scroll while IME is open so users can scroll fields above the keyboard; cleared on hide. */
+  const [keyboardScrollPad, setKeyboardScrollPad] = useState(0);
 
   const salaryCoachScrollRef = useRef<ScrollView>(null);
   const jobTitleInputRef = useRef<TextInput>(null);
@@ -161,20 +161,36 @@ export default function SalaryNegotiationScreen() {
   const offeredSalaryInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
-    if (Platform.OS !== "android") return undefined;
+    const computePad = (keyboardHeight: number) => {
+      const h = Math.round(keyboardHeight);
+      // Android has no KeyboardAvoidingView here — need most of the keyboard height as scroll slack.
+      // iOS uses KAV too; add moderate extra inset so the last inputs still reach comfortably above the keyboard.
+      const ratio = Platform.OS === "android" ? 0.72 : 0.42;
+      const cap = Platform.OS === "android" ? 480 : 340;
+      return Math.min(cap, Math.max(120, Math.round(h * ratio)));
+    };
+
     const onShow = Keyboard.addListener("keyboardDidShow", (e) => {
-      setAndroidKeyboardScrollPad(
-        Math.min(160, Math.round(e.endCoordinates.height * 0.12)),
-      );
+      setKeyboardScrollPad(computePad(e.endCoordinates.height));
     });
     const onHide = Keyboard.addListener("keyboardDidHide", () => {
-      setAndroidKeyboardScrollPad(0);
+      setKeyboardScrollPad(0);
     });
     return () => {
       onShow.remove();
       onHide.remove();
     };
   }, []);
+
+  /** Tabs stay mounted under stack — dismiss IME and reset scroll slack when leaving so Profile/tab layouts stay clean. */
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        Keyboard.dismiss();
+        setKeyboardScrollPad(0);
+      };
+    }, []),
+  );
 
   const androidScrollSalaryInputIntoView = useCallback(
     (inputRef: React.RefObject<TextInput | null>) => {
@@ -880,9 +896,7 @@ Rules:
       contentContainerStyle={[
         styles.scrollContent,
         {
-          paddingBottom:
-            salaryCoachScrollBottomPad +
-            (Platform.OS === "android" ? androidKeyboardScrollPad : 0),
+          paddingBottom: salaryCoachScrollBottomPad + keyboardScrollPad,
         },
       ]}
       keyboardShouldPersistTaps="handled"

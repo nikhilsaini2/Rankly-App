@@ -4,29 +4,79 @@ import { buildCareerCoachSystemPrompt } from "../services/gemini/prompts";
 import { supabase } from "../services/supabase/supabase";
 import type { ChatMessage, User } from "../types/common.types";
 import { isGreeting, RANKLY_GREETING } from "../utils/greetingDetection";
+import { buildGeminiErrorToastMessage } from "../utils/geminiToastBridge";
 import { useToast } from "../components/atoms/Toast";
 
+const OUT_OF_SCOPE_REDIRECT =
+  "Ha, I wish I could help with everything! 😄 But I'm built specifically to supercharge your career. Ask me anything about resumes, interviews, tech skills, or salary — let's get to work!";
+
+const CAREER_SCOPE_KEYWORDS = [
+  "career",
+  "job",
+  "resume",
+  "cv",
+  "cover letter",
+  "interview",
+  "salary",
+  "offer",
+  "negotiation",
+  "promotion",
+  "linkedin",
+  "networking",
+  "skill",
+  "developer",
+  "engineering",
+  "frontend",
+  "backend",
+  "react",
+  "node",
+  "aws",
+  "gcp",
+  "azure",
+  "devops",
+  "ml",
+  "ai",
+  "certification",
+  "course",
+  "roadmap",
+];
+
+const OUT_OF_SCOPE_KEYWORDS = [
+  "recipe",
+  "cook",
+  "cooking",
+  "food",
+  "match score",
+  "cricket",
+  "football",
+  "movie",
+  "music",
+  "celebrity",
+  "politics",
+  "election",
+  "weather",
+  "horoscope",
+  "relationship",
+  "dating",
+  "medical",
+  "disease",
+];
+
+function isOutOfScopeQuestion(input: string): boolean {
+  const lower = input.toLowerCase().trim();
+  if (!lower) return false;
+
+  const hasCareerSignal = CAREER_SCOPE_KEYWORDS.some((k) => lower.includes(k));
+  if (hasCareerSignal) return false;
+
+  const hasOutOfScopeSignal = OUT_OF_SCOPE_KEYWORDS.some((k) =>
+    lower.includes(k),
+  );
+  return hasOutOfScopeSignal;
+}
+
 function makeErrorMessage(err: unknown): string {
-  const msg = err instanceof Error ? err.message : String(err);
-  const lower = msg.toLowerCase();
-  if (
-    lower.includes("503") ||
-    lower.includes("high demand") ||
-    lower.includes("overloaded")
-  ) {
-    return "AI is busy right now. Please try again in a moment.";
-  }
-  if (
-    lower.includes("429") ||
-    lower.includes("quota") ||
-    lower.includes("rate limit")
-  ) {
-    return "AI request limit reached. Please wait a minute.";
-  }
-  if (lower.includes("network") || lower.includes("fetch failed")) {
-    return "Network error. Please check your connection.";
-  }
-  return "Something went wrong. Please try again.";
+  return buildGeminiErrorToastMessage(err, { label: "AI Chat" });
 }
 
 export function useAIChat(profile: User | null) {
@@ -118,7 +168,27 @@ export function useAIChat(profile: User | null) {
         return;
       }
 
-      // ── 2. Optimistically add user message to UI only (no DB yet) ──
+      // ── 2. Handle clearly off-topic questions locally ──
+      if (isOutOfScopeQuestion(userText)) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `local-${Date.now()}`,
+            role: "user",
+            content: userText,
+            createdAt: new Date().toISOString(),
+          },
+          {
+            id: `rankly-reply-${Date.now()}`,
+            role: "assistant",
+            content: OUT_OF_SCOPE_REDIRECT,
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+        return;
+      }
+
+      // ── 3. Optimistically add user message to UI only (no DB yet) ──
       const tempUserMsgId = `temp-${Date.now()}`;
       let threadSnapshot: ChatMessage[] = [];
       setMessages((prev) => {
@@ -142,14 +212,14 @@ export function useAIChat(profile: User | null) {
           text: m.content,
         }));
 
-        // ── 3. Call AI first, save to DB only on success ──
+        // ── 4. Call AI first, save to DB only on success ──
         const reply = await generateGeminiWithContext({
           systemInstruction: system,
           userMessage: userText,
           history,
         });
 
-        // ── 4. Save both messages to DB now that we have a reply ──
+        // ── 5. Save both messages to DB now that we have a reply ──
         const { data: userRow, error: userInsertError } = await supabase
           .from("ai_chats")
           .insert({ user_id: authUser.id, role: "user", content: userText })
@@ -166,7 +236,7 @@ export function useAIChat(profile: User | null) {
 
         if (asstInsertError) throw asstInsertError;
 
-        // ── 5. Replace temp message with real DB ids ──
+        // ── 6. Replace temp message with real DB ids ──
         setMessages((prev) =>
           prev
             .filter((m) => m.id !== tempUserMsgId)

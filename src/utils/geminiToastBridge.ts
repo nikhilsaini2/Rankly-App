@@ -6,6 +6,8 @@
  * This avoids needing `useToast()` inside non-React service code.
  */
 
+export const AI_LIMIT_RESET_NOTE = "The limit will reset tomorrow.";
+
 type GeminiToastListener = (message: string, variant: "error" | "info") => void;
 
 let _listener: GeminiToastListener | null = null;
@@ -28,7 +30,98 @@ export function unregisterGeminiToastListener() {
 let _lastToastTime = 0;
 const TOAST_COOLDOWN_MS = 3000;
 
-export function emitGeminiErrorToast(err: unknown): void {
+export function isGeminiRateLimitError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes("429") ||
+    lower.includes("quota") ||
+    lower.includes("rate limit") ||
+    lower.includes("resource_exhausted") ||
+    lower.includes("too many requests")
+  );
+}
+
+/** Trims Gemini/SDK noise for a short toast suffix (truncated). */
+export function sanitizeGeminiErrorDetail(err: unknown, maxLen = 140): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  const stripped = raw.replace(/^Gemini API:\s*/i, "").replace(/\s+/g, " ").trim();
+  if (!stripped) return "";
+  if (stripped.length <= maxLen) return stripped;
+  return stripped.slice(0, Math.max(0, maxLen - 1)) + "…";
+}
+
+/** Appends `(detail)` when it adds information beyond the base sentence. */
+function withOptionalDetail(base: string, err: unknown): string {
+  const detail = sanitizeGeminiErrorDetail(err);
+  if (!detail) return base;
+  const baseLower = base.toLowerCase();
+  const head = detail.toLowerCase().slice(0, 28);
+  if (head.length >= 12 && baseLower.includes(head.slice(0, 12))) return base;
+  return `${base} (${detail})`;
+}
+
+export type BuildGeminiToastOptions = { label?: string };
+
+/** Maps any Gemini-related error to a single toast line (with optional API detail). */
+export function buildGeminiErrorToastMessage(
+  err: unknown,
+  options?: BuildGeminiToastOptions,
+): string {
+  const label = options?.label ?? "AI";
+  const prefix = `${label}:`;
+  const msg = err instanceof Error ? err.message : String(err);
+  const lower = msg.toLowerCase();
+
+  if (isGeminiRateLimitError(err)) {
+    return withOptionalDetail(
+      `${prefix} Usage limit reached. ${AI_LIMIT_RESET_NOTE}`,
+      err,
+    );
+  }
+  if (
+    lower.includes("503") ||
+    lower.includes("high demand") ||
+    lower.includes("overloaded") ||
+    lower.includes("unavailable")
+  ) {
+    return withOptionalDetail(
+      `${prefix} Service temporarily unavailable. Please try again.`,
+      err,
+    );
+  }
+  if (
+    lower.includes("network") ||
+    lower.includes("fetch failed") ||
+    lower.includes("econnreset")
+  ) {
+    return withOptionalDetail(
+      `${prefix} Network error. Please check your connection and try again.`,
+      err,
+    );
+  }
+  if (lower.includes("api key") || lower.includes("invalid_key")) {
+    return withOptionalDetail(
+      `${prefix} Configuration error. Please try again later.`,
+      err,
+    );
+  }
+  if (lower.includes("empty_response") || lower.includes("empty response")) {
+    return withOptionalDetail(
+      `${prefix} No response from the model. Please try again.`,
+      err,
+    );
+  }
+  return withOptionalDetail(
+    `${prefix} Something went wrong. Please try again.`,
+    err,
+  );
+}
+
+export function emitGeminiErrorToast(
+  err: unknown,
+  options?: BuildGeminiToastOptions,
+): void {
   if (!_listener) return;
 
   // Prevent duplicate toasts from retry loops / cascading catches
@@ -36,34 +129,5 @@ export function emitGeminiErrorToast(err: unknown): void {
   if (now - _lastToastTime < TOAST_COOLDOWN_MS) return;
   _lastToastTime = now;
 
-  const msg = err instanceof Error ? err.message : String(err);
-  const lower = msg.toLowerCase();
-
-  let userMessage: string;
-
-  if (
-    lower.includes("429") ||
-    lower.includes("quota") ||
-    lower.includes("rate limit") ||
-    lower.includes("resource_exhausted")
-  ) {
-    userMessage = "AI is currently busy. Please try again in a moment.";
-  } else if (
-    lower.includes("503") ||
-    lower.includes("high demand") ||
-    lower.includes("overloaded") ||
-    lower.includes("unavailable")
-  ) {
-    userMessage = "AI service is temporarily unavailable. Please try again.";
-  } else if (lower.includes("network") || lower.includes("fetch failed") || lower.includes("econnreset")) {
-    userMessage = "Network error. Please check your connection and try again.";
-  } else if (lower.includes("api key") || lower.includes("invalid_key")) {
-    userMessage = "AI service configuration error. Please try again later.";
-  } else if (lower.includes("empty_response") || lower.includes("empty response")) {
-    userMessage = "AI returned no response. Please try again.";
-  } else {
-    userMessage = "Something went wrong with AI. Please try again.";
-  }
-
-  _listener(userMessage, "error");
+  _listener(buildGeminiErrorToastMessage(err, options), "error");
 }

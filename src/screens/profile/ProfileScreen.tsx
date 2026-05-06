@@ -1,7 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { NavigationProp } from "@react-navigation/native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useIsFocused,
+  useNavigation,
+} from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import React, {
   useCallback,
@@ -13,6 +17,7 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -59,6 +64,7 @@ export default function ProfileScreen() {
   const theme = useAppTheme();
   const profileStyles = createProfileStyles(theme);
   const tabBarHeight = useBottomTabBarHeight();
+  const isTabFocused = useIsFocused();
   const dispatch = useDispatch();
   const { user, loading, error, refetch: refetchProfile } = useProfile();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -71,6 +77,7 @@ export default function ProfileScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      Keyboard.dismiss();
       requestAnimationFrame(() => {
         scrollRef.current?.scrollTo({ y: 0, animated: false });
       });
@@ -388,11 +395,13 @@ export default function ProfileScreen() {
           scrollRef.current = ref as ScrollView | null;
         }}
         bounces={false}
+        padSafeAreaBottom={false}
+        keyboardAvoidingEnabled={isTabFocused}
         keyboardVerticalOffset={Math.max(tabBarHeight, 8)}
         contentContainerStyle={[
           profileStyles.scrollContent,
           /* Editing: base slack under form; keyboard-open slack comes from KeyboardAwareScreenScroll */
-          { paddingBottom: editing ? 25 : 36 },
+          { paddingBottom: editing ? 25 : 20 },
         ]}
         bottomAccessory={
           editing ? (

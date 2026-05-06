@@ -17,6 +17,7 @@ import type {
 } from "../types/interview.types";
 import NetInfo from "@react-native-community/netinfo";
 import { saveSession, clearSession } from "../services/storage";
+import { buildGeminiErrorToastMessage } from "../../../utils/geminiToastBridge";
 import { saveInterview } from "../services/interviewStorage";
 import type { PersistedSession } from "../services/storage";
 
@@ -264,12 +265,20 @@ export function useInterviewEngine(): InterviewEngine {
       dispatch({ type: "SESSION_READY", questions, config });
     } catch (err) {
       const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
-      const friendlyMsg =
-        msg.includes("503") || msg.includes("high demand")
-          ? "AI is experiencing high demand. Please try again in a moment."
-          : msg.includes("429") || msg.includes("quota")
-            ? "AI request limit reached. Please wait a minute and try again."
-            : "Something went wrong. Please try again.";
+      const isGeminiLike =
+        msg.includes("503") ||
+        msg.includes("high demand") ||
+        msg.includes("overloaded") ||
+        msg.includes("429") ||
+        msg.includes("quota") ||
+        msg.includes("resource_exhausted") ||
+        msg.includes("rate limit") ||
+        msg.includes("network") ||
+        msg.includes("fetch failed");
+
+      const friendlyMsg = isGeminiLike
+        ? buildGeminiErrorToastMessage(err, { label: "Interview" })
+        : "Something went wrong. Please try again.";
 
       dispatch({ type: "SET_ERROR", error: friendlyMsg });
     }
@@ -407,7 +416,7 @@ export function useInterviewEngine(): InterviewEngine {
       dispatch({
         type: "SET_ERROR",
         error: isQuota
-          ? "AI request limit reached. Your answers were recorded. Please try again later."
+          ? `${buildGeminiErrorToastMessage(err, { label: "Interview" })} Your answers were recorded.`
           : "Evaluation failed. Please try again.",
       });
     } finally {

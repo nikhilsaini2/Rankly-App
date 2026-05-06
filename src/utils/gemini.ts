@@ -2,6 +2,12 @@
  * Strips markdown code fences and extracts the first JSON object/array
  * from a Gemini response string.
  */
+
+import {
+  buildGeminiErrorToastMessage,
+  isGeminiRateLimitError,
+} from "./geminiToastBridge";
+
 export function extractJsonPayload(raw: string): string {
   const trimmed = raw.trim();
   const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -37,25 +43,26 @@ export function handleGeminiError(error: unknown, retryFn?: () => void) {
     error,
   });
 
-  // Detect non-retryable errors
-  const isRateLimit = message.includes("429") || message.includes("quota") || message.includes("rate limit") || message.includes("Rate limit");
-  const isAuthError = message.includes("Not signed in") || message.includes("Invalid API key");
+  const isRateLimit =
+    isGeminiRateLimitError(error) ||
+    message.includes("Rate limit");
+  const isAuthError =
+    message.includes("Not signed in") ||
+    message.includes("Invalid API key");
 
-  // Map specific errors to user-friendly messages
-  let userMessage = "An error occurred";
+  let userMessage = buildGeminiErrorToastMessage(error);
   if (isAuthError) {
     userMessage = "Please sign in again.";
   } else if (message.includes("Gemini API: Invalid API key")) {
-    userMessage = "AI service configuration error. Please contact support.";
-  } else if (isRateLimit) {
-    userMessage = "AI service is busy. Please wait a moment and try again.";
+    userMessage =
+      "AI: Configuration error. Please contact support.";
   } else if (message.includes("Gemini API: Invalid request")) {
-    userMessage = "Request could not be processed. Please try again.";
+    userMessage = "AI: Request could not be processed. Please try again.";
   } else if (message.includes("AI response was unclear")) {
-    userMessage = "AI response was unclear. Please try again.";
+    userMessage =
+      "AI: Response was unclear. Please try again.";
   }
 
-  // Only retry on transient errors — never on rate limits or auth errors
   if (retryFn && !isRateLimit && !isAuthError) {
     retryFn();
   } else {

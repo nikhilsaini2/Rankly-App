@@ -12,7 +12,8 @@ const ERROR_TITLES: Record<string, string> = {
 };
 
 const ERROR_SUBTITLES: Record<string, string> = {
-  rate_limit: "The free AI tier has hit its limit. Try again in a minute.",
+  rate_limit:
+    "The free AI tier has hit its limit. The limit will reset tomorrow.",
   unavailable:
     "Google's AI service is temporarily down - due to high demand. Please wait a moment and try again.",
   server_error: "Google's AI server returned an error. Please try again.",
@@ -54,7 +55,8 @@ function normalizeGeminiError(err: unknown): GeminiError {
   if (
     lower.includes("429") ||
     lower.includes("quota") ||
-    lower.includes("rate limit")
+    lower.includes("rate limit") ||
+    lower.includes("resource_exhausted")
   ) {
     return new GeminiError("rate_limit", msg);
   }

@@ -1,8 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
-import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import {
+  BottomTabBarHeightCallbackContext,
+  BottomTabBarProps,
+} from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useContext } from "react";
+import {
+  LayoutChangeEvent,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TABS } from "../constants/tabs";
 import { getElevation } from "../theme";
@@ -13,9 +22,19 @@ export const TabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
   const styles = createStyles(theme);
   const currentRoute = state.routes[state.index].name;
   const insets = useSafeAreaInsets();
+  const onTabBarHeightChange = useContext(BottomTabBarHeightCallbackContext);
+
+  const handleTabBarLayout = (e: LayoutChangeEvent) => {
+    const { height } = e.nativeEvent.layout;
+    // `marginBottom` is outside the layout box — include it so scenes match real chrome height.
+    onTabBarHeightChange?.(height + insets.bottom);
+  };
 
   return (
-    <View style={[styles.container, { marginBottom: insets.bottom }]}>
+    <View
+      style={[styles.container, { marginBottom: insets.bottom }]}
+      onLayout={handleTabBarLayout}
+    >
       {TABS.map((tab) => {
         const isFocused = currentRoute === tab.name;
 

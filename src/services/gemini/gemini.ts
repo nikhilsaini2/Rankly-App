@@ -1,6 +1,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GenerateParams } from "../../types";
-import { emitGeminiErrorToast } from "../../utils/geminiToastBridge";
+import {
+  buildGeminiErrorToastMessage,
+  emitGeminiErrorToast,
+} from "../../utils/geminiToastBridge";
 import { supabase } from "../supabase/supabase";
 
 export class GeminiError extends Error {
@@ -387,7 +390,7 @@ export async function generateGeminiWithContext(
 
   return text.trim();
   } catch (err) {
-    emitGeminiErrorToast(err);
+    // Toast is shown by callers (e.g. useAIChat) to avoid duplicate toasts — this API is only used from hooks/UI.
     throw err;
   }
 }
@@ -405,13 +408,7 @@ export function isGeminiQuotaError(error: any): boolean {
 }
 
 export function getGeminiErrorMessage(error: any): string {
-  if (isGeminiQuotaError(error)) {
-    return "AI is currently busy. Please wait a moment and try again.";
-  }
-  if (error?.message?.includes("TIMEOUT")) {
-    return "Request timed out. Please check your connection.";
-  }
-  return "Something went wrong. Please try again.";
+  return buildGeminiErrorToastMessage(error);
 }
 
 // ─── Quota status indicator (dev mode) ───────────────────────

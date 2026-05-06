@@ -185,7 +185,7 @@ async function extractTextFromStorageFile(
     return extractedText;
   } catch (err) {
     console.error("[extractTextFromStorageFile] Gemini call failed:", err);
-    emitGeminiErrorToast(err);
+    emitGeminiErrorToast(err, { label: "ATS" });
     throw new Error("GEMINI_API_ERROR");
   }
 }
@@ -363,7 +363,7 @@ export function useAtsScore() {
         const { error: updateError } = await supabase
           .from("resumes")
           .update({
-            latest_score: row.overall_score, // Use DB-returned value, not parsed
+            latest_score: row.overall_score, 
             latest_score_id: row.id,
             updated_at: new Date().toISOString(),
           })
@@ -405,7 +405,7 @@ export function useAtsScore() {
             "AI service configuration error. Please contact support.";
         } else if (message.includes("Gemini API: Rate limit")) {
           userMessage =
-            "AI service is busy. Please wait 30 seconds and try again.";
+            "ATS: Usage limit reached. The limit will reset tomorrow.";
         } else if (message.includes("Gemini API: Invalid request")) {
           userMessage =
             "Resume content could not be processed. Try re-uploading the file.";
@@ -419,7 +419,7 @@ export function useAtsScore() {
         }
 
         setError(userMessage);
-        emitGeminiErrorToast(e);
+        emitGeminiErrorToast(e, { label: "ATS" });
         throw e;
       } finally {
         setScoring(false);

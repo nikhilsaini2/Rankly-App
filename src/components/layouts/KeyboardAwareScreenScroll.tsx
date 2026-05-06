@@ -33,6 +33,17 @@ export type KeyboardAwareScreenScrollProps = ScrollViewProps & {
   bottomAccessory?: React.ReactNode;
   /** Alias merged with `ref` (legacy keyboard-aware-scroll-view API). */
   innerRef?: React.Ref<ScrollView>;
+  /**
+   * When true (default), scroll content adds `insets.bottom` so content clears the home indicator.
+   * Set false on tab screens: the tab bar already sits above the inset, and adding both creates a blank strip.
+   */
+  padSafeAreaBottom?: boolean;
+  /**
+   * When false, skips `KeyboardAvoidingView` and uses a plain `View` wrapper.
+   * Use on tab screens when a stack modal (e.g. Salary) is open: the tab stays mounted and would
+   * otherwise react to the modal's keyboard and leave a gap above the tab bar after dismiss.
+   */
+  keyboardAvoidingEnabled?: boolean;
 };
 
 function assignScrollRef(
@@ -56,6 +67,8 @@ export const KeyboardAwareScreenScroll = forwardRef<
     keyboardVerticalOffset = 0,
     contentBackgroundColor,
     bottomAccessory,
+    padSafeAreaBottom = true,
+    keyboardAvoidingEnabled = true,
     innerRef,
     keyboardShouldPersistTaps = "handled",
     keyboardDismissMode = "interactive",
@@ -70,8 +83,12 @@ export const KeyboardAwareScreenScroll = forwardRef<
   const bg = contentBackgroundColor ?? theme.background;
   const insets = useSafeAreaInsets();
 
-  /** Footer (`bottomAccessory`) already sits above home/tab chrome — avoid double-counting `insets.bottom` on scroll padding (creates a gap). */
-  const scrollSafeBottomInset = bottomAccessory != null ? 0 : insets.bottom;
+  /**
+   * Footer (`bottomAccessory`) already sits above home/tab chrome — avoid double-counting `insets.bottom`.
+   * Tab screens should set `padSafeAreaBottom={false}` because the tab bar handles bottom inset.
+   */
+  const scrollSafeBottomInset =
+    bottomAccessory != null || !padSafeAreaBottom ? 0 : insets.bottom;
 
   /**
    * When `bottomAccessory` is used (e.g. Profile Save/Cancel), extra bottom padding only while
@@ -120,6 +137,7 @@ export const KeyboardAwareScreenScroll = forwardRef<
     extraBottomPad,
     bottomAccessory,
     accessoryKeyboardPad,
+    padSafeAreaBottom,
   ]);
 
   const handleRef = useCallback(
@@ -166,9 +184,20 @@ export const KeyboardAwareScreenScroll = forwardRef<
     );
   }
 
+  const outerStyle = { flex: 1, backgroundColor: bg } as const;
+
+  if (!keyboardAvoidingEnabled) {
+    return (
+      <View style={outerStyle}>
+        {scrollView}
+        {accessory}
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: bg }}
+      style={outerStyle}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={keyboardVerticalOffset}
     >
