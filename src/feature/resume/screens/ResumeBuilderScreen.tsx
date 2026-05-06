@@ -856,7 +856,7 @@ export default function ResumeBuilderScreen() {
   };
 
   const resumeFormScrollPaddingBottom =
-    24 + Math.max(0, 16 - insets.bottom);
+    12 + Math.max(0, 8 - insets.bottom);
   const resumeFormDynamicPaddingBottom =
     resumeFormScrollPaddingBottom + keyboardScrollPad;
 

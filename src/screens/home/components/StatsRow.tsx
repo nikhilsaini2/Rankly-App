@@ -73,7 +73,7 @@ export function StatsRow({
         <View style={styles.statCard}>
           <Ionicons name="mic-outline" size={18} color={theme.primary} />
           <Text style={styles.statVal}>{sessionCount === 0 ? "—" : `${sessionCount}`}</Text>
-          <Text style={styles.statLab}>Sessions</Text>
+          <Text style={styles.statLab}>Interview</Text>
         </View>
       </View>
     </View>

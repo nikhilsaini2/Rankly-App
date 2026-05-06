@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { Formik } from "formik";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -44,6 +44,23 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const [keyboardScrollPad, setKeyboardScrollPad] = useState(0);
+
+  useEffect(() => {
+    const onShow = Keyboard.addListener("keyboardDidShow", (e) => {
+      const h = Math.round(e.endCoordinates.height);
+      const ratio = Platform.OS === "android" ? 0.7 : 0.4;
+      const cap = Platform.OS === "android" ? 420 : 300;
+      setKeyboardScrollPad(Math.min(cap, Math.max(96, Math.round(h * ratio))));
+    });
+    const onHide = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardScrollPad(0);
+    });
+    return () => {
+      onShow.remove();
+      onHide.remove();
+    };
+  }, []);
 
   const handleEmailLogin = useCallback(
     async (values: { email: string; password: string }) => {
@@ -132,6 +149,9 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
       <StatusBar style={isLight ? "dark" : "light"} />
       <View style={styles.container}>
         <KeyboardAwareScreenScroll
+          autoScrollToFocusedInputOnKeyboard
+          keyboardFocusedInputExtraOffset={96}
+          extraBottomPad={keyboardScrollPad}
           contentContainerStyle={{
             flexGrow: 1,
             paddingBottom: scrollBottomPad,

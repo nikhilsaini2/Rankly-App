@@ -24,13 +24,6 @@ export function StatsStrip({ statsDisplay }: StatsStripProps) {
   return (
     <Animated.View style={[styles.statsStrip]}>
       <View style={styles.statCell}>
-        <Text style={[styles.statValue, statsDisplay.resumes === 0 && styles.statValueMuted]}>
-          {statsDisplay.resumes === 0 ? "—" : String(statsDisplay.resumes)}
-        </Text>
-        <Text style={styles.statLabel}>Resumes</Text>
-      </View>
-      <View style={styles.statDivider} />
-      <View style={styles.statCell}>
         <Text style={[
           styles.statValue,
           statsDisplay.bestAts === 0 && styles.statValueMuted,
@@ -42,10 +35,17 @@ export function StatsStrip({ statsDisplay }: StatsStripProps) {
       </View>
       <View style={styles.statDivider} />
       <View style={styles.statCell}>
+        <Text style={[styles.statValue, statsDisplay.resumes === 0 && styles.statValueMuted]}>
+          {statsDisplay.resumes === 0 ? "—" : String(statsDisplay.resumes)}
+        </Text>
+        <Text style={styles.statLabel}>Resumes</Text>
+      </View>
+      <View style={styles.statDivider} />
+      <View style={styles.statCell}>
         <Text style={[styles.statValue, statsDisplay.interviews === 0 && styles.statValueMuted]}>
           {statsDisplay.interviews === 0 ? "—" : String(statsDisplay.interviews)}
         </Text>
-        <Text style={styles.statLabel}>Interviews</Text>
+        <Text style={styles.statLabel}>Interview</Text>
       </View>
     </Animated.View>
   );

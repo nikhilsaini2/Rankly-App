@@ -117,8 +117,8 @@ export const KeyboardAwareScreenScroll = forwardRef<
       const h = e.endCoordinates.height;
       const pad =
         Platform.OS === "ios"
-          ? Math.min(280, Math.round(h * 0.3))
-          : Math.min(210, Math.round(h * 0.19));
+          ? Math.min(360, Math.max(120, Math.round(h * 0.46)))
+          : Math.min(420, Math.max(140, Math.round(h * 0.72)));
       setAccessoryKeyboardPad(pad);
     });
     const onHide = Keyboard.addListener("keyboardDidHide", () => {

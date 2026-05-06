@@ -51,6 +51,23 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [customRole, setCustomRole] = useState("");
+  const [keyboardScrollPad, setKeyboardScrollPad] = useState(0);
+
+  useEffect(() => {
+    const onShow = Keyboard.addListener("keyboardDidShow", (e) => {
+      const h = Math.round(e.endCoordinates.height);
+      const ratio = Platform.OS === "android" ? 0.7 : 0.4;
+      const cap = Platform.OS === "android" ? 420 : 300;
+      setKeyboardScrollPad(Math.min(cap, Math.max(96, Math.round(h * ratio))));
+    });
+    const onHide = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardScrollPad(0);
+    });
+    return () => {
+      onShow.remove();
+      onHide.remove();
+    };
+  }, []);
 
   useEffect(() => {
     // Intentionally removed: calling getAuthSessionUser on mount caused
@@ -108,6 +125,9 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
       <View style={styles.container}>
         <KeyboardAwareScreenScroll
           ref={scrollRef}
+          autoScrollToFocusedInputOnKeyboard
+          keyboardFocusedInputExtraOffset={96}
+          extraBottomPad={keyboardScrollPad}
           contentContainerStyle={{
             flexGrow: 1,
             paddingBottom: scrollBottomPad,
