@@ -214,18 +214,6 @@ export async function generateGeminiText(
   return requestPromise;
 }
 
-// ───
-// ───// Helper to parse retry delay from 429 error message
-function parseRetryDelayMs(errorMessage: string): number | null {
-  // Gemini 429 response body contains: "Please retry in 51.62195941s"
-  const match = errorMessage.match(/retry in (\d+(?:\.\d+)?)s/i);
-  if (match) {
-    const seconds = parseFloat(match[1]);
-    return Math.ceil(seconds) * 1000 + 2000; // add 2s safety buffer
-  }
-  return null;
-}
-
 // With retry + fallback (use this in voice interview) ------
 export async function generateGeminiTextWithRetry(
   prompt: string,
