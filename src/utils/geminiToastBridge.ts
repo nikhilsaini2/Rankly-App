@@ -42,25 +42,6 @@ export function isGeminiRateLimitError(err: unknown): boolean {
   );
 }
 
-/** Trims Gemini/SDK noise for a short toast suffix (truncated). */
-export function sanitizeGeminiErrorDetail(err: unknown, maxLen = 140): string {
-  const raw = err instanceof Error ? err.message : String(err);
-  const stripped = raw.replace(/^Gemini API:\s*/i, "").replace(/\s+/g, " ").trim();
-  if (!stripped) return "";
-  if (stripped.length <= maxLen) return stripped;
-  return stripped.slice(0, Math.max(0, maxLen - 1)) + "…";
-}
-
-/** Appends `(detail)` when it adds information beyond the base sentence. */
-function withOptionalDetail(base: string, err: unknown): string {
-  const detail = sanitizeGeminiErrorDetail(err);
-  if (!detail) return base;
-  const baseLower = base.toLowerCase();
-  const head = detail.toLowerCase().slice(0, 28);
-  if (head.length >= 12 && baseLower.includes(head.slice(0, 12))) return base;
-  return `${base} (${detail})`;
-}
-
 export type BuildGeminiToastOptions = { label?: string };
 
 /** Maps any Gemini-related error to a single toast line (with optional API detail). */
@@ -74,10 +55,7 @@ export function buildGeminiErrorToastMessage(
   const lower = msg.toLowerCase();
 
   if (isGeminiRateLimitError(err)) {
-    return withOptionalDetail(
-      `${prefix} Usage limit reached. ${AI_LIMIT_RESET_NOTE}`,
-      err,
-    );
+    return `${prefix} Usage limit reached. ${AI_LIMIT_RESET_NOTE}`;
   }
   if (
     lower.includes("503") ||
@@ -85,37 +63,22 @@ export function buildGeminiErrorToastMessage(
     lower.includes("overloaded") ||
     lower.includes("unavailable")
   ) {
-    return withOptionalDetail(
-      `${prefix} Service temporarily unavailable. Please try again.`,
-      err,
-    );
+    return `${prefix} Service temporarily unavailable. Please try again.`;
   }
   if (
     lower.includes("network") ||
     lower.includes("fetch failed") ||
     lower.includes("econnreset")
   ) {
-    return withOptionalDetail(
-      `${prefix} Network error. Please check your connection and try again.`,
-      err,
-    );
+    return `${prefix} Network error. Please check your connection and try again.`;
   }
   if (lower.includes("api key") || lower.includes("invalid_key")) {
-    return withOptionalDetail(
-      `${prefix} Configuration error. Please try again later.`,
-      err,
-    );
+    return `${prefix} Configuration error. Please try again later.`;
   }
   if (lower.includes("empty_response") || lower.includes("empty response")) {
-    return withOptionalDetail(
-      `${prefix} No response from the model. Please try again.`,
-      err,
-    );
+    return `${prefix} No response from the model. Please try again.`;
   }
-  return withOptionalDetail(
-    `${prefix} Something went wrong. Please try again.`,
-    err,
-  );
+  return `${prefix} Gemini AI failed. Please try again.`;
 }
 
 export function emitGeminiErrorToast(

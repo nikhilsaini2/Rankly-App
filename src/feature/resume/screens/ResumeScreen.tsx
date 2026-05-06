@@ -74,8 +74,6 @@ export default function ResumeScreen() {
   const [analyzeResumeId, setAnalyzeResumeId] = useState<string | null>(null);
   const [jobDescription, setJobDescription] = useState("");
   const [analyzingInProgress, setAnalyzingInProgress] = useState(false);
-  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
-  const [pendingAnalyzeId, setPendingAnalyzeId] = useState<string | null>(null);
   const didInitialLoad = useRef(false);
 
   const screenAnim = useSharedValue(0);
@@ -113,7 +111,6 @@ export default function ResumeScreen() {
 
   async function handleAnalyze(resumeId: string, jd?: string) {
     setAnalyzingInProgress(true);
-    setAnalyzeError(null);
     try {
       const mapped = await scoreResume(resumeId, jd);
       toast("ATS score ready", "success");
@@ -126,8 +123,6 @@ export default function ResumeScreen() {
         e instanceof Error && e.message.trim().length > 0
           ? e.message
           : "Could not score resume. Please try again.";
-      setAnalyzeError(msg);
-      setPendingAnalyzeId(resumeId);
       toast(msg, "error");
     } finally {
       setAnalyzingInProgress(false);
@@ -207,13 +202,6 @@ export default function ResumeScreen() {
     setAnalyzeResumeId(id);
     setJobDescription("");
     setAnalyzeOpen(true);
-  }
-
-  async function retryAnalyze() {
-    if (!pendingAnalyzeId) return;
-    setAnalyzeError(null);
-    setAnalyzingInProgress(true);
-    await handleAnalyze(pendingAnalyzeId);
   }
 
   if (loading) {
@@ -358,42 +346,6 @@ export default function ResumeScreen() {
         </View>
 
         <ResumeAnalyzingOverlay visible={analyzingInProgress} />
-
-        {analyzeError && !analyzingInProgress && (
-          <View style={{
-            marginHorizontal: 16,
-            marginBottom: 12,
-            backgroundColor: "rgba(239,68,68,0.10)",
-            borderWidth: 1,
-            borderColor: theme.background === "#F3F4F8" ? "rgba(239,68,68,0.6)" : "rgba(239,68,68,0.35)",
-            borderRadius: 14,
-            padding: 14,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 10,
-          }}>
-            <Ionicons name="warning-outline" size={18} color={theme.danger} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: theme.danger, fontSize: 13, fontWeight: "600" }}>
-                Analysis failed
-              </Text>
-              <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
-                {analyzeError}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={retryAnalyze}
-              style={{
-                backgroundColor: theme.danger,
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 8,
-              }}
-            >
-              <Text style={{ color: theme.onPrimary, fontSize: 12, fontWeight: "700" }}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
         <FlatList
           data={resumes}
