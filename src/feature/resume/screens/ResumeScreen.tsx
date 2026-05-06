@@ -122,9 +122,10 @@ export default function ResumeScreen() {
         rootNav?.navigate("AtsScore", { resumeId, scoreId: mapped.id });
       }
     } catch (e) {
-      const msg = e instanceof Error && e.message === "GEMINI_API_ERROR"
-        ? "AI processing failed. Try again later."
-        : "Could not score resume. Please try again.";
+      const msg =
+        e instanceof Error && e.message.trim().length > 0
+          ? e.message
+          : "Could not score resume. Please try again.";
       setAnalyzeError(msg);
       setPendingAnalyzeId(resumeId);
       toast(msg, "error");

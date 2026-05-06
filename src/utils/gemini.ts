@@ -58,9 +58,9 @@ export function handleGeminiError(error: unknown, retryFn?: () => void) {
       "AI: Configuration error. Please contact support.";
   } else if (message.includes("Gemini API: Invalid request")) {
     userMessage = "AI: Request could not be processed. Please try again.";
-  } else if (message.includes("AI response was unclear")) {
+  } else if (message.includes("AI response was unclear") || message.includes("Could not parse JSON from model response")) {
     userMessage =
-      "AI: Response was unclear. Please try again.";
+      "AI: Gemini failed to process the response. Please try again.";
   }
 
   if (retryFn && !isRateLimit && !isAuthError) {

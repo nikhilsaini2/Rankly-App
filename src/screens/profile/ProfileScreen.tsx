@@ -397,6 +397,8 @@ export default function ProfileScreen() {
         bounces={false}
         padSafeAreaBottom={false}
         keyboardAvoidingEnabled={isTabFocused}
+        autoScrollToFocusedInputOnKeyboard={editing}
+        keyboardFocusedInputExtraOffset={96}
         keyboardVerticalOffset={Math.max(tabBarHeight, 8)}
         contentContainerStyle={[
           profileStyles.scrollContent,

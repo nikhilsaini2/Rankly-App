@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  TextInput,
   type ScrollViewProps,
   StyleSheet,
   View,
@@ -44,6 +45,13 @@ export type KeyboardAwareScreenScrollProps = ScrollViewProps & {
    * otherwise react to the modal's keyboard and leave a gap above the tab bar after dismiss.
    */
   keyboardAvoidingEnabled?: boolean;
+  /**
+   * Auto-scrolls to the currently focused `TextInput` when keyboard opens.
+   * Useful for long forms where lower fields can remain hidden after IME appears.
+   */
+  autoScrollToFocusedInputOnKeyboard?: boolean;
+  /** Extra inset (px) above focused input when auto-scrolling on keyboard open. */
+  keyboardFocusedInputExtraOffset?: number;
 };
 
 function assignScrollRef(
@@ -69,6 +77,8 @@ export const KeyboardAwareScreenScroll = forwardRef<
     bottomAccessory,
     padSafeAreaBottom = true,
     keyboardAvoidingEnabled = true,
+    autoScrollToFocusedInputOnKeyboard = false,
+    keyboardFocusedInputExtraOffset = 84,
     innerRef,
     keyboardShouldPersistTaps = "handled",
     keyboardDismissMode = "interactive",
@@ -82,6 +92,7 @@ export const KeyboardAwareScreenScroll = forwardRef<
   const theme = useAppTheme();
   const bg = contentBackgroundColor ?? theme.background;
   const insets = useSafeAreaInsets();
+  const scrollViewRef = React.useRef<ScrollView | null>(null);
 
   /**
    * Footer (`bottomAccessory`) already sits above home/tab chrome — avoid double-counting `insets.bottom`.
@@ -142,10 +153,43 @@ export const KeyboardAwareScreenScroll = forwardRef<
 
   const handleRef = useCallback(
     (instance: ScrollView | null) => {
+      scrollViewRef.current = instance;
       assignScrollRef(instance, ref as React.Ref<ScrollView>, innerRef);
     },
     [ref, innerRef],
   );
+
+  useEffect(() => {
+    if (!autoScrollToFocusedInputOnKeyboard) return undefined;
+    let t1: ReturnType<typeof setTimeout> | null = null;
+    let t2: ReturnType<typeof setTimeout> | null = null;
+
+    const onShow = Keyboard.addListener("keyboardDidShow", () => {
+      const scrollIntoView = () => {
+        const scroll = scrollViewRef.current;
+        const focusedInput = TextInput.State.currentlyFocusedInput?.();
+        if (!scroll || !focusedInput) return;
+        scroll.scrollResponderScrollNativeHandleToKeyboard?.(
+          focusedInput as never,
+          keyboardFocusedInputExtraOffset,
+          false,
+        );
+      };
+
+      requestAnimationFrame(scrollIntoView);
+      t1 = setTimeout(scrollIntoView, 120);
+      t2 = setTimeout(scrollIntoView, 260);
+    });
+
+    return () => {
+      if (t1) clearTimeout(t1);
+      if (t2) clearTimeout(t2);
+      onShow.remove();
+    };
+  }, [
+    autoScrollToFocusedInputOnKeyboard,
+    keyboardFocusedInputExtraOffset,
+  ]);
 
   const scrollView = (
     <ScrollView

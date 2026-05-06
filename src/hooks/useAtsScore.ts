@@ -7,7 +7,7 @@ import {
 import { buildAtsScorePrompt } from "../services/gemini/prompts";
 import { supabase } from "../services/supabase/supabase";
 import type { AtsScoreRow } from "../types/common.types";
-import { emitGeminiErrorToast } from "../utils/geminiToastBridge";
+import { buildGeminiErrorToastMessage } from "../utils/geminiToastBridge";
 
 type GeminiAts = {
   overall_score: number;
@@ -80,7 +80,7 @@ function parseAtsResponse(raw: string): GeminiAts {
         parseError instanceof Error ? parseError.message : String(parseError),
       rawResponse: raw.slice(0, 1000),
     });
-    throw new Error("AI response was unclear. Please try again.");
+    throw new Error("Gemini AI failed to process ATS response. Please try again.");
   }
 }
 
@@ -118,7 +118,9 @@ async function extractTextFromStorageFile(
 
   const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("GEMINI_API_ERROR");
+    throw new Error(
+      "Gemini API key missing. Add EXPO_PUBLIC_GEMINI_API_KEY or configure the app.",
+    );
   }
 
   const mimeType = fileName?.endsWith(".pdf")
@@ -158,7 +160,10 @@ async function extractTextFromStorageFile(
         geminiResponse.status,
         errBody,
       );
-      throw new Error("GEMINI_API_ERROR");
+      const snippet = errBody.replace(/\s+/g, " ").trim().slice(0, 600);
+      throw new Error(
+        `Gemini API ${geminiResponse.status}${snippet ? `: ${snippet}` : ""}`,
+      );
     }
 
     const geminiData = await geminiResponse.json();
@@ -170,7 +175,9 @@ async function extractTextFromStorageFile(
         "[extractTextFromStorageFile] Gemini returned empty text. Full response:",
         JSON.stringify(geminiData).slice(0, 500),
       );
-      throw new Error("GEMINI_API_ERROR");
+      throw new Error(
+        "Gemini returned no extractable text from this file. Try another PDF or re-upload.",
+      );
     }
 
     console.log(
@@ -185,8 +192,8 @@ async function extractTextFromStorageFile(
     return extractedText;
   } catch (err) {
     console.error("[extractTextFromStorageFile] Gemini call failed:", err);
-    emitGeminiErrorToast(err, { label: "ATS" });
-    throw new Error("GEMINI_API_ERROR");
+    if (err instanceof Error) throw err;
+    throw new Error(String(err));
   }
 }
 
@@ -393,34 +400,24 @@ export function useAtsScore() {
           userId: "unknown",
         });
 
-        // Map specific errors to user-friendly messages
         let userMessage = "Could not score resume";
         if (message.includes("Not signed in")) {
           userMessage = "Please sign in again to score your resume.";
         } else if (message.includes("EMPTY_RESUME")) {
           userMessage =
             "Could not read your resume content. Please delete and re-upload the file.";
-        } else if (message.includes("Gemini API: Invalid API key")) {
-          userMessage =
-            "AI service configuration error. Please contact support.";
-        } else if (message.includes("Gemini API: Rate limit")) {
-          userMessage =
-            "ATS: Usage limit reached. The limit will reset tomorrow.";
-        } else if (message.includes("Gemini API: Invalid request")) {
-          userMessage =
-            "Resume content could not be processed. Try re-uploading the file.";
-        } else if (message.includes("Database save failed")) {
+        } else if (message.includes("Could not save score")) {
           userMessage =
             "Score was generated but could not be saved. Please try again.";
-        } else if (message.includes("AI response was unclear")) {
-          userMessage = "AI response was unclear. Please try again.";
         } else if (message.includes("Resume not found")) {
           userMessage = "Resume not found. Please refresh and try again.";
+        } else {
+          // Gemini quota, network, 5xx, API key, etc. — same copy as other AI surfaces (+ try again tomorrow on limits)
+          userMessage = buildGeminiErrorToastMessage(e, { label: "ATS" });
         }
 
         setError(userMessage);
-        emitGeminiErrorToast(e, { label: "ATS" });
-        throw e;
+        throw new Error(userMessage);
       } finally {
         setScoring(false);
       }

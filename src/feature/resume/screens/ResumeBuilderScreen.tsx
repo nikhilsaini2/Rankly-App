@@ -11,6 +11,7 @@ import React, {
 import {
   ActivityIndicator,
   BackHandler,
+  Keyboard,
   Modal,
   Platform,
   Text,
@@ -640,6 +641,23 @@ export default function ResumeBuilderScreen() {
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const hasCheckedDraft = useRef(false);
   const hasUserInteracted = useRef(false);
+  const [keyboardScrollPad, setKeyboardScrollPad] = useState(0);
+
+  useEffect(() => {
+    const onShow = Keyboard.addListener("keyboardDidShow", (e) => {
+      const h = Math.round(e.endCoordinates.height);
+      const ratio = Platform.OS === "android" ? 0.7 : 0.4;
+      const cap = Platform.OS === "android" ? 420 : 300;
+      setKeyboardScrollPad(Math.min(cap, Math.max(96, Math.round(h * ratio))));
+    });
+    const onHide = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardScrollPad(0);
+    });
+    return () => {
+      onShow.remove();
+      onHide.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (hasCheckedDraft.current) return;
@@ -839,6 +857,8 @@ export default function ResumeBuilderScreen() {
 
   const resumeFormScrollPaddingBottom =
     24 + Math.max(0, 16 - insets.bottom);
+  const resumeFormDynamicPaddingBottom =
+    resumeFormScrollPaddingBottom + keyboardScrollPad;
 
   const stepContent = (
     <>
@@ -866,11 +886,13 @@ export default function ResumeBuilderScreen() {
   const resumeFormScrollView = (
     <KeyboardAwareScreenScroll
       style={{ flex: 1 }}
+      autoScrollToFocusedInputOnKeyboard
+      keyboardFocusedInputExtraOffset={96}
       contentContainerStyle={[
         resumeStyles.scrollContentContainer,
         {
           flexGrow: 1,
-          paddingBottom: resumeFormScrollPaddingBottom,
+          paddingBottom: resumeFormDynamicPaddingBottom,
         },
       ]}
       keyboardShouldPersistTaps="handled"
