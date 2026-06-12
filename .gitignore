@@ -41,3 +41,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# development notes
+GLOBAL_CONTEXT.md
+
