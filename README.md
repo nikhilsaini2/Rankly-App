@@ -11,35 +11,10 @@
 
 ---
 
-## 📸 App Tour & Showcase
+## 📸 App Preview & Screenshots
 
-Here is a visual overview of **Rankly's** design, flow, and key feature slides:
-
-<p align="center">
-  <img src="assets/screenshots/page_1.png" width="80%" alt="Rankly Cover" />
-</p>
-
-### 🚀 Core Modules & User Flows
-
-<p align="center">
-  <img src="assets/screenshots/page_2.png" width="48%" />
-  <img src="assets/screenshots/page_3.png" width="48%" />
-</p>
-
-<p align="center">
-  <img src="assets/screenshots/page_4.png" width="48%" />
-  <img src="assets/screenshots/page_5.png" width="48%" />
-</p>
-
-<p align="center">
-  <img src="assets/screenshots/page_6.png" width="48%" />
-  <img src="assets/screenshots/page_7.png" width="48%" />
-</p>
-
-<p align="center">
-  <img src="assets/screenshots/page_8.png" width="48%" />
-  <img src="assets/screenshots/page_9.png" width="48%" />
-</p>
+To view the complete interactive UI designs, feature slides, and app screens:
+👉 **[View the App Preview Slides on Google Drive](https://drive.google.com/file/d/1UWFrrdWGJAloZdkshk22l5GasPA4W1fL/view?usp=sharing)**
 
 ---
 
